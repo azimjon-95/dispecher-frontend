@@ -1,629 +1,539 @@
 import { useState, useEffect, useMemo } from 'react'
-import { api, fmt, botApi } from '../../services/api.js'
-import { Modal, Confirm, toast } from '../../components/ui/UI.jsx'
+import {
+  MdArrowBack, MdAdd, MdEdit, MdDelete, MdPersonAdd,
+  MdDirectionsCar, MdArrowForward, MdCheck, MdAttachMoney,
+  MdPhone, MdLocationOn
+} from 'react-icons/md'
+import { api, fmt } from '../../services/api.js'
+import { Modal, Confirm, Sbadge, toast } from '../../components/ui/UI.jsx'
 import './OrderDetail.css'
 
 /* ── Constants ── */
 const ETAPLAR = [
-  { key: 'qabul',      label: 'Qabul',      icon: '📥' },
-  { key: 'yuvish',     label: 'Yuvish',      icon: '🫧' },
-  { key: 'quritish',   label: 'Quritish',    icon: '💨' },
-  { key: 'bezak',      label: 'Bezak',       icon: '✨' },
-  { key: 'yetkazish',  label: 'Yetkazish',   icon: '🚚' },
-  { key: 'tugallandi', label: 'Tugallandi',   icon: '✅' },
+  { key:'qabul',      label:'Qabul',     icon:'📥', color:'var(--accent)' },
+  { key:'yuvish',     label:'Yuvish',    icon:'🫧', color:'#58a6ff' },
+  { key:'quritish',   label:'Quritish',  icon:'💨', color:'var(--orange)' },
+  { key:'bezak',      label:'Bezak',     icon:'✨', color:'var(--purple)' },
+  { key:'yetkazish',  label:'Yetkazish', icon:'🚚', color:'#f0883e' },
+  { key:'tugallandi', label:'Tayyor',    icon:'✅', color:'var(--green)' },
 ]
-const ETAP_NEXT = {
-  qabul:'yuvish', yuvish:'quritish', quritish:'bezak',
-  bezak:'yetkazish', yetkazish:'tugallandi', tugallandi:'tugallandi',
-}
+const ETAP_NEXT = { qabul:'yuvish', yuvish:'quritish', quritish:'bezak', bezak:'yetkazish', yetkazish:'tugallandi', tugallandi:'tugallandi' }
+
 const ITEM_TYPES = [
-  { key:'gilam',  label:'Gilam',    unit:'sqm',  icon:'🟫' },
-  { key:'kurpa',  label:"Ko'rpa",   unit:'dona', icon:'🛏️' },
-  { key:'adyol',  label:'Adyol',    unit:'dona', icon:'🧸' },
-  { key:'yostiq', label:'Yostiq',   unit:'dona', icon:'💤' },
-  { key:'parda',  label:'Parda',    unit:'dona', icon:'🪟' },
-  { key:'kiyim',  label:'Kiyim',    unit:'dona', icon:'👕' },
-  { key:'boshqa', label:'Boshqa',   unit:'dona', icon:'📦' },
+  { key:'gilam',  label:'Gilam',   unit:'sqm',  icon:'🟫', defaultPrice:15000 },
+  { key:'kurpa',  label:"Ko'rpa",  unit:'dona', icon:'🛏️', defaultPrice:25000 },
+  { key:'adyol',  label:'Adyol',   unit:'dona', icon:'🧸', defaultPrice:20000 },
+  { key:'yostiq', label:'Yostiq',  unit:'dona', icon:'💤', defaultPrice:8000  },
+  { key:'parda',  label:'Parda',   unit:'dona', icon:'🪟', defaultPrice:12000 },
+  { key:'kiyim',  label:'Kiyim',   unit:'dona', icon:'👕', defaultPrice:8000  },
+  { key:'boshqa', label:'Boshqa',  unit:'dona', icon:'📦', defaultPrice:10000 },
 ]
 
-/* Telegram link builder */
-function tgLink(phone, itemName, stage) {
-  const clean = (phone||'').replace(/\D/g,'')
-  const stageLabel = ETAPLAR.find(e=>e.key===stage)?.label || stage
-  const msg = encodeURIComponent(
-    `Assalomu alaykum! Buyurtmangiz "${itemName}" mahsuloti hozir "${stageLabel}" bosqichida.\nBatafsil: +998901234567`
-  )
-  return `https://t.me/+${clean}?text=${msg}`
+const EMPTY_ITEM = { itemType:'gilam', name:'Gilam', unit:'sqm', width:'', length:'', qty:1, pricePerUnit:15000, description:'' }
+
+function norm(r) {
+  if (!r || r.status !== 'fulfilled') return []
+  const v = r.value
+  if (Array.isArray(v)) return v
+  if (Array.isArray(v?.data)) return v.data
+  return []
 }
 
-/* Stage badge */
 function StageBadge({ stage }) {
-  const e = ETAPLAR.find(x => x.key === stage) || { label: stage, icon: '?' }
+  const e = ETAPLAR.find(x=>x.key===stage) || { label:stage, icon:'?', color:'var(--text3)' }
   return (
-    <span className={`stage-badge stage-${stage}`}>
+    <span style={{
+      display:'inline-flex', alignItems:'center', gap:4,
+      padding:'2px 8px', borderRadius:99,
+      background: e.color+'22', color: e.color,
+      border:`1px solid ${e.color}44`,
+      fontSize:11, fontWeight:700,
+    }}>
       {e.icon} {e.label}
     </span>
   )
 }
 
-/* TG SVG */
 function TgIcon() {
-  return (
-    <svg style={{width:12,height:12,flexShrink:0}} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248-2.012 9.48c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L6.26 14.4l-2.95-.924c-.64-.203-.654-.64.136-.948l11.52-4.443c.534-.194 1.001.13.596.163z"/>
-    </svg>
-  )
+  return <svg style={{width:12,height:12,flexShrink:0}} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248-2.012 9.48c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L6.26 14.4l-2.95-.924c-.64-.203-.654-.64.136-.948l11.52-4.443c.534-.194 1.001.13.596.163z"/></svg>
 }
 
-/* ══════════════════════════════════════
-   MAIN COMPONENT
-══════════════════════════════════════ */
-export default function OrderDetail({ order, onBack }) {
+/* ══════════════════════════════════════════
+   MAIN
+══════════════════════════════════════════ */
+export default function OrderDetail({ order: initialOrder, onBack }) {
+  const [order,    setOrder]    = useState(initialOrder)
   const [items,    setItems]    = useState([])
   const [workers,  setWorkers]  = useState([])
+  const [drivers,  setDrivers]  = useState([])
   const [prices,   setPrices]   = useState([])
   const [loading,  setLoading]  = useState(true)
 
-  /* New item form */
-  const [newItem, setNewItem] = useState({
-    itemType: 'gilam', name: '', unit: 'sqm',
-    width: '', length: '', qty: 1, pricePerUnit: '', description: ''
-  })
+  /* Forms */
+  const [newItem,    setNewItem]    = useState(EMPTY_ITEM)
+  const [addingItem, setAddingItem] = useState(false)
 
   /* Modals */
-  const [assignModal, setAssignModal] = useState(null)  // item to assign
-  const [selWorker,   setSelWorker]   = useState(null)
-  const [delItemId,   setDelItemId]   = useState(null)
-  const [editItem,    setEditItem]    = useState(null)
+  const [assignWorkerModal, setAssignWorkerModal] = useState(null)
+  const [assignDriverModal, setAssignDriverModal] = useState(null)
+  const [selWorker,  setSelWorker]  = useState(null)
+  const [selDriver,  setSelDriver]  = useState(null)
+  const [delItemId,  setDelItemId]  = useState(null)
+  const [editModal,  setEditModal]  = useState(null)
+  const [editForm,   setEditForm]   = useState({})
+  const [advConfirm, setAdvConfirm] = useState(null)
 
-  useEffect(() => {
-    loadAll()
-  }, [order._id])
+  useEffect(() => { loadAll() }, [order._id])
 
   async function loadAll() {
     setLoading(true)
     try {
-      const [itsRes, wsRes, psRes] = await Promise.allSettled([
+      const [itsR, wsR, drR, prR] = await Promise.allSettled([
         api.getOrderItems(order._id),
         api.getEmployees(),
+        api.getDrivers(),
         api.getPrices(),
       ])
-      // Normalize — always array
-      const norm = r => {
-        if (!r || r.status !== 'fulfilled') return []
-        const v = r.value
-        if (Array.isArray(v)) return v
-        if (Array.isArray(v?.data)) return v.data
-        return []
-      }
-      setItems(norm(itsRes))
-      setWorkers(norm(wsRes).filter(w => w.status === 'active'))
-      setPrices(norm(psRes))
-    } catch(e) {
-      console.error('loadAll error:', e)
-    } finally {
-      setLoading(false)
-    }
+      setItems(norm(itsR))
+      setWorkers(norm(wsR).filter(w=>w.status==='active'&&w.role==='Ishchi'))
+      setDrivers(norm(drR).filter(d=>d.status!=='dam'))
+      setPrices(norm(prR))
+    } catch(e) { toast(e.message,'err') }
+    finally { setLoading(false) }
   }
 
-  /* Auto-fill price when itemType changes */
-  function handleItemTypeChange(e) {
-    const type  = e.target.value
-    const found = ITEM_TYPES.find(t => t.key === type)
-    const price = prices.find(p => p.itemType === type)
+  /* ── Auto-fill price on type change ── */
+  function handleTypeChange(e) {
+    const type   = e.target.value
+    const found  = ITEM_TYPES.find(t=>t.key===type)
+    const priceRec = prices.find(p=>p.itemType===type)
     setNewItem(p => ({
       ...p,
       itemType:     type,
       name:         found?.label || '',
       unit:         found?.unit  || 'dona',
-      pricePerUnit: price?.price || '',
+      pricePerUnit: priceRec?.price || found?.defaultPrice || '',
     }))
   }
 
-  /* Computed: preview price */
+  /* ── Preview price ── */
   const previewPrice = useMemo(() => {
-    if (newItem.unit === 'sqm') {
-      const sqm = parseFloat(newItem.width||0) * parseFloat(newItem.length||0)
-      return Math.round(sqm * (parseFloat(newItem.pricePerUnit)||0))
-    }
-    return Math.round((parseInt(newItem.qty)||1) * (parseFloat(newItem.pricePerUnit)||0))
+    if (newItem.unit==='sqm') return Math.round(parseFloat(newItem.width||0)*parseFloat(newItem.length||0)*(parseFloat(newItem.pricePerUnit)||0))
+    return Math.round((parseInt(newItem.qty)||1)*(parseFloat(newItem.pricePerUnit)||0))
   }, [newItem])
 
-  const [addingItem, setAddingItem] = useState(false)
-
-  /* Add item */
+  /* ── Add item ── */
   async function addItem() {
-    if (addingItem) return  // prevent double click
-    if (!newItem.name || !newItem.pricePerUnit) {
-      toast("Mahsulot nomi va narxni kiriting!", 'err'); return
-    }
-    if (newItem.unit === 'sqm' && (!newItem.width || !newItem.length)) {
-      toast("Gilam o'lchamini kiriting (eni × uzunligi)!", 'err'); return
-    }
+    if (addingItem) return
+    if (!newItem.name) { toast('Mahsulot nomini kiriting!','err'); return }
+    if (!newItem.pricePerUnit) { toast('Narxni kiriting!','err'); return }
+    if (newItem.unit==='sqm' && (!newItem.width||!newItem.length)) { toast("Eni va uzunligini kiriting!",'err'); return }
 
     const payload = {
       orderId:      order._id,
       orderNumber:  order.number,
       ...newItem,
-      width:        parseFloat(newItem.width)  || null,
-      length:       parseFloat(newItem.length) || null,
-      qty:          parseInt(newItem.qty)      || 1,
-      pricePerUnit: parseFloat(newItem.pricePerUnit) || 0,
+      width:        parseFloat(newItem.width)||null,
+      length:       parseFloat(newItem.length)||null,
+      qty:          parseInt(newItem.qty)||1,
+      pricePerUnit: parseFloat(newItem.pricePerUnit)||0,
     }
+    const sqm   = payload.unit==='sqm' ? Math.round(parseFloat(payload.width||0)*parseFloat(payload.length||0)*100)/100 : 0
+    const price = payload.unit==='sqm' ? Math.round(sqm*(payload.pricePerUnit||0)) : Math.round((payload.qty||1)*(payload.pricePerUnit||0))
 
-    // Compute sqm and totalPrice locally for immediate display
-    const sqm        = payload.unit === 'sqm' ? Math.round(parseFloat(payload.width||0) * parseFloat(payload.length||0) * 100) / 100 : 0
-    const totalPrice = payload.unit === 'sqm'
-      ? Math.round(sqm * (payload.pricePerUnit||0))
-      : Math.round((payload.qty||1) * (payload.pricePerUnit||0))
-
-    // Optimistic: add immediately to local list
-    const tempId  = '_tmp_' + Date.now()
-    const tempItem = { _id: tempId, ...payload, sqm, totalPrice, stage:'qabul', assignments:[], tgNotified:false, _pending:true }
-    setItems(p => [tempItem, ...p])
-    setNewItem({ itemType:'gilam', name:'', unit:'sqm', width:'', length:'', qty:1, pricePerUnit:'', description:'' })
-
+    // Optimistic
+    const tempId = '_tmp_'+Date.now()
+    const temp   = { _id:tempId, ...payload, sqm, totalPrice:price, stage:'qabul', assignments:[], _pending:true }
+    setItems(p=>[...p, temp])
+    setNewItem(EMPTY_ITEM)
     setAddingItem(true)
+
     try {
-      const rec = await api.createOrderItem(payload)
+      const rec   = await api.createOrderItem(payload)
       const saved = rec?.data || rec
-      if (saved && saved._id) {
-        // Replace temp with real
-        setItems(p => p.map(i => i._id === tempId ? saved : i))
-        toast(`"${saved.name}" mahsulot qo'shildi ✅`, 'ok')
+      if (saved?._id) {
+        setItems(p=>p.map(i=>i._id===tempId?saved:i))
+        toast(`"${saved.name}" qo'shildi ✅`,'ok')
+        // Update order total
+        setOrder(o=>({...o, total:(o.total||0)+price, itemCount:(o.itemCount||0)+1}))
       } else {
-        // Offline: keep temp item, show pending badge
-        toast(`"${payload.name}" saqlandi (internet kelganda yuboriladi)`, 'inf')
+        toast(`"${payload.name}" saqlandi (offline)`,'inf')
       }
     } catch(e) {
-      // Remove temp on error
-      setItems(p => p.filter(i => i._id !== tempId))
-      setNewItem(payload)  // restore form
-      toast(e.message || 'Xato yuz berdi', 'err')
-    } finally {
-      setAddingItem(false)
-    }
+      setItems(p=>p.filter(i=>i._id!==tempId))
+      setNewItem(payload)
+      toast(e.message,'err')
+    } finally { setAddingItem(false) }
   }
 
-  /* Delete item */
-  async function doDeleteItem() {
-    await api.deleteOrderItem(delItemId)
-    setItems(p => p.filter(i => i._id !== delItemId))
-    setDelItemId(null)
-    toast("Mahsulot o'chirildi", 'inf')
-  }
-
-  /* Assign worker */
-  async function confirmAssign() {
-    if (!selWorker) { toast("Ishchini tanlang", 'err'); return }
-    const res = await api.assignWorker(assignModal._id, selWorker, assignModal.stage)
-    if (res) {
-      setItems(p => p.map(i => i._id === assignModal._id ? res.item : i))
-      toast(`${res.worker.name} ga biriktirildi ✅`, 'ok')
-
-      // TG xabar yuborish
-      try {
-        await botApi.sendItem(assignModal._id, selWorker)
-        toast(`📨 ${res.worker.name} ga Telegram xabar yuborildi`, 'ok')
-      } catch {
-        toast('⚠️ TG xabar yuborishda xato (bot ishlamayapti?)', 'err')
+  /* ── Assign worker to item (stage O'ZGARMAYDI) ── */
+  async function confirmAssignWorker() {
+    if (!selWorker) { toast('Ishchini tanlang','err'); return }
+    try {
+      const res = await api.assignWorker(assignWorkerModal._id, selWorker, assignWorkerModal.stage)
+      if (res) {
+        const data = res?.data || res
+        setItems(p=>p.map(i=>i._id===assignWorkerModal._id ? (data.item||i) : i))
+        toast(`${data.worker?.name || 'Ishchi'} biriktirildi ✅`,'ok')
       }
-
-      setAssignModal(null)
-      setSelWorker(null)
-    }
+    } catch(e) { toast(e.message,'err') }
+    setAssignWorkerModal(null); setSelWorker(null)
   }
 
-  /* Advance stage */
-  async function advanceStage(item) {
-    const res = await api.advanceStage(item._id)
-    if (res) {
-      setItems(p => p.map(i => i._id === item._id ? res.item : i))
-      const nextLabel = ETAPLAR.find(e=>e.key===res.nextStage)?.label || res.nextStage
-      toast(`"${item.name}" → ${nextLabel} bosqichiga o'tdi`, 'ok')
-    }
+  /* ── Advance stage (done click) ── */
+  async function doAdvance(item) {
+    try {
+      const res = await api.advanceStage(item._id)
+      const data = res?.data || res
+      setItems(p=>p.map(i=>i._id===item._id?(data.item||{...i,stage:data.nextStage||i.stage}):i))
+      const label = ETAPLAR.find(e=>e.key===data.nextStage)?.label || data.nextStage
+      toast(`"${item.name}" → ${label} ✅`,'ok')
+      if (data.earned > 0) toast(`💰 Ishchi balansiga +${fmt.currency(data.earned)} yozildi`,'ok')
+      // Bezak tugasa → avto yetkazish
+      if (data.nextStage==='yetkazish') toast('🚚 Yetkazish topshirig\'i avtomatik yaratildi!','ok')
+      if (data.orderStatus) setOrder(o=>({...o, status:data.orderStatus}))
+    } catch(e) { toast(e.message,'err') }
+    setAdvConfirm(null)
   }
 
-  /* Stage counts for pipeline */
-  const stageCounts = useMemo(() => {
-    const c = {}
-    ETAPLAR.forEach(e => { c[e.key] = 0 })
-    items.forEach(i => { if (c[i.stage] !== undefined) c[i.stage]++ })
-    return c
-  }, [items])
+  /* ── Assign driver to order (for yetkazish) ── */
+  async function confirmAssignDriver() {
+    if (!selDriver) { toast('Shafyorni tanlang','err'); return }
+    const dr = drivers.find(d=>d._id===selDriver)
+    try {
+      await api.updateOrder(order._id, { driver: dr.name })
+      setOrder(o=>({...o, driver:dr.name}))
+      toast(`${dr.name} buyurtmaga biriktirildi ✅`,'ok')
+    } catch(e) { toast(e.message,'err') }
+    setAssignDriverModal(null); setSelDriver(null)
+  }
 
-  /* Current order stage (dominant) */
-  const dominantStage = useMemo(() => {
-    if (!items.length) return 'qabul'
-    const counts = {}
-    items.forEach(i => { counts[i.stage] = (counts[i.stage]||0)+1 })
-    return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'qabul'
-  }, [items])
+  /* ── Delete item ── */
+  async function doDelete() {
+    try {
+      await api.deleteOrderItem(delItemId, order._id)
+      const del = items.find(i=>i._id===delItemId)
+      setItems(p=>p.filter(i=>i._id!==delItemId))
+      if (del) setOrder(o=>({...o, total:Math.max(0,(o.total||0)-(del.totalPrice||0)), itemCount:Math.max(0,(o.itemCount||0)-1)}))
+      toast("O'chirildi",'inf')
+    } catch(e) { toast(e.message,'err') }
+    setDelItemId(null)
+  }
 
-  const totalPrice = items.reduce((s, i) => s + (i.totalPrice||0), 0)
+  /* ── Computed ── */
+  const totalPrice    = items.reduce((s,i)=>s+(i.totalPrice||0),0)
+  const stageCounts   = useMemo(()=>{ const c={}; ETAPLAR.forEach(e=>{c[e.key]=0}); items.forEach(i=>{if(c[i.stage]!==undefined)c[i.stage]++}); return c },[items])
+  const dominantStage = useMemo(()=>{
+    const priority = ['yetkazish','bezak','quritish','yuvish','qabul','tugallandi']
+    for (const s of priority) { if (items.some(i=>i.stage===s)) return s }
+    return 'qabul'
+  },[items])
 
   return (
     <div className="od-wrap">
+      {/* Back */}
+      <button className="btn btn-ghost btn-sm" onClick={onBack} style={{marginBottom:14}}>
+        <MdArrowBack size={15}/> Orqaga
+      </button>
 
-      {/* Back button */}
-      <div style={{ marginBottom: 16 }}>
-        <button className="btn btn-ghost btn-sm" onClick={onBack}>← Orqaga</button>
-      </div>
-
-      {/* Order header */}
+      {/* ── Order header ── */}
       <div className="od-header">
         <div className="od-header-left">
-          <div className="od-order-num">{order.number}</div>
-          <div className="od-customer">{order.customer}</div>
-          <div className="od-phone-row">
-            <a href={tgLink(order.phone, order.number, dominantStage)}
-              target="_blank" rel="noopener noreferrer" className="tg-btn">
-              <TgIcon /> {order.phone}
-            </a>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
+            <div className="od-order-num">{order.number}</div>
+            <StageBadge stage={order.status?.replace('da','').replace('_qilindi','') || dominantStage}/>
           </div>
-          {order.address && <div className="od-address">📍 {order.address}</div>}
-          {order.description && (
-            <div className="od-desc">📋 {order.description}</div>
+          <div className="od-customer">{order.customer}</div>
+          {order.phone && (
+            <div className="od-phone-row" style={{display:'flex',alignItems:'center',gap:8,marginTop:4}}>
+              <a href={`https://t.me/+${(order.phone||'').replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer"
+                style={{display:'inline-flex',alignItems:'center',gap:5,padding:'3px 8px',borderRadius:99,background:'rgba(34,158,217,.15)',color:'#229ED9',textDecoration:'none',fontSize:12,fontWeight:600}}>
+                <TgIcon/> {order.phone}
+              </a>
+            </div>
+          )}
+          {order.address && <div style={{fontSize:12,color:'var(--text2)',marginTop:4,display:'flex',alignItems:'center',gap:4}}><MdLocationOn size={13}/> {order.address}</div>}
+          {order.description && <div style={{fontSize:12,color:'var(--text3)',marginTop:3,fontStyle:'italic'}}>📋 {order.description}</div>}
+          {order.driver && (
+            <div style={{marginTop:6,display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:600,color:'var(--orange)'}}>
+              <MdDirectionsCar size={14}/> Shafyor: {order.driver}
+              <button className="btn btn-ghost btn-sm" style={{fontSize:10,padding:'2px 6px'}} onClick={()=>{setAssignDriverModal(true);setSelDriver(null)}}>
+                🔄 Almashtirish
+              </button>
+            </div>
           )}
         </div>
         <div className="od-header-right">
           <div className="od-total-box">
             <div className="od-total-label">Jami narx</div>
-            <div className="od-total-val">{fmt.currency(totalPrice)}</div>
+            <div className="od-total-val" style={{color:'var(--green)'}}>{fmt.currency(totalPrice)}</div>
           </div>
-          <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-            {items.length > 0 && items.some(i=>i.stage==='qabul') && (
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => setAssignModal({ _id:'__bulk__', stage:'yuvish', name:'Barcha mahsulotlar' })}
-              >
-                👷 Hammaga biriktirish
+          <div style={{display:'flex',gap:6,marginTop:8,flexWrap:'wrap'}}>
+            {!order.driver && (
+              <button className="btn btn-primary btn-sm" onClick={()=>{setAssignDriverModal(true);setSelDriver(null)}}>
+                <MdDirectionsCar size={13}/> Shafyor biriktirish
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Pipeline */}
+      {/* ── Pipeline progress ── */}
       <div className="od-pipeline">
-        {ETAPLAR.map(e => {
-          const count   = stageCounts[e.key] || 0
-          const isDone  = ETAPLAR.findIndex(x=>x.key===e.key) < ETAPLAR.findIndex(x=>x.key===dominantStage)
+        {ETAPLAR.map(e=>{
+          const count   = stageCounts[e.key]||0
+          const allIdx  = ETAPLAR.findIndex(x=>x.key===e.key)
+          const domIdx  = ETAPLAR.findIndex(x=>x.key===dominantStage)
+          const isDone  = allIdx < domIdx
           const isCur   = e.key === dominantStage
           return (
-            <div key={e.key} className={`od-stage ${isDone?'done':''} ${isCur?'current':''}`}>
+            <div key={e.key} className={`od-stage ${isDone?'done':''} ${isCur?'current':''}`}
+              style={{ '--stage-color': e.color }}>
               <span className="od-stage-icon">{e.icon}</span>
-              {e.label}
-              {count > 0 && <span className="od-stage-count">{count}</span>}
+              <span className="od-stage-label">{e.label}</span>
+              {count>0 && <span className="od-stage-count">{count}</span>}
             </div>
           )
         })}
       </div>
 
-      {/* Add item form */}
+      {/* ── Add item form ── */}
       <div className="od-add-section">
-        <div className="od-add-title">➕ Mahsulot qo'shish</div>
+        <div className="od-add-title"><MdAdd size={15}/> Mahsulot qo'shish</div>
         <div className="od-add-grid">
-          {/* Item type */}
           <div className="fg">
-            <label className="flabel">Mahsulot turi</label>
-            <select className="fselect" value={newItem.itemType} onChange={handleItemTypeChange}>
-              {ITEM_TYPES.map(t => (
-                <option key={t.key} value={t.key}>{t.icon} {t.label}</option>
-              ))}
+            <label className="flabel">Turi</label>
+            <select className="fselect" value={newItem.itemType} onChange={handleTypeChange}>
+              {ITEM_TYPES.map(t=><option key={t.key} value={t.key}>{t.icon} {t.label}</option>)}
             </select>
           </div>
 
-          {/* Size or qty */}
-          {newItem.unit === 'sqm' ? (
-            <>
-              <div className="fg">
-                <label className="flabel">Eni (m)</label>
-                <input className="finput" type="number" step="0.1" min="0" placeholder="2.5"
-                  value={newItem.width} onChange={e => setNewItem(p=>({...p,width:e.target.value}))} />
-              </div>
-              <div className="fg">
-                <label className="flabel">Uzunligi (m)</label>
-                <input className="finput" type="number" step="0.1" min="0" placeholder="3.0"
-                  value={newItem.length} onChange={e => setNewItem(p=>({...p,length:e.target.value}))} />
-              </div>
-            </>
-          ) : (
-            <div className="fg">
-              <label className="flabel">Soni (dona)</label>
+          {newItem.unit==='sqm' ? (<>
+            <div className="fg"><label className="flabel">Eni (m)</label>
+              <input className="finput" type="number" step="0.1" min="0" placeholder="2.5"
+                value={newItem.width} onChange={e=>setNewItem(p=>({...p,width:e.target.value}))}/></div>
+            <div className="fg"><label className="flabel">Uzunligi (m)</label>
+              <input className="finput" type="number" step="0.1" min="0" placeholder="3.0"
+                value={newItem.length} onChange={e=>setNewItem(p=>({...p,length:e.target.value}))}/></div>
+          </>) : (
+            <div className="fg"><label className="flabel">Soni</label>
               <input className="finput" type="number" min="1" value={newItem.qty}
-                onChange={e => setNewItem(p=>({...p,qty:e.target.value}))} />
-            </div>
+                onChange={e=>setNewItem(p=>({...p,qty:e.target.value}))}/></div>
           )}
 
-          {/* Price */}
           <div className="fg">
-            <label className="flabel">
-              Narx (1 {newItem.unit === 'sqm' ? 'kv.m' : 'dona'})
-            </label>
+            <label className="flabel">Narx (1 {newItem.unit==='sqm'?'kv.m':'dona'})</label>
             <input className="finput" type="number" min="0" placeholder="15000"
-              value={newItem.pricePerUnit}
-              onChange={e => setNewItem(p=>({...p,pricePerUnit:e.target.value}))} />
+              value={newItem.pricePerUnit} onChange={e=>setNewItem(p=>({...p,pricePerUnit:e.target.value}))}/>
           </div>
 
-          {/* Preview price */}
-          <div className="fg">
-            <label className="flabel">Jami narx</label>
-            <div className="od-add-total">{fmt.currency(previewPrice)}</div>
-          </div>
-
-          {/* Add button */}
           <div className="fg">
             <label className="flabel">&nbsp;</label>
-            <button className="btn btn-primary" onClick={addItem} disabled={addingItem}
-              style={{opacity:addingItem?0.7:1,minWidth:90}}>
-              {addingItem ? '⏳' : '➕ Qo\'shish'}
-            </button>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontFamily:'monospace',fontWeight:800,fontSize:14,color:'var(--green)'}}>
+                = {fmt.currency(previewPrice)}
+              </span>
+              <button className="btn btn-primary" onClick={addItem} disabled={addingItem}
+                style={{whiteSpace:'nowrap',opacity:addingItem?.7:1}}>
+                {addingItem?'⏳':'➕ Qo\'shish'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Items table */}
+      {/* ── Items list ── */}
       <div className="od-items-section">
-        <div className="od-items-header">
-          <div className="od-items-title">
-            📦 Mahsulotlar — {items.length} ta
-          </div>
-          {items.length > 0 && (
-            <div style={{ fontSize:12, color:'var(--text2)' }}>
-              Jami: <strong style={{ color:'var(--green)', fontFamily:'monospace' }}>{fmt.currency(totalPrice)}</strong>
-            </div>
-          )}
+        <div className="od-items-title">
+          📦 Mahsulotlar — {items.length} ta
+          {totalPrice>0 && <span style={{marginLeft:8,fontFamily:'monospace',color:'var(--green)'}}>{fmt.currency(totalPrice)}</span>}
         </div>
 
         {loading ? (
-          <div style={{ padding:32, textAlign:'center', color:'var(--text3)' }}>⏳ Yuklanmoqda...</div>
-        ) : items.length === 0 ? (
-          <div style={{ padding:40, textAlign:'center', color:'var(--text3)' }}>
-            <div style={{ fontSize:32, marginBottom:8 }}>📭</div>
-            <div>Hali mahsulot qo'shilmagan</div>
-            <div style={{ fontSize:11, marginTop:4 }}>Yuqoridagi formadan mahsulot qo'shing</div>
+          <div style={{padding:32,textAlign:'center',color:'var(--text3)'}}>⏳ Yuklanmoqda...</div>
+        ) : items.length===0 ? (
+          <div style={{padding:32,textAlign:'center',color:'var(--text3)'}}>
+            <div style={{fontSize:28,marginBottom:8}}>📭</div>
+            Mahsulot qo'shilmagan. Yuqoridan qo'shing.
           </div>
         ) : (
-          <div style={{ overflowX:'auto' }}>
-            <table className="od-items-tbl">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Mahsulot</th>
-                  <th>O'lcham</th>
-                  <th>Narx</th>
-                  <th>Jami</th>
-                  <th>Bosqich</th>
-                  <th>Ishchi</th>
-                  <th>TG</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, idx) => {
-                  const curAssign   = item.assignments?.find(a => a.stage === item.stage && !a.doneAt)
-                  const nextStage   = ETAP_NEXT[item.stage]
-                  const isDone      = item.stage === 'tugallandi'
-                  const workerPhone = curAssign?.workerPhone
+          <div className="od-items-list">
+            {items.map(item=>{
+              const etap  = ETAPLAR.find(e=>e.key===item.stage) || ETAPLAR[0]
+              const assign = item.assignments?.find(a=>a.stage===item.stage&&!a.doneAt)
+              const canAdv = item.stage!=='tugallandi'
+              const needWorker = ['yuvish','quritish','bezak'].includes(item.stage)
 
-                  return (
-                    <tr key={item._id}>
-                      {/* # */}
-                      <td style={{ color:'var(--text3)', fontFamily:'monospace', fontSize:11 }}>{idx+1}</td>
-
-                      {/* Name */}
-                      <td>
-                        <div style={{ fontWeight:600 }}>
-                          {ITEM_TYPES.find(t=>t.key===item.itemType)?.icon} {item.name}
+              return (
+                <div key={item._id} className="od-item-card" style={{opacity:item._pending?.7:1, '--item-color':etap.color}}>
+                  {/* Item header */}
+                  <div className="od-item-hd">
+                    <div style={{display:'flex',alignItems:'center',gap:8,flex:1}}>
+                      <span style={{fontSize:16}}>{ITEM_TYPES.find(t=>t.key===item.itemType)?.icon||'📦'}</span>
+                      <div>
+                        <div style={{fontWeight:700,fontSize:13}}>{item.name}</div>
+                        <div style={{fontSize:11,color:'var(--text2)'}}>
+                          {item.unit==='sqm'
+                            ? `${item.width||0} × ${item.length||0} = ${item.sqm||0} kv.m`
+                            : `${item.qty||1} dona`
+                          }
+                          {' · '}{fmt.currency(item.pricePerUnit)}/{item.unit==='sqm'?'kv.m':'dona'}
                         </div>
-                        {item.description && (
-                          <div style={{ fontSize:11, color:'var(--text2)' }}>{item.description}</div>
-                        )}
-                      </td>
+                      </div>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <span style={{fontFamily:'monospace',fontWeight:800,color:'var(--green)',fontSize:13}}>
+                        {fmt.currency(item.totalPrice)}
+                      </span>
+                      <StageBadge stage={item.stage}/>
+                      {item._pending && <span style={{fontSize:9,color:'var(--yellow)',fontWeight:700}}>⏳</span>}
+                    </div>
+                  </div>
 
-                      {/* Size */}
-                      <td>
-                        {item.unit === 'sqm' ? (
-                          <span className="mono">
-                            {item.width}×{item.length} = <strong>{item.sqm} m²</strong>
-                          </span>
-                        ) : (
-                          <span className="mono">{item.qty} dona</span>
-                        )}
-                      </td>
+                  {/* Assigned worker */}
+                  {assign && (
+                    <div style={{padding:'5px 10px',background:'var(--bg3)',borderRadius:'var(--r)',margin:'4px 0',fontSize:11,display:'flex',alignItems:'center',gap:6}}>
+                      👷 <span style={{fontWeight:600}}>{assign.workerName}</span>
+                      <span style={{color:'var(--text3)'}}>{etap.label} bosqichida ishlayapti</span>
+                    </div>
+                  )}
 
-                      {/* Price per unit */}
-                      <td>
-                        <span className="mono" style={{ fontSize:12 }}>
-                          {fmt.currency(item.pricePerUnit)}
-                          <span style={{ color:'var(--text3)', fontSize:10 }}>
-                            /{item.unit==='sqm'?'kv.m':'dona'}
-                          </span>
-                        </span>
-                      </td>
+                  {/* Actions */}
+                  <div className="od-item-actions">
+                    {/* Ishchi biriktirish */}
+                    {needWorker && (
+                      <button className="btn btn-ghost btn-sm"
+                        style={{fontSize:11,color:'var(--purple)',borderColor:'rgba(163,113,247,.3)'}}
+                        onClick={()=>{setAssignWorkerModal(item);setSelWorker(assign?.workerId||null)}}>
+                        <MdPersonAdd size={12}/>
+                        {assign ? `${assign.workerName} ✓` : 'Ishchi biriktirish'}
+                      </button>
+                    )}
 
-                      {/* Total */}
-                      <td>
-                        <span className="mono" style={{ fontWeight:800, color:'var(--green)' }}>
-                          {fmt.currency(item.totalPrice)}
-                        </span>
-                      </td>
+                    {/* Bosqichni tugatdi → keyingiga */}
+                    {canAdv && assign && (
+                      <button className="btn btn-ghost btn-sm"
+                        style={{fontSize:11,color:'var(--green)',borderColor:'rgba(63,185,80,.3)'}}
+                        onClick={()=>setAdvConfirm(item)}>
+                        <MdCheck size={12}/>
+                        {etap.label} tugallandi → {ETAPLAR.find(e=>e.key===ETAP_NEXT[item.stage])?.label}
+                      </button>
+                    )}
 
-                      {/* Stage */}
-                      <td>
-                        <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
-                          <StageBadge stage={item.stage} />
-                          {!isDone && nextStage && nextStage !== item.stage && (
-                            <button
-                              className="btn btn-ghost btn-sm"
-                              style={{ fontSize:10, padding:'2px 6px' }}
-                              onClick={() => advanceStage(item)}
-                            >
-                              → {ETAPLAR.find(e=>e.key===nextStage)?.label}
-                            </button>
-                          )}
-                        </div>
-                      </td>
+                    {/* Agar assign yo'q va qabul bosqichida */}
+                    {item.stage==='qabul' && !assign && (
+                      <button className="btn btn-ghost btn-sm"
+                        style={{fontSize:11,color:'var(--yellow)',borderColor:'rgba(210,153,34,.3)'}}
+                        onClick={()=>setAdvConfirm(item)}>
+                        <MdArrowForward size={12}/> Yuvishga o'tkazish
+                      </button>
+                    )}
 
-                      {/* Worker */}
-                      <td>
-                        {curAssign ? (
-                          <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
-                            <span style={{ fontWeight:600, fontSize:12 }}>{curAssign.workerName}</span>
-                            <span style={{ fontSize:10, color:'var(--text2)' }}>
-                              {ETAPLAR.find(e=>e.key===curAssign.stage)?.label}
-                            </span>
-                          </div>
-                        ) : !isDone ? (
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            style={{ fontSize:11, color:'var(--yellow)', borderColor:'var(--yellowbg)', background:'var(--yellowbg)' }}
-                            onClick={() => { setAssignModal(item); setSelWorker(null) }}
-                          >
-                            ⚡ Biriktirish
-                          </button>
-                        ) : (
-                          <span style={{ color:'var(--green)', fontSize:11 }}>✅ Tugadi</span>
-                        )}
-                      </td>
-
-                      {/* TG notify */}
-                      <td>
-                        {workerPhone ? (
-                          <a
-                            href={tgLink(workerPhone, item.name, item.stage)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="tg-btn"
-                            title="Ishchiga TG xabar"
-                            style={{ fontSize:10 }}
-                          >
-                            <TgIcon /> Xabar
-                          </a>
-                        ) : item.tgNotified ? (
-                          <span className="od-notify-done">✅ Yuborildi</span>
-                        ) : (
-                          <span style={{ color:'var(--text3)', fontSize:11 }}>—</span>
-                        )}
-                      </td>
-
-                      {/* Actions */}
-                      <td>
-                        <div style={{ display:'flex', gap:3 }}>
-                          {!isDone && (
-                            <button
-                              className="btn btn-ghost btn-icon btn-sm"
-                              title="Ishchi biriktirish"
-                              onClick={() => { setAssignModal(item); setSelWorker(null) }}
-                            >👷</button>
-                          )}
-                          <button
-                            className="btn btn-ghost btn-icon btn-sm"
-                            style={{ color:'var(--red)' }}
-                            title="O'chirish"
-                            onClick={() => setDelItemId(item._id)}
-                          >🗑️</button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                    <div style={{flex:1}}/>
+                    <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditForm({...item});setEditModal(item._id)}}><MdEdit size={13}/></button>
+                    <button className="btn btn-ghost btn-icon btn-sm" style={{color:'var(--red)'}} onClick={()=>setDelItemId(item._id)}><MdDelete size={13}/></button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
 
-      {/* Summary */}
-      {items.length > 0 && (
-        <div className="od-summary">
-          <div className="od-summary-row">
-            <div className="od-summary-item">
-              <span className="od-summary-label">Mahsulotlar</span>
-              <span className="od-summary-value" style={{ color:'var(--accent)' }}>{items.length} ta</span>
-            </div>
-            <div className="od-summary-item">
-              <span className="od-summary-label">Tugallandi</span>
-              <span className="od-summary-value" style={{ color:'var(--green)' }}>
-                {items.filter(i=>i.stage==='tugallandi').length} ta
-              </span>
-            </div>
-            <div className="od-summary-item">
-              <span className="od-summary-label">Jami kv.m</span>
-              <span className="od-summary-value">
-                {items.filter(i=>i.unit==='sqm').reduce((s,i)=>s+(i.sqm||0),0).toFixed(1)} m²
-              </span>
-            </div>
-            <div className="od-summary-item">
-              <span className="od-summary-label">Jami dona</span>
-              <span className="od-summary-value">
-                {items.filter(i=>i.unit==='dona').reduce((s,i)=>s+(i.qty||0),0)} ta
-              </span>
-            </div>
-          </div>
-          <div className="od-summary-item" style={{ textAlign:'right' }}>
-            <span className="od-summary-label">Jami hisob</span>
-            <span className="od-summary-value" style={{ color:'var(--green)', fontSize:22 }}>
-              {fmt.currency(totalPrice)}
-            </span>
-          </div>
-        </div>
-      )}
+      {/* ══ MODALS ══ */}
 
-      {/* ── Assign Worker Modal ── */}
-      <Modal
-        open={!!assignModal}
-        onClose={() => { setAssignModal(null); setSelWorker(null) }}
-        title={`👷 Ishchi biriktirish — ${assignModal?.name || ''}`}
-        size="sm"
-        footer={
-          <>
-            <button className="btn btn-ghost" onClick={() => { setAssignModal(null); setSelWorker(null) }}>Bekor</button>
-            <button className="btn btn-primary" onClick={confirmAssign} disabled={!selWorker}>
-              ✅ Biriktirish
-            </button>
-          </>
-        }
+      {/* Assign worker */}
+      <Modal open={!!assignWorkerModal} onClose={()=>{setAssignWorkerModal(null);setSelWorker(null)}}
+        title={`👷 Ishchi biriktirish — ${assignWorkerModal?.name||''}`} size="sm"
+        footer={<>
+          <button className="btn btn-ghost" onClick={()=>{setAssignWorkerModal(null);setSelWorker(null)}}>Bekor</button>
+          <button className="btn btn-primary" onClick={confirmAssignWorker} disabled={!selWorker}>✅ Biriktirish</button>
+        </>}
       >
-        <div style={{ fontSize:12, color:'var(--text2)', marginBottom:10 }}>
-          Bosqich: <StageBadge stage={assignModal?.stage || 'yuvish'} />
+        <div style={{fontSize:12,color:'var(--text2)',marginBottom:10}}>
+          Bosqich: <StageBadge stage={assignWorkerModal?.stage||'qabul'}/>
         </div>
-        <div className="assign-worker-list">
-          {workers
-            .filter(w => w.role === 'Ishchi')
-            .map(w => (
-              <div
-                key={w._id}
-                className={`assign-worker-item ${selWorker === w._id ? 'sel' : ''}`}
-                onClick={() => setSelWorker(w._id)}
-              >
-                <div className="assign-worker-avatar">{w.name?.[0]}</div>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:700, fontSize:13 }}>{w.name}</div>
-                  <div className="assign-worker-section">Bo'lim: {w.section}</div>
+        <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:260,overflowY:'auto'}}>
+          {workers.length===0
+            ? <div style={{textAlign:'center',padding:20,color:'var(--text3)'}}>Faol ishchi topilmadi</div>
+            : workers.map(w=>(
+                <div key={w._id}
+                  className={`assign-driver-item ${selWorker===w._id?'sel':''}`}
+                  onClick={()=>setSelWorker(w._id)}
+                >
+                  <div className="assign-driver-avatar" style={{background:'var(--purplebg)',borderColor:'var(--purple)',color:'var(--purple)'}}>{w.name[0]}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:13}}>{w.name}</div>
+                    <div style={{fontSize:11,color:'var(--text2)'}}>{w.section} · Balans: {fmt.currency(w.balance)}</div>
+                  </div>
+                  <Sbadge s={w.status}/>
                 </div>
-                <div style={{ fontSize:11, color:'var(--text2)' }}>
-                  {fmt.currency(w.balance)} to'plangan
-                </div>
-              </div>
-            ))
+              ))
           }
-        </div>
-        <div style={{ marginTop:10, padding:'8px 12px', background:'var(--accentbg)', borderRadius:'var(--r)', fontSize:12, color:'var(--text2)' }}>
-          💡 Biriktirish bilan ishchiga TG xabar yuboriladi
         </div>
       </Modal>
 
-      {/* ── Delete Confirm ── */}
-      <Confirm
-        open={!!delItemId}
-        onClose={() => setDelItemId(null)}
-        onOk={doDeleteItem}
-        title="Mahsulotni o'chirish"
-        msg="Bu mahsulotni buyurtmadan o'chirishni xohlaysizmi?"
-        danger
-      />
+      {/* Assign driver */}
+      <Modal open={!!assignDriverModal} onClose={()=>{setAssignDriverModal(null);setSelDriver(null)}}
+        title="🚗 Shafyor biriktirish" size="sm"
+        footer={<>
+          <button className="btn btn-ghost" onClick={()=>{setAssignDriverModal(null);setSelDriver(null)}}>Bekor</button>
+          <button className="btn btn-primary" onClick={confirmAssignDriver} disabled={!selDriver}>✅ Biriktirish</button>
+        </>}
+      >
+        {order.driver && (
+          <div style={{padding:'7px 10px',background:'var(--orangebg)',borderRadius:'var(--r)',marginBottom:10,fontSize:12,color:'var(--orange)',fontWeight:600}}>
+            ⚠️ Hozirgi shafyor: {order.driver}
+          </div>
+        )}
+        <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:280,overflowY:'auto'}}>
+          {drivers.map(d=>(
+            <div key={d._id}
+              className={`assign-driver-item ${selDriver===d._id?'sel':''}`}
+              onClick={()=>setSelDriver(d._id)}
+            >
+              <div className="assign-driver-avatar">{d.name[0]}</div>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:700,fontSize:13}}>{d.name}</div>
+                <div style={{fontSize:11,color:'var(--text2)'}}>{d.car} · {d.plate}</div>
+              </div>
+              <Sbadge s={d.status}/>
+            </div>
+          ))}
+        </div>
+      </Modal>
+
+      {/* Advance confirm */}
+      <Modal open={!!advConfirm} onClose={()=>setAdvConfirm(null)}
+        title={`✅ Bosqichni tugatish — ${advConfirm?.name||''}`} size="sm"
+        footer={<>
+          <button className="btn btn-ghost" onClick={()=>setAdvConfirm(null)}>Bekor</button>
+          <button className="btn btn-success" onClick={()=>doAdvance(advConfirm)}>✅ Tugallandi</button>
+        </>}
+      >
+        <div style={{padding:'12px 14px',background:'var(--bg3)',borderRadius:'var(--r)',fontSize:13}}>
+          <div style={{fontWeight:700,marginBottom:6}}>{advConfirm?.name}</div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <StageBadge stage={advConfirm?.stage||'qabul'}/>
+            <span style={{color:'var(--text3)'}}>→</span>
+            <StageBadge stage={ETAP_NEXT[advConfirm?.stage||'qabul']||'yuvish'}/>
+          </div>
+          {['yuvish','quritish','bezak'].includes(advConfirm?.stage) && (
+            <div style={{marginTop:8,fontSize:11,color:'var(--green)',fontWeight:600}}>
+              💰 Ishchi balansiga qo'shiladi
+            </div>
+          )}
+          {advConfirm?.stage==='bezak' && (
+            <div style={{marginTop:4,fontSize:11,color:'#f0883e',fontWeight:600}}>
+              🚚 Bezak tugasa yetkazib berish topshirig'i avtomatik yaratiladi!
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Delete confirm */}
+      <Confirm open={!!delItemId} onClose={()=>setDelItemId(null)} onOk={doDelete}
+        title="Mahsulotni o'chirish" msg="Bu mahsulotni o'chirishni xohlaysizmi?" danger/>
     </div>
   )
 }
