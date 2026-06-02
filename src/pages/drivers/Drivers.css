@@ -1,0 +1,19 @@
+/* ── Drivers Page ── */
+.drivers-wrap { animation: fadeIn .3s both; }
+
+.driver-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--orangebg); border: 2px solid var(--orange);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+
+.plate-badge {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 2px 8px;
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 12px;
+}

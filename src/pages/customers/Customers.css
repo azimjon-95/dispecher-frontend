@@ -1,0 +1,22 @@
+/* ── Customers Page ── */
+.customers-wrap { animation: fadeIn .3s both; }
+
+.cust-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--purplebg); border: 2px solid var(--purple);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 13px; color: var(--purple);
+  flex-shrink: 0;
+}
+
+.detail-row {
+  display: flex; align-items: center;
+  gap: 16px; padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-key {
+  width: 110px; flex-shrink: 0;
+  font-size: 12px; font-weight: 600; color: var(--text2);
+}
+.detail-val { font-size: 13.5px; font-weight: 500; }

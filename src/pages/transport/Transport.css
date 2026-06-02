@@ -1,0 +1,138 @@
+/* ═══════════════════════════════════════
+   TRANSPORT PAGE — Olib Kelish + Olib Ketish + Live Map
+═══════════════════════════════════════ */
+.transport-wrap { animation: fadeIn .25s both; }
+
+/* ── Tabs (mobile) ── */
+.tp-tabs { display:none; background:var(--bg3); border:1px solid var(--border); border-radius:var(--r); padding:3px; gap:3px; margin-bottom:14px; }
+.tp-tab  { flex:1; padding:7px 10px; border-radius:6px; background:none; border:none; font-family:inherit; font-size:13px; font-weight:600; color:var(--text2); cursor:pointer; transition:all var(--t); }
+.tp-tab.active { background:var(--bg2); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.2); }
+
+/* ── Dual panel grid ── */
+.tp-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; margin-bottom:20px; }
+
+/* ── Panel ── */
+.tp-panel { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r2); overflow:hidden; transition:border-color var(--t); }
+.tp-panel:hover { border-color:var(--border2); }
+.tp-panel-hd { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--border); gap:8px; flex-wrap:wrap; }
+.tp-panel-title { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700; }
+.tp-panel-icon  { width:28px; height:28px; border-radius:var(--r); display:flex; align-items:center; justify-content:center; font-size:14px; }
+.tp-panel-count { font-size:11px; font-weight:600; padding:2px 8px; border-radius:99px; background:var(--bg4); color:var(--text2); }
+
+.tp-fbar { display:flex; align-items:center; gap:6px; padding:8px 14px; border-bottom:1px solid var(--border); background:var(--bg3); }
+.tp-fbar input, .tp-fbar select { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r); padding:5px 9px; color:var(--text); font-family:inherit; font-size:12px; outline:none; transition:border-color var(--t); }
+.tp-fbar input { flex:1; min-width:0; }
+.tp-fbar input:focus, .tp-fbar select:focus { border-color:var(--accent); }
+.tp-fbar input::placeholder { color:var(--text3); }
+
+/* ── Table ── */
+.tp-tbl-wrap { overflow-x:auto; }
+.tp-tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
+.tp-tbl thead { background:var(--bg3); }
+.tp-tbl thead th { padding:7px 10px; text-align:left; font-size:10px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--text2); border-bottom:1px solid var(--border); white-space:nowrap; }
+.tp-tbl tbody tr { border-bottom:1px solid var(--border); transition:background var(--t); }
+.tp-tbl tbody tr:last-child { border-bottom:none; }
+.tp-tbl tbody tr:hover { background:var(--bg3); }
+.tp-tbl tbody td { padding:9px 10px; vertical-align:middle; }
+
+/* ── TG button ── */
+.tp-tg-btn { display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:4px; background:#229ED9; color:#fff; font-size:10px; font-weight:700; cursor:pointer; border:none; text-decoration:none; transition:filter var(--t); white-space:nowrap; font-family:inherit; }
+.tp-tg-btn:hover { filter:brightness(1.15); }
+
+/* ── Map/loc buttons ── */
+.tp-loc-btn { display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:4px; background:var(--accentbg); color:var(--accent); font-size:10px; font-weight:600; cursor:pointer; border:1px solid rgba(47,129,247,.2); transition:all var(--t); white-space:nowrap; font-family:inherit; text-decoration:none; }
+.tp-loc-btn:hover { background:var(--accent); color:#fff; }
+
+/* ── Driver cell ── */
+.tp-driver-cell { display:flex; align-items:center; gap:6px; }
+.tp-assign-btn  { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:var(--r); background:var(--yellowbg); color:var(--yellow); border:1px solid rgba(210,153,34,.25); font-size:11px; font-weight:600; cursor:pointer; font-family:inherit; transition:all var(--t); white-space:nowrap; }
+.tp-assign-btn:hover { background:var(--yellow); color:#000; }
+.tp-change-btn  { display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:var(--r); background:var(--orangebg); color:var(--orange); border:1px solid rgba(240,136,62,.2); font-size:10px; font-weight:600; cursor:pointer; font-family:inherit; transition:all var(--t); white-space:nowrap; }
+.tp-change-btn:hover { background:var(--orange); color:#fff; }
+
+/* ── Row actions ── */
+.tp-row-actions { display:flex; gap:3px; }
+
+/* ── Send TG button ── */
+.tp-send-btn { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:var(--r); font-size:10px; font-weight:700; cursor:pointer; border:none; font-family:inherit; transition:all var(--t); white-space:nowrap; }
+.tp-send-btn.sent     { background:var(--greenbg); color:var(--green); }
+.tp-send-btn.unsent   { background:#229ED9; color:#fff; }
+.tp-send-btn.unsent:hover { filter:brightness(1.1); }
+.tp-send-btn:disabled { opacity:.5; cursor:not-allowed; }
+
+/* ── Empty ── */
+.tp-empty { padding:32px 16px; text-align:center; color:var(--text3); font-size:13px; }
+.tp-empty-ico { font-size:28px; opacity:.4; margin-bottom:6px; }
+
+/* ── Order num ── */
+.tp-order-num { font-family:monospace; font-weight:700; color:var(--accent); font-size:12.5px; }
+
+/* ── Assign modal ── */
+.assign-driver-list { display:flex; flex-direction:column; gap:6px; max-height:280px; overflow-y:auto; }
+.assign-driver-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--r); background:var(--bg3); border:1px solid var(--border); cursor:pointer; transition:all var(--t); }
+.assign-driver-item:hover  { border-color:var(--accent); background:var(--accentbg); }
+.assign-driver-item.sel    { border-color:var(--accent); background:var(--accentbg); }
+.assign-driver-avatar { width:32px; height:32px; border-radius:50%; background:var(--orangebg); border:2px solid var(--orange); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; color:var(--orange); flex-shrink:0; }
+
+/* ── Form row ── */
+.tp-form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+/* ══════════════════════════════════
+   LIVE MAP SECTION
+══════════════════════════════════ */
+.live-map-section {
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--r2);
+  overflow:hidden; margin-bottom:20px;
+}
+.live-map-hd {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; border-bottom:1px solid var(--border);
+  flex-wrap:wrap; gap:8px;
+}
+.live-map-title { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700; }
+.live-dot-pulse {
+  width:10px; height:10px; border-radius:50%; background:var(--green);
+  animation:pulse 1.4s infinite; flex-shrink:0;
+}
+.live-map-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
+/* Map iframe wrapper */
+.live-map-frame {
+  position:relative; height:420px; background:var(--bg3);
+  display:flex; align-items:center; justify-content:center;
+}
+.live-map-frame iframe { width:100%; height:100%; border:none; display:block; }
+
+/* Map placeholder (no iframe) */
+.map-placeholder {
+  width:100%; height:420px;
+  background:linear-gradient(135deg,var(--bg3) 0%,var(--bg4) 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:12px; color:var(--text2); font-size:13px;
+}
+.map-placeholder-ico { font-size:48px; opacity:.4; }
+
+/* Driver pins overlay */
+.map-pins-bar {
+  padding:10px 16px; background:var(--bg3); border-top:1px solid var(--border);
+  display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+}
+.map-pin-chip {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:99px;
+  background:var(--bg2); border:1px solid var(--border);
+  font-size:11px; font-weight:600; cursor:pointer;
+  transition:all var(--t);
+}
+.map-pin-chip:hover { border-color:var(--accent); background:var(--accentbg); }
+.map-pin-chip .pin-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.map-pin-chip.live .pin-dot { animation:pulse 1.2s infinite; }
+
+/* ── Mobile ── */
+@media (max-width:900px) {
+  .tp-grid { grid-template-columns:1fr; }
+  .tp-tabs { display:flex; }
+  .tp-panel { display:none; }
+  .tp-panel.active { display:block; }
+  .live-map-frame { height:280px; }
+}

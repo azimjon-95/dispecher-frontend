@@ -1,0 +1,26 @@
+/* ── Driver Stats Modal ── */
+.dstat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.dstat-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 14px;
+}
+.dstat-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+.dstat-value { font-size: 20px; font-weight: 800; font-family: monospace; }
+
+.dstat-tasks { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+.dstat-task-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: var(--r);
+  background: var(--bg3); border: 1px solid var(--border);
+  font-size: 12px;
+}
+.dstat-task-num  { font-family: monospace; color: var(--accent); font-weight: 700; }
+.dstat-task-name { flex: 1; color: var(--text2); }
+.dstat-task-sum  { font-family: monospace; font-weight: 700; color: var(--green); }

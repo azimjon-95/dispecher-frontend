@@ -1,0 +1,33 @@
+/* ── Salary Page ── */
+.salary-wrap { animation: fadeIn .3s both; }
+
+.salary-progress-bar {
+  height: 5px;
+  background: var(--bg4);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.salary-progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 99px;
+  transition: width .8s ease;
+}
+.salary-progress-label {
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 4px;
+}
+
+.salary-total-box {
+  padding: 10px 14px;
+  border-radius: var(--r);
+  background: var(--accentbg);
+  border: 1px solid rgba(47,129,247,.2);
+}
+.salary-total-label { font-size: 11px; color: var(--text2); }
+.salary-total-value {
+  font-size: 20px; font-weight: 800;
+  color: var(--accent); font-family: monospace;
+}

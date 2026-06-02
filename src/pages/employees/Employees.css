@@ -1,0 +1,10 @@
+/* ── Employees Page ── */
+.employees-wrap { animation: fadeIn .3s both; }
+
+.emp-avatar {
+  width: 32px; height: 32px; border-radius: var(--r);
+  background: var(--accentbg); border: 2px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 13px; color: var(--accent);
+  flex-shrink: 0;
+}

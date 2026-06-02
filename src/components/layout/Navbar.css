@@ -1,0 +1,130 @@
+/* ============================================
+   NAVBAR
+   ============================================ */
+.navbar {
+  position: fixed; top: 0; right: 0;
+  left: var(--sidebar-w);
+  height: var(--navbar-h);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 16px; gap: 10px; z-index: 90;
+  transition: left var(--t2);
+}
+.navbar.collapsed { left: var(--sidebar-col); }
+
+.nb-burger {
+  display: none; background: none; border: none;
+  color: var(--text2); cursor: pointer;
+  padding: 6px; border-radius: var(--r);
+  font-size: 18px; line-height: 1;
+  transition: all var(--t);
+}
+.nb-burger:hover { background: var(--bg3); color: var(--text); }
+
+.nb-page-title { font-size: 15px; font-weight: 700; }
+.nb-page-sub   { font-size: 11px; color: var(--text2); }
+
+.nb-spacer { flex: 1; }
+
+/* Search */
+.nb-search {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 6px 11px; width: 240px;
+  transition: border-color var(--t), box-shadow var(--t);
+}
+.nb-search:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(47,129,247,.12);
+}
+.nb-search input {
+  background: none; border: none; outline: none;
+  color: var(--text); font-family: inherit; font-size: 13px; width: 100%;
+}
+.nb-search input::placeholder { color: var(--text3); }
+.nb-search-ico { color: var(--text3); }
+
+/* Icon buttons */
+.nb-btn {
+  width: 34px; height: 34px; border-radius: var(--r);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg3); border: 1px solid var(--border);
+  cursor: pointer; color: var(--text2); font-size: 15px;
+  position: relative; transition: all var(--t);
+}
+.nb-btn:hover { background: var(--bg4); color: var(--text); }
+
+.nb-dot {
+  position: absolute; top: -2px; right: -2px;
+  width: 14px; height: 14px; background: var(--red);
+  border-radius: 50%; font-size: 9px; font-weight: 700; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--bg2);
+}
+
+/* Live indicator */
+.nb-live {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 700; color: var(--green);
+  padding: 4px 9px; background: var(--greenbg);
+  border-radius: 99px; border: 1px solid rgba(63,185,80,.2);
+}
+.nb-live-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--green); animation: pulse 2s infinite;
+}
+
+/* Profile */
+.nb-profile {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 9px 4px 4px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r); cursor: pointer; transition: all var(--t);
+}
+.nb-profile:hover { background: var(--bg4); }
+.nb-avatar {
+  width: 26px; height: 26px; border-radius: var(--r);
+  background: var(--accent); display: flex; align-items: center;
+  justify-content: center; font-weight: 700; font-size: 11px; color: #fff;
+}
+.nb-uname { font-size: 12px; font-weight: 600; }
+.nb-urole { font-size: 10px; color: var(--text2); }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .navbar       { left: 0 !important; padding: 0 12px; gap: 8px; }
+  .nb-burger    { display: flex; }
+  .nb-search    { display: none; }
+  .nb-live      { display: none; }
+  .nb-page-sub  { display: none; }
+}
+@media (max-width: 480px) {
+  .nb-uname, .nb-urole { display: none; }
+  .nb-profile { padding: 4px; }
+}
+
+/* ── Dropdown ── */
+.nb-profile { position: relative; }
+.nb-dropdown {
+  position: absolute; top: calc(100% + 8px); right: 0;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r2); box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  min-width: 180px; z-index: 999;
+  animation: slideUp 150ms both;
+  overflow: hidden;
+}
+.nb-dropdown-user { padding: 12px 14px; }
+.nb-dropdown-name { font-weight: 700; font-size: 13px; }
+.nb-dropdown-role { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.nb-dropdown-divider { height: 1px; background: var(--border); }
+.nb-dropdown-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; width: 100%;
+  background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  color: var(--text2); transition: all var(--t); text-align: left;
+}
+.nb-dropdown-item:hover { background: var(--bg3); color: var(--text); }
+.nb-logout { color: var(--red) !important; }
+.nb-logout:hover { background: var(--redbg) !important; }

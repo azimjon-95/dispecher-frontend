@@ -1,0 +1,58 @@
+/* ── Settings Page ── */
+.settings-wrap { animation: fadeIn .3s both; }
+
+.settings-layout {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.settings-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 190px;
+  flex-shrink: 0;
+}
+
+.stab {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 12px; border-radius: var(--r);
+  background: none; border: 1px solid transparent;
+  color: var(--text2); font-family: inherit;
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; text-align: left;
+  transition: all var(--t);
+}
+.stab:hover  { background: var(--bg3); color: var(--text); }
+.stab.active {
+  background: var(--accentbg); color: var(--accent);
+  border-color: rgba(47,129,247,.2); font-weight: 600;
+}
+
+.settings-content { flex: 1; min-width: 0; }
+
+.price-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: var(--r);
+  background: var(--bg3); border: 1px solid var(--border);
+  transition: border-color var(--t);
+}
+.price-row:hover { border-color: var(--border2); }
+.price-row-name  { flex: 1; font-weight: 600; }
+.price-row-val   { flex: 1; color: var(--text2); font-size: 13px; font-family: monospace; }
+
+.role-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-radius: var(--r);
+  background: var(--bg3); border: 1px solid var(--border);
+  gap: 12px; flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .settings-tabs {
+    flex-direction: row; width: 100%;
+    overflow-x: auto; flex-wrap: nowrap;
+  }
+  .stab { white-space: nowrap; flex-shrink: 0; }
+}

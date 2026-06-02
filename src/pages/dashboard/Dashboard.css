@@ -1,0 +1,64 @@
+/* ── Dashboard Page ── */
+.dash-wrap { animation: fadeIn .3s both; }
+
+/* Bar chart */
+.dash-chart {
+  display: flex; align-items: flex-end; gap: 8px;
+  height: 140px; padding-top: 20px;
+}
+.dash-chart-col {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 4px; height: 100%;
+}
+.dash-chart-val  { font-size: 9px; color: var(--text3); font-family: monospace; }
+.dash-chart-outer {
+  flex: 1; width: 100%;
+  display: flex; align-items: flex-end;
+  background: var(--bg3); border-radius: var(--r);
+  overflow: hidden;
+}
+.dash-chart-bar {
+  width: 100%; min-height: 4px; border-radius: var(--r);
+  background: linear-gradient(to top, var(--accent), #6ba3ff);
+  transition: height .8s cubic-bezier(.4,0,.2,1);
+}
+.dash-chart-day  { font-size: 10px; color: var(--text2); font-weight: 600; }
+
+/* Quick actions */
+.dash-quick {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.dash-quick-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 10px; border-radius: var(--r);
+  background: var(--bg3); border: 1px solid var(--border);
+  cursor: pointer; font-family: inherit; font-size: 12px;
+  font-weight: 600; color: var(--text2);
+  transition: all var(--t); text-align: left;
+}
+.dash-quick-btn:hover {
+  background: var(--bg4);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.dash-quick-ico { font-size: 16px; }
+
+/* Feed */
+.dash-feed { display: flex; flex-direction: column; gap: 9px; }
+.dash-feed-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.dash-feed-dot  { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.dash-feed-msg  { flex: 1; color: var(--text2); }
+.dash-feed-time { color: var(--text3); font-size: 10px; white-space: nowrap; }
+
+/* Live dot anim */
+.live-dot {
+  display: inline-block;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--green); animation: pulse 2s infinite;
+}
+
+@media (max-width: 600px) {
+  .dash-chart    { gap: 4px; }
+  .dash-chart-val{ display: none; }
+  .dash-quick    { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,73 @@
+/* ══ ORDERS — Kanban + Table ══ */
+.orders-wrap { animation: fadeIn .25s both; }
+
+/* View toggle */
+.orders-view-toggle { display:flex; align-items:center; gap:4px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--r); padding:3px; }
+.ovt-btn { display:flex; align-items:center; gap:5px; padding:5px 10px; border-radius:5px; background:none; border:none; cursor:pointer; font-family:inherit; font-size:12px; font-weight:600; color:var(--text2); transition:all var(--t); }
+.ovt-btn.active { background:var(--bg2); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.2); }
+.ovt-btn:hover:not(.active) { color:var(--text); }
+
+/* Kanban board */
+.kanban-board { display:flex; gap:10px; overflow-x:auto; padding-bottom:8px; align-items:flex-start; }
+.kanban-board::-webkit-scrollbar { height:5px; }
+.kanban-board::-webkit-scrollbar-thumb { background:var(--border2); border-radius:99px; }
+
+/* Column */
+.kb-col { flex:0 0 258px; min-width:258px; background:var(--bg2); border:1px solid var(--border); border-radius:var(--r2); overflow:hidden; transition:border-color var(--t); }
+.kb-col:hover { border-color:var(--border2); }
+.kb-col-hd { padding:10px 12px; border-bottom:2px solid transparent; display:flex; align-items:center; gap:7px; }
+.kb-col-ico { font-size:15px; }
+.kb-col-name { font-size:12px; font-weight:700; flex:1; }
+.kb-col-count { min-width:20px; height:20px; border-radius:99px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; background:var(--bg4); color:var(--text2); padding:0 5px; }
+
+/* Summary strip */
+.kb-summary { padding:6px 12px; background:var(--bg3); border-bottom:1px solid var(--border); font-size:11px; color:var(--text2); display:flex; justify-content:space-between; align-items:center; }
+.kb-summary-val { font-weight:700; font-family:monospace; color:var(--text); }
+
+/* Cards */
+.kb-cards { display:flex; flex-direction:column; gap:6px; padding:8px; min-height:80px; }
+
+/* Card */
+.kb-card { background:var(--bg); border:1px solid var(--border); border-radius:var(--r); padding:10px 11px; cursor:pointer; transition:all var(--t); position:relative; overflow:hidden; }
+.kb-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--kb-accent,var(--accent)); border-radius:3px 0 0 3px; }
+.kb-card:hover { border-color:var(--border2); transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.2); }
+.kb-card-num { font-family:monospace; font-weight:800; font-size:12px; color:var(--kb-accent,var(--accent)); margin-bottom:3px; }
+.kb-card-customer { font-weight:700; font-size:13px; margin-bottom:1px; }
+.kb-card-phone { font-size:11px; color:var(--text2); display:flex; align-items:center; gap:4px; margin-bottom:4px; }
+.kb-card-desc { font-size:11px; color:var(--text2); font-style:italic; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:5px; }
+.kb-card-footer { display:flex; align-items:center; justify-content:space-between; gap:4px; }
+.kb-card-price { font-family:monospace; font-weight:700; font-size:12px; color:var(--green); }
+.kb-card-items { font-size:10px; color:var(--text3); }
+
+/* Card actions */
+.kb-card-actions { display:flex; gap:3px; margin-top:7px; border-top:1px solid var(--border); padding-top:7px; flex-wrap:wrap; }
+.kb-action-btn { display:inline-flex; align-items:center; gap:3px; padding:3px 7px; border-radius:var(--r); font-size:10px; font-weight:600; cursor:pointer; border:1px solid transparent; font-family:inherit; transition:all var(--t); white-space:nowrap; }
+.kb-action-btn:disabled { opacity:.4; cursor:not-allowed; }
+.kba-detail  { background:var(--accentbg); color:var(--accent); border-color:rgba(47,129,247,.2); }
+.kba-assign  { background:var(--yellowbg); color:var(--yellow); border-color:rgba(210,153,34,.2); }
+.kba-advance { background:var(--greenbg);  color:var(--green);  border-color:rgba(63,185,80,.2); }
+.kba-tg      { background:#229ED9; color:#fff; }
+.kba-map     { background:var(--orangebg); color:var(--orange); border-color:rgba(240,136,62,.2); }
+
+/* Empty */
+.kb-empty { padding:20px 12px; text-align:center; color:var(--text3); font-size:11px; }
+.kb-empty-ico { font-size:22px; opacity:.3; margin-bottom:4px; }
+
+/* Column accent colors */
+.kb-col[data-status="yangi"]         .kb-col-hd { border-color:var(--accent);  }
+.kb-col[data-status="qabul_qilindi"] .kb-col-hd { border-color:var(--yellow);  }
+.kb-col[data-status="yuvishda"]      .kb-col-hd { border-color:#58a6ff;        }
+.kb-col[data-status="qurishda"]      .kb-col-hd { border-color:var(--orange);  }
+.kb-col[data-status="bezakda"]       .kb-col-hd { border-color:var(--purple);  }
+.kb-col[data-status="yetkazishda"]   .kb-col-hd { border-color:#f0883e;        }
+.kb-col[data-status="tugallandi"]    .kb-col-hd { border-color:var(--green);   }
+
+/* Assign driver */
+.assign-driver-list { display:flex; flex-direction:column; gap:6px; max-height:280px; overflow-y:auto; }
+.assign-driver-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--r); background:var(--bg3); border:1px solid var(--border); cursor:pointer; transition:all var(--t); }
+.assign-driver-item:hover { border-color:var(--accent); background:var(--accentbg); }
+.assign-driver-item.sel   { border-color:var(--accent); background:var(--accentbg); }
+.assign-driver-avatar { width:32px; height:32px; border-radius:50%; background:var(--orangebg); border:2px solid var(--orange); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; font-weight:800; color:var(--orange); }
+
+/* Table view */
+.orders-table-view { animation:fadeIn .2s both; }
