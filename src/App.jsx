@@ -13,7 +13,8 @@ import Customers from './pages/customers/Customers.jsx'
 import Finance   from './pages/finance/Finance.jsx'
 import Salary    from './pages/salary/Salary.jsx'
 import Archive   from './pages/archive/Archive.jsx'
-import Settings  from './pages/settings/Settings.jsx'
+import Settings     from './pages/settings/Settings.jsx'
+import HomeService  from './pages/homeservice/HomeService.jsx'
 import { useNetworkStatus } from './hooks/useNetworkStatus.jsx'
 import { syncOfflineQueue, getQueueSize, isOnline } from './services/api.js'
 import { api, norm } from './services/api.js'
@@ -146,7 +147,8 @@ export default function App() {
     finance:   <Finance />,
     salary:    <Salary />,
     archive:   <Archive />,
-    settings:  <Settings />,
+    settings:    <Settings />,
+    homeservice: <HomeService />,
   }
 
   return (

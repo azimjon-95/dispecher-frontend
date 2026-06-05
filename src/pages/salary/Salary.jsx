@@ -1,148 +1,228 @@
-import { useState } from 'react'
-import { MdFileDownload, MdEdit, MdCheckCircle, MdHourglassEmpty, MdPeople, MdSavings } from 'react-icons/md'
+import { useState, useEffect, useMemo } from 'react'
+import { MdAdd, MdRefresh, MdAttachMoney, MdWarning, MdStar } from 'react-icons/md'
 import { api, fmt } from '../../services/api.js'
-import { useCRUD } from '../../hooks/useCRUD.js'
-import { Modal, Table, Paging, PH, ExportBtn, toast } from '../../components/ui/UI.jsx'
+import { Modal, Sbadge, Table, Paging, PH, toast } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
-import './Salary.css'
+
+const MONTHS = Array.from({length:6},(_,i)=>{
+  const d = new Date(); d.setMonth(d.getMonth()-i)
+  return d.toISOString().slice(0,7)
+})
+const PAY_TYPES = [
+  { key:'avans',  label:'Avans',  icon:'💵', color:'var(--yellow)', desc:'Oyligidan oldindan beriladi' },
+  { key:'oylik',  label:'Oylik',  icon:'💰', color:'var(--green)',  desc:"To'liq oylik to'lovi" },
+  { key:'jarima', label:'Jarima', icon:'⚠️', color:'var(--red)',    desc:'Intizom buzilishi yoki xato' },
+  { key:'bonus',  label:'Bonus',  icon:'🌟', color:'var(--purple)', desc:'Qo\'shimcha mukofot' },
+]
+
+function norm(r){ return Array.isArray(r)?r:Array.isArray(r?.data)?r.data:[] }
 
 export default function Salary() {
-  const crud = useCRUD(
-    { getAll:api.getSalary, create:()=>Promise.resolve({}), update:api.updateSalary, remove:()=>Promise.resolve({}) },
-    ['employee']
-  )
-  const [modal, setModal] = useState(null)
-  const [form,  setForm]  = useState({})
+  const [month,    setMonth]    = useState(MONTHS[0])
+  const [summary,  setSummary]  = useState([])
+  const [payments, setPayments] = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [modal,    setModal]    = useState(false)
+  const [form,     setForm]     = useState({ employeeId:'', type:'avans', amount:'', note:'' })
+  const [saving,   setSaving]   = useState(false)
+  const [tab,      setTab]      = useState('summary')
 
-  async function saveBonusFine() {
-    const total = (form.base||0)+(+form.bonus||0)-(+form.fine||0)
-    await crud.update(form._id, { bonus:form.bonus, fine:form.fine, total })
-    setModal(null)
+  useEffect(()=>{ load() },[month])
+
+  async function load(){
+    setLoading(true)
+    try {
+      const [sumR, payR] = await Promise.allSettled([
+        api.getSalarySummary(month),
+        api.getSalaryPayments({ month }),
+      ])
+      setSummary(norm(sumR.value))
+      setPayments(norm(payR.value))
+    } catch(e){ toast(e.message,'err') }
+    setLoading(false)
   }
 
-  async function togglePaid(row) {
-    await crud.update(row._id, { paid:!row.paid })
-    toast(row.paid ? "To'lov bekor qilindi" : "To'langan ✅", row.paid?'inf':'ok')
+  async function pay(){
+    if (!form.employeeId||!form.amount){ toast("Ishchi va miqdor!",'err'); return }
+    setSaving(true)
+    try {
+      await api.createSalaryPayment({ ...form, amount:+form.amount })
+      toast(`${PAY_TYPES.find(t=>t.key===form.type)?.label} berildi ✅`,'ok')
+      setModal(false); setForm({employeeId:'',type:'avans',amount:'',note:''}); load()
+    } catch(e){ toast(e.message,'err') } finally { setSaving(false) }
   }
 
-  const paid  = crud.data.filter(r=>r.paid).length
-  const total = crud.data.reduce((s,r)=>s+(r.total||0),0)
-  const pct   = crud.data.length ? Math.round((paid/crud.data.length)*100) : 0
+  const totalExpected = summary.reduce((s,e)=>s+(e.expected||0),0)
+  const totalPaid     = summary.reduce((s,e)=>s+(e.oylik||0)+(e.avans||0),0)
+  const totalBalance  = summary.reduce((s,e)=>s+(e.currentBalance||0),0)
 
-  const COLS = [
-    { k:'employee', l:'Xodim', r:(v,r)=>(
-      <div style={{display:'flex',alignItems:'center',gap:8}}>
-        <div style={{width:28,height:28,borderRadius:'50%',background:'var(--accentbg)',border:'2px solid var(--accent)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:12,color:'var(--accent)',flexShrink:0}}>
-          {v?.[0]}
-        </div>
-        <div>
-          <div style={{fontWeight:600}}>{v}</div>
-          <div style={{fontSize:11,color:'var(--text2)'}}>{r.role}</div>
-        </div>
-      </div>
-    )},
-    { k:'items',  l:'Buyumlar', r:v=><span className="mono">{v}</span> },
-    { k:'sqm',    l:'Kv.m',     r:v=><span className="mono">{v} m²</span> },
-    { k:'base',   l:'Asosiy',   r:v=><span className="mono">{fmt.currency(v)}</span> },
-    { k:'earned', l:"To'plangan", r:v=>v>0
-      ? <span className="mono" style={{color:'var(--accent)',fontWeight:700}}>{fmt.currency(v)}</span>
-      : <span style={{color:'var(--text3)'}}>—</span>
-    },
-    { k:'bonus',  l:'Ustama',   r:v=>v>0?<span className="mono" style={{color:'var(--green)'}}>+{fmt.currency(v)}</span>:<span style={{color:'var(--text3)'}}>—</span> },
-    { k:'fine',   l:'Jarima',   r:v=>v>0?<span className="mono" style={{color:'var(--red)'}}>−{fmt.currency(v)}</span>:<span style={{color:'var(--text3)'}}>—</span> },
-    { k:'total',  l:'Jami',     r:v=><span className="mono" style={{fontWeight:800,color:'var(--accent)'}}>{fmt.currency(v)}</span> },
-    { k:'paid',   l:"To'lov",   r:(v,row)=>(
-      <button
-        className={`btn btn-sm ${v?'btn-success':'btn-ghost'}`}
-        onClick={e=>{e.stopPropagation();togglePaid(row)}}
-        style={{display:'flex',alignItems:'center',gap:4}}
-      >
-        {v ? <><MdCheckCircle size={13}/> To'langan</> : <><MdHourglassEmpty size={13}/> To'lanmagan</>}
-      </button>
-    )},
-    { k:'_a', l:'', r:(_,row)=>(
-      <button className="btn btn-ghost btn-icon btn-sm"
-        onClick={e=>{e.stopPropagation();setForm({...row});setModal('edit')}}
-        title="Ustama/Jarima">
-        <MdEdit size={15}/>
-      </button>
-    )},
+  const HIST_COLS = [
+    { k:'date',         l:'Sana',    r:v=><span className="mono" style={{fontSize:11}}>{v}</span> },
+    { k:'employeeName', l:'Ishchi' },
+    { k:'type', l:'Tur', r:v=>{ const t=PAY_TYPES.find(x=>x.key===v); return <span className="badge" style={{background:t?.color+'22',color:t?.color}}>{t?.icon} {t?.label||v}</span> } },
+    { k:'amount',       l:'Miqdor', r:v=><span className="mono" style={{fontWeight:700,color:'var(--green)'}}>{fmt.currency(v)}</span> },
+    { k:'note',         l:'Izoh',   r:v=><span style={{fontSize:11,color:'var(--text2)'}}>{v||'—'}</span> },
+    { k:'paidBy',       l:'Kim berdi', r:v=><span style={{fontSize:11}}>{v}</span> },
   ]
 
   return (
     <ErrorBoundary>
-      <div className="salary-wrap">
-        <PH title="💳 Maosh Hisoblash" sub="Oylik to'lovlar"
-          actions={<ExportBtn data={crud.filtered} name="maosh-2025-05"/>}
+      <div>
+        <PH title="💰 Maosh Hisoblash" sub={`${month} · ${summary.length} ta xodim`}
+          actions={<>
+            <select className="fselect" value={month} onChange={e=>setMonth(e.target.value)} style={{minWidth:120}}>
+              {MONTHS.map(m=><option key={m} value={m}>{m}</option>)}
+            </select>
+            <button className="btn btn-ghost btn-sm" onClick={load}><MdRefresh size={14}/></button>
+            <button className="btn btn-primary" onClick={()=>setModal(true)}>
+              <MdAdd size={15}/> Avans/Jarima/Bonus
+            </button>
+          </>}
         />
 
-        {/* Summary */}
-        <div className="kpi-grid" style={{marginBottom:16}}>
-          <div className="kpi-card">
-            <div className="kpi-hd">
-              <div className="kpi-icon" style={{background:'var(--accentbg)'}}>
-                <MdSavings size={20} style={{color:'var(--accent)'}}/>
-              </div>
+        {/* Summary KPIs */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:14}}>
+          {[
+            { lbl:"Jami kutilgan maosh", val:fmt.currency(totalExpected), c:'var(--accent)',  icon:'📊' },
+            { lbl:"Berilgan maosh",      val:fmt.currency(totalPaid),     c:'var(--green)',   icon:'💰' },
+            { lbl:"Yig'ilgan balans",    val:fmt.currency(totalBalance),  c:'var(--yellow)',  icon:'⚖️' },
+          ].map(k=>(
+            <div key={k.lbl} className="kpi-card">
+              <div style={{fontSize:20,marginBottom:6}}>{k.icon}</div>
+              <div style={{fontWeight:800,fontSize:16,color:k.c,fontFamily:'monospace'}}>{k.val}</div>
+              <div style={{fontSize:11,color:'var(--text2)',marginTop:2}}>{k.lbl}</div>
             </div>
-            <div className="kpi-val" style={{fontSize:18}}>{fmt.currency(total)}</div>
-            <div className="kpi-lbl">Jami to'lov</div>
-          </div>
-          <div className="kpi-card">
-            <div className="kpi-hd">
-              <div className="kpi-icon" style={{background:'var(--greenbg)'}}>
-                <MdCheckCircle size={20} style={{color:'var(--green)'}}/>
-              </div>
-            </div>
-            <div className="kpi-val" style={{color:'var(--green)'}}>{paid}</div>
-            <div className="kpi-lbl">To'langan</div>
-          </div>
-          <div className="kpi-card">
-            <div className="kpi-hd">
-              <div className="kpi-icon" style={{background:'var(--yellowbg)'}}>
-                <MdHourglassEmpty size={20} style={{color:'var(--yellow)'}}/>
-              </div>
-            </div>
-            <div className="kpi-val" style={{color:'var(--yellow)'}}>{crud.data.length-paid}</div>
-            <div className="kpi-lbl">Kutayotganlar</div>
-          </div>
+          ))}
         </div>
 
-        {/* Progress bar */}
-        <div className="salary-progress-bar">
-          <div className="salary-progress-fill" style={{width:pct+'%'}}/>
-        </div>
-        <div className="salary-progress-label">{pct}% to'langan</div>
-
-        <div className="card" style={{padding:0,marginTop:14}}>
-          <Table cols={COLS} rows={crud.paginated} loading={crud.loading}/>
-          <Paging page={crud.page} total={crud.total} size={crud.pageSize} onChange={crud.setPage}/>
+        {/* Tabs */}
+        <div style={{display:'flex',gap:4,marginBottom:12}}>
+          {['summary','history'].map(t=>(
+            <button key={t} className={`btn btn-sm ${tab===t?'btn-primary':'btn-ghost'}`} onClick={()=>setTab(t)}>
+              {t==='summary'?'📊 Oylik xulosa':'📋 To\'lov tarixi'}
+            </button>
+          ))}
         </div>
 
-        {/* Edit bonus/fine modal */}
-        <Modal open={modal==='edit'} onClose={()=>setModal(null)} title="✏️ Ustama / Jarima"
-          footer={<>
-            <button className="btn btn-ghost" onClick={()=>setModal(null)}>Bekor</button>
-            <button className="btn btn-primary" onClick={saveBonusFine}>Saqlash</button>
-          </>}
-        >
-          <div style={{padding:'10px 12px',borderRadius:'var(--r)',background:'var(--bg3)',marginBottom:4}}>
-            <div style={{fontWeight:700}}>{form.employee}</div>
-            <div style={{fontSize:12,color:'var(--text2)'}}>Asosiy: {fmt.currency(form.base)}</div>
-            <div style={{fontSize:12,color:'var(--accent)'}}>To'plangan: {fmt.currency(form.earned)}</div>
+        {/* Summary tab */}
+        {tab==='summary' && (
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {loading ? <div style={{padding:40,textAlign:'center',color:'var(--text3)'}}>⏳ Yuklanmoqda...</div>
+              : summary.length===0 ? <div style={{padding:30,textAlign:'center',color:'var(--text3)'}}>Ma'lumot yo'q</div>
+              : summary.map(emp=>(
+                <div key={emp._id} className="card" style={{padding:'12px 14px'}}>
+                  <div style={{display:'flex',alignItems:'flex-start',gap:12,flexWrap:'wrap'}}>
+                    {/* Avatar + name */}
+                    <div style={{display:'flex',alignItems:'center',gap:8,flex:1,minWidth:160}}>
+                      <div style={{width:36,height:36,borderRadius:'50%',background:'var(--accentbg)',border:'2px solid var(--accent)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,color:'var(--accent)',flexShrink:0}}>
+                        {emp.name?.[0]}
+                      </div>
+                      <div>
+                        <div style={{fontWeight:700,fontSize:13}}>{emp.name}</div>
+                        <div style={{fontSize:11,color:'var(--text2)'}}>{emp.role} · {emp.salaryType||'Oylik'}</div>
+                      </div>
+                    </div>
+
+                    {/* Salary type info */}
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap',flex:2}}>
+                      {/* Expected */}
+                      <div style={{textAlign:'center',padding:'6px 10px',background:'var(--bg3)',borderRadius:'var(--r)',minWidth:90}}>
+                        <div style={{fontFamily:'monospace',fontWeight:700,fontSize:12,color:'var(--accent)'}}>{fmt.currency(emp.expected)}</div>
+                        <div style={{fontSize:10,color:'var(--text3)'}}>{emp.salaryType==='Kunlik'?'26 kun':'Oylik'}</div>
+                      </div>
+                      {/* Balance from work */}
+                      {emp.salaryType==='Ish bayi' && (
+                        <div style={{textAlign:'center',padding:'6px 10px',background:'var(--bg3)',borderRadius:'var(--r)',minWidth:90}}>
+                          <div style={{fontFamily:'monospace',fontWeight:700,fontSize:12,color:'var(--purple)'}}>{fmt.currency(emp.currentBalance)}</div>
+                          <div style={{fontSize:10,color:'var(--text3)'}}>Qilgan ishi</div>
+                        </div>
+                      )}
+                      {/* Avans */}
+                      {emp.avans>0 && (
+                        <div style={{textAlign:'center',padding:'6px 10px',background:'var(--yellowbg)',borderRadius:'var(--r)',minWidth:80}}>
+                          <div style={{fontFamily:'monospace',fontWeight:700,fontSize:12,color:'var(--yellow)'}}>{fmt.currency(emp.avans)}</div>
+                          <div style={{fontSize:10,color:'var(--text3)'}}>Avans</div>
+                        </div>
+                      )}
+                      {/* Jarima */}
+                      {emp.jarima>0 && (
+                        <div style={{textAlign:'center',padding:'6px 10px',background:'var(--redbg)',borderRadius:'var(--r)',minWidth:80}}>
+                          <div style={{fontFamily:'monospace',fontWeight:700,fontSize:12,color:'var(--red)'}}>−{fmt.currency(emp.jarima)}</div>
+                          <div style={{fontSize:10,color:'var(--text3)'}}>Jarima</div>
+                        </div>
+                      )}
+                      {/* Bonus */}
+                      {emp.bonus>0 && (
+                        <div style={{textAlign:'center',padding:'6px 10px',background:'var(--purplebg)',borderRadius:'var(--r)',minWidth:80}}>
+                          <div style={{fontFamily:'monospace',fontWeight:700,fontSize:12,color:'var(--purple)'}}>+{fmt.currency(emp.bonus)}</div>
+                          <div style={{fontSize:10,color:'var(--text3)'}}>Bonus</div>
+                        </div>
+                      )}
+                      {/* Remaining */}
+                      <div style={{textAlign:'center',padding:'6px 10px',background:emp.remaining>0?'var(--greenbg)':'var(--redbg)',borderRadius:'var(--r)',minWidth:100}}>
+                        <div style={{fontFamily:'monospace',fontWeight:800,fontSize:13,color:emp.remaining>0?'var(--green)':'var(--red)'}}>{fmt.currency(emp.remaining)}</div>
+                        <div style={{fontSize:10,color:'var(--text3)'}}>Qolgan</div>
+                      </div>
+                    </div>
+
+                    {/* Pay button */}
+                    <button className="btn btn-primary btn-sm" style={{whiteSpace:'nowrap'}}
+                      onClick={()=>{setForm({employeeId:emp._id,type:'oylik',amount:emp.remaining>0?emp.remaining:'',note:''});setModal(true)}}>
+                      💰 To'lash
+                    </button>
+                  </div>
+
+                  {/* Progress bar */}
+                  {emp.expected>0 && (
+                    <div style={{marginTop:10}}>
+                      <div style={{height:5,background:'var(--bg4)',borderRadius:99,overflow:'hidden'}}>
+                        <div style={{height:'100%',background:'var(--green)',borderRadius:99,width:Math.min(100,Math.round(((emp.avans+emp.oylik)/emp.expected)*100))+'%',transition:'width .5s'}}/>
+                      </div>
+                      <div style={{fontSize:10,color:'var(--text3)',marginTop:2}}>
+                        {Math.min(100,Math.round(((emp.avans+emp.oylik)/emp.expected)*100))}% to'landi
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            }
+          </div>
+        )}
+
+        {/* History tab */}
+        {tab==='history' && (
+          <div className="card" style={{padding:0}}>
+            <Table cols={HIST_COLS} rows={payments} loading={loading}/>
+          </div>
+        )}
+
+        {/* Pay modal */}
+        <Modal open={modal} onClose={()=>setModal(false)} title="💰 To'lov" size="sm"
+          footer={<><button className="btn btn-ghost" onClick={()=>setModal(false)}>Bekor</button><button className="btn btn-primary" onClick={pay} disabled={saving}>{saving?'⏳':'✅ Tasdiqlash'}</button></>}>
+          {/* Type buttons */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:12}}>
+            {PAY_TYPES.map(t=>(
+              <button key={t.key} className="btn btn-ghost btn-sm"
+                style={{borderColor:form.type===t.key?t.color:'var(--border)',background:form.type===t.key?t.color+'22':'transparent',color:form.type===t.key?t.color:'var(--text2)',display:'flex',alignItems:'center',gap:6,justifyContent:'flex-start'}}
+                onClick={()=>setForm(p=>({...p,type:t.key}))}>
+                <span>{t.icon}</span><span style={{fontWeight:700}}>{t.label}</span>
+              </button>
+            ))}
+          </div>
+          <div style={{fontSize:11,color:'var(--text2)',marginBottom:10}}>
+            {PAY_TYPES.find(t=>t.key===form.type)?.desc}
+          </div>
+          <div className="fg"><label className="flabel">Ishchi *</label>
+            <select className="fselect" value={form.employeeId} onChange={e=>setForm(p=>({...p,employeeId:e.target.value}))}>
+              <option value="">— Tanlang —</option>
+              {summary.map(e=><option key={e._id} value={e._id}>{e.name} (qolgan: {fmt.currency(e.remaining)})</option>)}
+            </select>
           </div>
           <div className="fgrid2">
-            <div className="fg"><label className="flabel">Ustama (so'm)</label>
-              <input className="finput" type="number" min="0" value={form.bonus||0}
-                onChange={e=>setForm(p=>({...p,bonus:+e.target.value}))}/></div>
-            <div className="fg"><label className="flabel">Jarima (so'm)</label>
-              <input className="finput" type="number" min="0" value={form.fine||0}
-                onChange={e=>setForm(p=>({...p,fine:+e.target.value}))}/></div>
-          </div>
-          <div className="salary-total-box">
-            <div className="salary-total-label">Jami:</div>
-            <div className="salary-total-value">
-              {fmt.currency((form.base||0)+(form.earned||0)+(+form.bonus||0)-(+form.fine||0))}
-            </div>
+            <div className="fg"><label className="flabel">Miqdor (so'm) *</label>
+              <input className="finput" type="number" value={form.amount} onChange={e=>setForm(p=>({...p,amount:e.target.value}))}/></div>
+            <div className="fg"><label className="flabel">Izoh</label>
+              <input className="finput" placeholder="Ixtiyoriy..." value={form.note} onChange={e=>setForm(p=>({...p,note:e.target.value}))}/></div>
           </div>
         </Modal>
       </div>

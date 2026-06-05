@@ -223,6 +223,23 @@ export const api = {
 
   /* Live locations */
   getLiveLocations: () => http.get(BASE_URL + '/api/driver/live-locations').then(r=>r.data||[]).catch(()=>[]),
+
+  /* Attendance */
+  getAttendanceToday:   ()     => withRetry(() => http.get('/attendance/today')),
+  getAttendance:        (q={}) => withRetry(() => http.get('/attendance', { params:q })),
+  createAttendance:     b      => mutate('post', '/attendance', b),
+
+  /* SalaryPayments */
+  getSalaryPayments:    (q={}) => withRetry(() => http.get('/salary-payments', { params:q })),
+  createSalaryPayment:  b      => mutate('post', '/salary-payments', b),
+  getSalarySummary:     month  => withRetry(() => http.get('/salary-payments/summary/' + month)),
+
+  /* HomeService */
+  getHomeServices:      ()     => withRetry(() => http.get('/home-service')),
+  createHomeService:    b      => mutate('post', '/home-service', b),
+  updateHomeService:    (id,b) => mutate('put',  '/home-service/' + id, b),
+  deleteHomeService:    id     => mutate('delete','/home-service/' + id, null),
+  completeHomeService:  (id,b) => mutate('post', '/home-service/' + id + '/complete', b),
 }
 
 export const fmt = {

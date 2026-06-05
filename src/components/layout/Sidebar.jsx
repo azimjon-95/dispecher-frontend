@@ -28,8 +28,9 @@ export default function Sidebar({ active, onNav, collapsed, onToggle, mobOpen, o
     {
       section: 'Moliya',
       items: [
-        { id:'finance',   Icon:MdAttachMoney,     label:'Moliya',          badge:null },
-        { id:'salary',    Icon:MdAccountBalance,  label:'Maosh Hisoblash', badge:null },
+        { id:'finance',     Icon:MdAttachMoney,     label:'Moliya',          badge:null },
+        { id:'salary',      Icon:MdAccountBalance,  label:'Maosh Hisoblash', badge:null },
+        { id:'homeservice', Icon:MdLocalShipping,   label:'Uyga Xizmat',     badge:null },
       ]
     },
     {
