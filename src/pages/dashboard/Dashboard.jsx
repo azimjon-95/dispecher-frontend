@@ -56,7 +56,7 @@ export default function Dashboard({ onNav }) {
 
   /* Finance calc */
   const kirim   = finance.filter(f=>f.type==='kirim').reduce((s,f)=>s+(f.amount||0),0)
-  const chiqim  = finance.filter(f=>f.type==='chiqim').reduce((s,f)=>s++(f.amount||0),0)
+  const chiqim  = finance.filter(f=>f.type==='chiqim').reduce((s,f)=>s+(f.amount||0),0)
   const balans  = kirim - chiqim
   const todayKirim  = finance.filter(f=>f.type==='kirim'&&f.date===today).reduce((s,f)=>s+(f.amount||0),0)
 
