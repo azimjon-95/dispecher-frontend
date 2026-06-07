@@ -232,26 +232,126 @@ function TaskPanel({ title, icon, color, type, apiFns, drivers, allOrders, onDri
 }
 
 /* ════════════════════════════════
-   LIVE MAP
+   LIVE MAP — Leaflet.js (OpenStreetMap)
 ════════════════════════════════ */
 function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
-  const [connected,  setConnected]  = useState(false)
-  const [focused,    setFocused]    = useState(null)
-  const [fullscreen, setFullscreen] = useState(false)
+  const [connected,   setConnected]   = useState(false)
+  const [fullscreen,  setFullscreen]  = useState(false)
+  const [focused,     setFocused]     = useState(null)
   const [assignOrder, setAssignOrder] = useState(null)
-  const [selDrv,      setSelDrv]    = useState(null)
-  const socketRef = useRef(null)
-  const mapRef    = useRef(null)
+  const [selDrv,      setSelDrv]      = useState(null)
+  const mapRef     = useRef(null)
+  const leafletRef = useRef(null)
+  const markersRef = useRef({})
+  const socketRef  = useRef(null)
 
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
-  // Pending orders (need pickup or delivery)
   const pendingPickup   = orders.filter(o => o && !o.driver && o.status==='yangi')
   const pendingDelivery = orders.filter(o => o && o.status==='yetkazishda')
   const activeDrivers   = drivers.filter(d => driverLocations[d.tgChatId||d._id]?.online)
 
+  // Init Leaflet map
   useEffect(() => {
-    // Fetch existing
+    if (leafletRef.current) return
+    if (!mapRef.current) return
+
+    // Inject Leaflet CSS
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link')
+      link.id   = 'leaflet-css'
+      link.rel  = 'stylesheet'
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+      document.head.appendChild(link)
+    }
+
+    const script = document.createElement('script')
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+    script.onload = () => {
+      const L = window.L
+      const map = L.map(mapRef.current, { zoomControl: true }).setView([41.2995, 69.2401], 11)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 19,
+      }).addTo(map)
+      leafletRef.current = map
+      updateMarkers()
+    }
+    document.head.appendChild(script)
+
+    return () => { leafletRef.current?.remove(); leafletRef.current = null }
+  }, [])
+
+  // Update markers when data changes
+  function updateMarkers() {
+    const L = window.L
+    if (!L || !leafletRef.current) return
+    const map = leafletRef.current
+
+    // Clear old markers
+    Object.values(markersRef.current).forEach(m => m.remove())
+    markersRef.current = {}
+
+    // Driver markers
+    drivers.forEach((dr, i) => {
+      const tgId = dr.tgChatId || dr._id
+      const loc  = driverLocations[tgId]
+      if (!loc?.latitude || !loc?.longitude) return
+      const colors = ['#3fb950','#58a6ff','#f0883e','#bc8cff','#ff7b72']
+      const clr = colors[i % colors.length]
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="background:${clr};width:32px;height:32px;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.4)">🚗</div>`,
+        iconSize: [32,32], iconAnchor: [16,16],
+      })
+      const marker = L.marker([loc.latitude, loc.longitude], { icon })
+        .addTo(map)
+        .bindPopup(`<b>${dr.name||'Shafyor'}</b><br>📍 Online<br>${loc.speed?'🚀 '+Math.round(loc.speed*3.6)+'km/h':''}`)
+      markersRef.current['drv_'+tgId] = marker
+    })
+
+    // Pickup markers (green)
+    pendingPickup.forEach(o => {
+      if (!o.lat || !o.lon) return
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="background:#3fb950;color:white;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3)">📥 ${o.number}</div>`,
+        iconSize: [80,28], iconAnchor: [40,14],
+      })
+      const m = L.marker([o.lat, o.lon], { icon })
+        .addTo(map)
+        .bindPopup(`<b>${o.number}</b><br>👤 ${o.customer||''}<br>📍 ${o.address||''}`)
+        .on('click', () => { setAssignOrder(o); setSelDrv(null) })
+      markersRef.current['pickup_'+o._id] = m
+    })
+
+    // Delivery markers (orange)
+    pendingDelivery.forEach(o => {
+      if (!o.lat || !o.lon) return
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="background:#f0883e;color:white;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3)">📦 ${o.number}</div>`,
+        iconSize: [80,28], iconAnchor: [40,14],
+      })
+      const m = L.marker([o.lat, o.lon], { icon }).addTo(map)
+        .bindPopup(`<b>${o.number}</b><br>👤 ${o.customer||''}<br>📍 ${o.address||''}`)
+      markersRef.current['delivery_'+o._id] = m
+    })
+  }
+
+  useEffect(() => { updateMarkers() }, [driverLocations, drivers, orders])
+
+  // Focus on driver
+  useEffect(() => {
+    if (!focused || !leafletRef.current) return
+    const loc = driverLocations[focused]
+    if (loc?.latitude && loc?.longitude) {
+      leafletRef.current.setView([loc.latitude, loc.longitude], 15, { animate: true })
+    }
+  }, [focused])
+
+  // Socket.IO
+  useEffect(() => {
     fetch(`${API}/api/driver/live-locations`)
       .then(r=>r.json()).then(arr=>{
         if (Array.isArray(arr)) {
@@ -259,17 +359,14 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
         }
       }).catch(()=>{})
 
-    // Socket
     try {
       const socket = io(API, { transports:['websocket','polling'] })
       socketRef.current = socket
-      socket.on('connect', ()=>{ setConnected(true); socket.emit('join:admin') })
+      socket.on('connect',    ()=>setConnected(true))
       socket.on('disconnect', ()=>setConnected(false))
       socket.on('driver:live-location', data => setDriverLocations(prev=>({...prev,[data.telegramId]:{...data,online:true}})))
-      socket.on('driver:offline', ({telegramId}) => setDriverLocations(prev=>({...prev,[telegramId]:{...prev[telegramId],online:false}})))
     } catch {}
 
-    // Poll every 15s
     const poll = setInterval(()=>{
       fetch(`${API}/api/driver/live-locations`).then(r=>r.json())
         .then(arr=>{ if(Array.isArray(arr)){const l={};arr.forEach(d=>{l[d.telegramId]={...d,online:true}});setDriverLocations(p=>({...p,...l}))} })
@@ -279,47 +376,6 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
     return () => { socketRef.current?.disconnect(); clearInterval(poll) }
   }, [])
 
-  // Build Yandex maps URL with all markers
-  const mapUrl = useMemo(() => {
-    const pts = []
-
-    // Driver markers (online)
-    Object.values(driverLocations).forEach((loc, i) => {
-      if (loc.online && loc.latitude && loc.longitude) {
-        if (focused === loc.telegramId) {
-          pts.push(`${loc.longitude},${loc.latitude},pm2dgl`)  // focused = blue
-        } else {
-          pts.push(`${loc.longitude},${loc.latitude},pm2rdl`)  // online = red
-        }
-      }
-    })
-
-    // Pickup orders (need driver)
-    pendingPickup.forEach(o => {
-      if (o.lat && o.lon) pts.push(`${o.lon},${o.lat},pm2gnm`)  // green
-    })
-
-    // Delivery orders
-    pendingDelivery.forEach(o => {
-      if (o.lat && o.lon) pts.push(`${o.lon},${o.lat},pm2ynm`)  // yellow
-    })
-
-    if (pts.length === 0) {
-      return 'https://yandex.com/maps/?ll=69.2401,41.2995&z=11&l=map'
-    }
-
-    // Center on focused driver or first point
-    let center = '69.2401,41.2995'
-    let zoom   = 12
-    if (focused && driverLocations[focused]?.latitude) {
-      const loc = driverLocations[focused]
-      center = `${loc.longitude},${loc.latitude}`
-      zoom   = 15
-    }
-
-    return `https://yandex.com/maps/?ll=${center}&z=${zoom}&pt=${pts.join('~')}&l=map`
-  }, [driverLocations, focused, pendingPickup, pendingDelivery])
-
   async function confirmMapAssign() {
     if (!selDrv || !assignOrder) return
     const dr = drivers.find(d=>d._id===selDrv)
@@ -327,7 +383,7 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
       await api.updateOrder(assignOrder._id, { driver: dr.name })
       toast(`${dr.name} → ${assignOrder.number} biriktirildi ✅`, 'ok')
       if (dr.phone) {
-        const msg = `🚗 Yangi topshiriq!\n📋 ${assignOrder.number}\n👤 ${assignOrder.customer}\n📍 ${assignOrder.address}`
+        const msg = `🚗 Yangi topshiriq!\n📋 ${assignOrder.number}\n👤 ${assignOrder.customer}\n📍 ${assignOrder.address||''}`
         window.open(`https://t.me/+${dr.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank')
       }
     } catch(e) { toast(e.message,'err') }
@@ -339,9 +395,9 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
       {/* Header */}
       <div className="live-map-hd">
         <div className="live-map-title">
-          <div style={{width:10,height:10,borderRadius:'50%',background:connected?'var(--green)':'var(--yellow)',animation:connected?'pulse 1.4s infinite':undefined,flexShrink:0}}/>
+          <div style={{width:10,height:10,borderRadius:'50%',background:connected?'var(--green)':'var(--yellow)',flexShrink:0}}/>
           🗺️ Live Xarita
-          <span style={{fontSize:11,color:'var(--text2)',fontWeight:400}}>{connected?'· Socket.IO':'· Polling'}</span>
+          <span style={{fontSize:11,color:'var(--text2)',fontWeight:400}}>{connected?'· Socket.IO ulangan':'· Polling'}</span>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <span style={{fontSize:11,color:'var(--text2)'}}>
@@ -349,69 +405,60 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
             · 📥 {pendingPickup.length} ta kutayapti
             · 📦 {pendingDelivery.length} ta yetkazilmoqda
           </span>
-          <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">
-            <MdMyLocation size={13}/> Yandex'da
-          </a>
           <button className="btn btn-ghost btn-sm" onClick={()=>setFullscreen(v=>!v)}>
             {fullscreen?<MdFullscreenExit size={16}/>:<MdFullscreen size={16}/>}
           </button>
         </div>
       </div>
 
-      {/* Map iframe */}
+      {/* Leaflet Map */}
       <div className="live-map-frame" style={{height:fullscreen?'calc(100vh - 90px)':'420px',position:'relative'}}>
-        <iframe ref={mapRef} src={mapUrl} title="Live Map" allowFullScreen loading="lazy"
-          style={{width:'100%',height:'100%',border:'none',display:'block'}}
-          sandbox="allow-scripts allow-same-origin allow-popups allow-forms"/>
+        <div ref={mapRef} style={{width:'100%',height:'100%'}}/>
       </div>
 
-      {/* Bottom bar */}
+      {/* Bottom chips */}
       <div className="map-pins-bar" style={{flexWrap:'wrap',gap:8}}>
-        {/* Legend */}
         <div style={{display:'flex',gap:10,alignItems:'center',fontSize:11,color:'var(--text2)'}}>
-          <span>🔴 Shafyor (online)</span>
-          <span>🟢 Olib kelish kerak</span>
-          <span>🟡 Yetkazish kerak</span>
+          <span>🚗 Shafyor</span>
+          <span>📥 Olib kelish</span>
+          <span>📦 Yetkazish</span>
+          <span style={{color:'var(--text3)',fontSize:10}}>· Belgi ustiga bosing — batafsil</span>
         </div>
 
-        {/* Driver chips */}
-        {drivers.map((dr, i) => {
-          const tgId = dr.tgChatId || dr._id
+        {drivers.map((dr,i)=>{
+          const tgId = dr.tgChatId||dr._id
           const loc  = driverLocations[tgId]
-          const clr  = DRIVER_COLORS[(i||0) % DRIVER_COLORS.length]
-          const age  = loc ? Math.round((Date.now()-new Date(loc.updatedAt).getTime())/1000) : null
+          const colors=['#3fb950','#58a6ff','#f0883e','#bc8cff','#ff7b72']
+          const clr  = colors[i%colors.length]
           return (
             <div key={dr._id}
               className="map-pin-chip"
-              style={{borderColor:focused===tgId?clr:undefined,color:focused===tgId?clr:undefined,background:focused===tgId?clr+'11':undefined}}
+              style={{borderColor:focused===tgId?clr:undefined,color:focused===tgId?clr:undefined,background:focused===tgId?clr+'11':undefined,cursor:'pointer'}}
               onClick={()=>setFocused(prev=>prev===tgId?null:tgId)}
-              title={loc?`${dr.name||'?'}: ${loc.latitude?.toFixed(4)}, ${loc.longitude?.toFixed(4)}`:`${dr.name||'?'}: offline`}
             >
-              <div className="pin-dot" style={{background:loc?.online?clr:'var(--text3)',animation:loc?.online?'pulse 1.2s infinite':undefined}}/>
+              <div className="pin-dot" style={{background:loc?.online?clr:'var(--text3)'}}/>
               🚗 {(dr.name||'Shafyor').split(' ')[0]}
               {loc?.speed ? ` · ${Math.round(loc.speed*3.6)}km/h` : ''}
-              {age!==null ? <span style={{fontSize:9,color:'var(--text3)',marginLeft:3}}>{age}s</span> : ''}
+              {!loc?.online && <span style={{fontSize:9,color:'var(--text3)',marginLeft:3}}>offline</span>}
             </div>
           )
         })}
 
-        {/* Pending pickup orders */}
         {pendingPickup.slice(0,5).map(o=>(
           <div key={o._id}
             className="map-pin-chip"
             style={{borderColor:'var(--green)',color:'var(--green)',cursor:'pointer'}}
             onClick={()=>{setAssignOrder(o);setSelDrv(null)}}
-            title={`${o.number} — ${o.customer} (shafyor yo'q)`}
           >
             <div className="pin-dot" style={{background:'var(--green)'}}/>
-            📥 {o.number} <span style={{fontSize:9,color:'var(--text3)'}}>→ biriktirish</span>
+            📥 {o.number}
           </div>
         ))}
       </div>
 
-      {/* Assign from map modal */}
+      {/* Assign modal */}
       <Modal open={!!assignOrder} onClose={()=>{setAssignOrder(null);setSelDrv(null)}}
-        title={`🗺️ Xaritadan shafyor biriktirish — ${assignOrder?.number}`} size="sm"
+        title={`🗺️ Shafyor biriktirish — ${assignOrder?.number}`} size="sm"
         footer={<><button className="btn btn-ghost" onClick={()=>{setAssignOrder(null);setSelDrv(null)}}>Bekor</button>
           <button className="btn btn-primary" onClick={confirmMapAssign} disabled={!selDrv}>✅ Biriktirish + TG</button></>}>
         <div style={{padding:'8px 10px',background:'var(--bg3)',borderRadius:'var(--r)',fontSize:12,marginBottom:10}}>
@@ -420,19 +467,16 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
         </div>
         <div className="assign-driver-list">
           {drivers.map(dr=>{
-            const tgId = dr.tgChatId || dr._id
+            const tgId = dr.tgChatId||dr._id
             const loc  = driverLocations[tgId]
             return (
               <div key={dr._id} className={`assign-driver-item ${selDrv===dr._id?'sel':''}`} onClick={()=>setSelDrv(dr._id)}>
-                <div className="assign-driver-avatar">{dr.name?.[0]}</div>
+                <div className="assign-driver-avatar">{(dr.name||'?')[0]}</div>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:13}}>{dr.name}</div>
                   <div style={{fontSize:11,color:'var(--text2)'}}>{dr.car} · {dr.plate}</div>
                 </div>
-                <div style={{textAlign:'right'}}>
-                  <Sbadge s={dr.status}/>
-                  {loc?.online && <div style={{fontSize:9,color:'var(--green)',marginTop:2}}>📍 Online</div>}
-                </div>
+                {loc?.online && <span style={{fontSize:10,color:'var(--green)',fontWeight:700}}>📍 Online</span>}
               </div>
             )
           })}
