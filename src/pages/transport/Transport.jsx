@@ -246,8 +246,8 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
   // Pending orders (need pickup or delivery)
-  const pendingPickup   = orders.filter(o => !o.driver && o.status==='yangi')
-  const pendingDelivery = orders.filter(o => o.status==='yetkazishda')
+  const pendingPickup   = orders.filter(o => o && !o.driver && o.status==='yangi')
+  const pendingDelivery = orders.filter(o => o && o.status==='yetkazishda')
   const activeDrivers   = drivers.filter(d => driverLocations[d.tgChatId||d._id]?.online)
 
   useEffect(() => {
@@ -378,17 +378,17 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
         {drivers.map((dr, i) => {
           const tgId = dr.tgChatId || dr._id
           const loc  = driverLocations[tgId]
-          const clr  = DRIVER_COLORS[i % DRIVER_COLORS.length]
+          const clr  = DRIVER_COLORS[(i||0) % DRIVER_COLORS.length]
           const age  = loc ? Math.round((Date.now()-new Date(loc.updatedAt).getTime())/1000) : null
           return (
             <div key={dr._id}
               className="map-pin-chip"
               style={{borderColor:focused===tgId?clr:undefined,color:focused===tgId?clr:undefined,background:focused===tgId?clr+'11':undefined}}
               onClick={()=>setFocused(prev=>prev===tgId?null:tgId)}
-              title={loc?`${dr.name}: ${loc.latitude?.toFixed(4)}, ${loc.longitude?.toFixed(4)}`:`${dr.name}: offline`}
+              title={loc?`${dr.name||'?'}: ${loc.latitude?.toFixed(4)}, ${loc.longitude?.toFixed(4)}`:`${dr.name||'?'}: offline`}
             >
               <div className="pin-dot" style={{background:loc?.online?clr:'var(--text3)',animation:loc?.online?'pulse 1.2s infinite':undefined}}/>
-              🚗 {dr.name.split(' ')[0]}
+              🚗 {(dr.name||'Shafyor').split(' ')[0]}
               {loc?.speed ? ` · ${Math.round(loc.speed*3.6)}km/h` : ''}
               {age!==null ? <span style={{fontSize:9,color:'var(--text3)',marginLeft:3}}>{age}s</span> : ''}
             </div>
@@ -466,8 +466,16 @@ export default function Transport() {
   }
 
   const apiFns = {
-    delivery: { getAll:api.getDelivery, update:api.updateDelivery, remove:api.deleteDelivery },
-    pickup:   { getAll:api.getPickup,   update:api.updatePickup,   remove:api.deletePickup   },
+    delivery: {
+      getAll:  api.getDelivery  || (()=>Promise.resolve([])),
+      update:  api.updateDelivery || (()=>Promise.resolve({})),
+      remove:  api.deleteDelivery || (()=>Promise.resolve({})),
+    },
+    pickup: {
+      getAll:  api.getPickup    || (()=>Promise.resolve([])),
+      update:  api.updatePickup  || (()=>Promise.resolve({})),
+      remove:  api.deletePickup  || (()=>Promise.resolve({})),
+    },
   }
 
   return (
