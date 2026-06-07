@@ -74,7 +74,7 @@ function exportToPDF(rows, month, summary) {
 </style>
 </head>
 <body>
-<h1>CleanPro Himchishtka CRM — Moliyaviy Hisobot</h1>
+<h1>Tartib CRM — Moliyaviy Hisobot</h1>
 <h2>${monthLabel(month)} oyi</h2>
 <div class="summary">
   <div class="sum-item"><div class="sum-val green">${summary.kirim.toLocaleString()} so'm</div><div class="sum-lbl">Jami kirim</div></div>
@@ -88,7 +88,7 @@ function exportToPDF(rows, month, summary) {
 ${rows.map(r=>`<tr><td>${r.date||''}</td><td class="${r.type}">${r.type==='kirim'?'↑ Kirim':'↓ Chiqim'}</td><td>${r.description||''}</td><td>${r.category||''}</td><td class="${r.type}">${r.type==='kirim'?'+':'-'}${(r.amount||0).toLocaleString()} so'm</td><td>${r.by||''}</td></tr>`).join('')}
 </tbody>
 </table>
-<div class="footer">Hisobot sanasi: ${new Date().toLocaleDateString('uz-UZ')} · CleanPro Himchishtka CRM</div>
+<div class="footer">Hisobot sanasi: ${new Date().toLocaleDateString('uz-UZ')} · Tartib CRM</div>
 </body></html>`
 
   const blob = new Blob([html], { type:'text/html;charset=utf-8' })

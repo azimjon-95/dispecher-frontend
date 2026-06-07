@@ -331,7 +331,7 @@ export default function Settings() {
   const [prices, setPrices] = useState(INIT_PRICES)
   const [modal,  setModal]  = useState(null)
   const [pform,  setPform]  = useState({})
-  const [co,     setCo]     = useState('CleanPro')
+  const [co,     setCo]     = useState('Tartib CRM')
   const [ph,     setPh]     = useState('+998 90 123 45 67')
   const [ad,     setAd]     = useState('Toshkent sh.')
 
@@ -364,9 +364,9 @@ export default function Settings() {
                 <div className="card-hd"><div className="card-title">📝 SMS Shablonlar</div></div>
                 <div style={{display:'flex',flexDirection:'column',gap:14}}>
                   {[
-                    { label:"📥 Olib kelish xabari",    def:"Salom, {ism}! Buyurtmangiz #{raqam} qabul qilindi. Shafyorimiz tez orada keladi. CleanPro" },
-                    { label:"📦 Yetkazib berish xabari", def:"Salom, {ism}! Buyurtmangiz #{raqam} tayyor, yetkazilmoqda. CleanPro" },
-                    { label:"🔄 Holat xabarnomasi",      def:"Salom, {ism}! Buyurtmangiz #{raqam} holati: {status}. CleanPro" },
+                    { label:"📥 Olib kelish xabari",    def:"Salom, {ism}! Buyurtmangiz #{raqam} qabul qilindi. Shafyorimiz tez orada keladi. Tartib CRM" },
+                    { label:"📦 Yetkazib berish xabari", def:"Salom, {ism}! Buyurtmangiz #{raqam} tayyor, yetkazilmoqda. Tartib CRM" },
+                    { label:"🔄 Holat xabarnomasi",      def:"Salom, {ism}! Buyurtmangiz #{raqam} holati: {status}. Tartib CRM" },
                     { label:"📍 GPS manzil so'rash",     def:"Salom, {ism}! Iltimos joylashuvingizni yuboring." },
                   ].map((t,i) => (
                     <div key={i} className="fg">

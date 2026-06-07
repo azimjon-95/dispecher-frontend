@@ -57,7 +57,7 @@ export function Logo({ size = 36, collapsed = false, textColor = '#e6edf3' }) {
             letterSpacing: '1px', textTransform: 'uppercase', marginTop: 1,
             whiteSpace: 'nowrap',
           }}>
-            Boshqaruv tizimi
+            Gilam yuvish tizimi
           </div>
         </div>
       )}

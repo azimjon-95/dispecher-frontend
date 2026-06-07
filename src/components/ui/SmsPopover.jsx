@@ -57,8 +57,8 @@ export function SmsPopover({ phone, customerName, orderNum, messageType = 'picku
   const clean = phone.replace(/\D/g,'')
   const name  = customerName || 'Hurmatli mijoz'
 
-  const SMS_PICKUP   = `Salom, ${name}! Buyurtmangiz #${orderNum} qabul qilindi. Tez orada shafyorimiz sizga yetib boradi. Minnatdorchilik bilan, CleanPro.`
-  const SMS_DELIVERY = `Salom, ${name}! Buyurtmangiz #${orderNum} tayyor va yetkazib berilmoqda. Shafyorimiz tez orada keladi. CleanPro.`
+  const SMS_PICKUP   = `Salom, ${name}! Buyurtmangiz #${orderNum} qabul qilindi. Tez orada shafyorimiz sizga yetib boradi. Minnatdorchilik bilan, Tartib CRM.`
+  const SMS_DELIVERY = `Salom, ${name}! Buyurtmangiz #${orderNum} tayyor va yetkazib berilmoqda. Shafyorimiz tez orada keladi. Tartib CRM.`
 
   const smsText = messageType === 'pickup' ? SMS_PICKUP : SMS_DELIVERY
   const tgUrl   = `https://t.me/+${clean}?text=${encodeURIComponent(smsText)}`
