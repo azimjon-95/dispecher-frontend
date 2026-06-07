@@ -6,7 +6,7 @@ import {
   MdAdd, MdLocalShipping, MdConstruction,
 } from 'react-icons/md'
 import { api, fmt } from '../../services/api.js'
-import { Modal, toast } from '../../components/ui/UI.jsx'
+import { Modal, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import './Dashboard.css'
 
 const today = new Date().toISOString().slice(0,10)
@@ -91,8 +91,7 @@ export default function Dashboard({ onNav }) {
       {/* KPI */}
       <div className="kpi-grid" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
         {loading ? [...Array(4)].map((_,i)=>(
-          <div key={i} className="kpi-card"><div className="skel" style={{height:80,borderRadius:'var(--r)'}}/></div>
-        )) : KPI_CARDS.map((k,i)=>(
+          <SkeletonKPI key={i}/>)) : KPI_CARDS.map((k,i)=>(
           <div key={i} className="kpi-card" style={{cursor:'pointer',animationDelay:i*40+'ms'}} onClick={()=>onNav?.(k.nav)}>
             <div className="kpi-hd">
               <div className="kpi-icon" style={{background:k.bg}}><span style={{color:k.c}}>{k.icon}</span></div>

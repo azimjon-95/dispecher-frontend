@@ -7,7 +7,7 @@ import {
 } from 'react-icons/md'
 import { api, fmt } from '../../services/api.js'
 import { useCRUD } from '../../hooks/useCRUD.js'
-import { Modal, Confirm, Sbadge, Table, Paging, PH, toast } from '../../components/ui/UI.jsx'
+import { Modal, Confirm, Sbadge, Table, Paging, PH, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import './Finance.css'
 

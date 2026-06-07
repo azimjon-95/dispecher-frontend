@@ -37,6 +37,114 @@ export class ErrorBoundary extends React.Component {
 /* ════════════════════════════════
    MODAL
 ════════════════════════════════ */
+
+/* ══════════════════════════════════════════
+   TARTIB CRM — MARKAZIY LOADER
+   Butun oyna emas, faqat o'z joyida
+══════════════════════════════════════════ */
+
+/* Kichik inline loader — jadval, karta, bo'lim uchun */
+export function Loader({ size = 'md', text = '' }) {
+  const sz = { sm: 28, md: 44, lg: 64 }[size] || 44
+  const sq = Math.round(sz * 0.28)
+  const gap = Math.round(sq * 0.35)
+  const rx  = Math.round(sq * 0.2)
+
+  // 3x3 grid pozitsiyalari
+  const cells = [
+    { x:0,   y:0,   fill:'#3B82F6', delay:0    },
+    { x:1,   y:0,   fill:'#ffffff', delay:0.08, opacity:0.15 },
+    { x:2,   y:0,   fill:'#ffffff', delay:0.16, opacity:0.15 },
+    { x:0,   y:1,   fill:'#06B6D4', delay:0.12 },
+    { x:1,   y:1,   fill:'#3B82F6', delay:0.20 },
+    { x:2,   y:1,   fill:'#ffffff', delay:0.28, opacity:0.15 },
+    { x:0,   y:2,   fill:'#ffffff', delay:0.24, opacity:0.15 },
+    { x:1,   y:2,   fill:'#06B6D4', delay:0.32 },
+    { x:2,   y:2,   fill:'#3B82F6', delay:0.40 },
+  ]
+
+  const total = sz
+  const step  = sq + gap
+
+  return (
+    <div style={{
+      display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', gap:10, padding:'20px 0',
+    }}>
+      <svg width={total} height={total} viewBox={`0 0 ${total} ${total}`} fill="none">
+        <style>{`
+          @keyframes tartib-pulse {
+            0%,100% { opacity:1; transform:scale(1); }
+            50%      { opacity:0.35; transform:scale(0.82); }
+          }
+        `}</style>
+        {cells.map((cell, i) => (
+          <rect key={i}
+            x={cell.x * step + 1}
+            y={cell.y * step + 1}
+            width={sq} height={sq} rx={rx}
+            fill={cell.fill}
+            opacity={cell.opacity || 1}
+            style={{
+              animation: `tartib-pulse 1.4s ease-in-out ${cell.delay}s infinite`,
+              transformOrigin: `${cell.x * step + 1 + sq/2}px ${cell.y * step + 1 + sq/2}px`,
+            }}
+          />
+        ))}
+      </svg>
+      {text && (
+        <span style={{
+          fontSize: size==='sm' ? 11 : size==='lg' ? 14 : 12,
+          color:'var(--text3)', fontWeight:500, letterSpacing:'.3px',
+        }}>
+          {text}
+        </span>
+      )}
+    </div>
+  )
+}
+
+/* Skeleton — bitta satr uchun */
+export function SkeletonRow({ cols = 4, rows = 5 }) {
+  return (
+    <div style={{ padding:'0 2px' }}>
+      {[...Array(rows)].map((_,i) => (
+        <div key={i} style={{ display:'flex', gap:12, padding:'10px 16px', borderBottom:'1px solid var(--border)' }}>
+          {[...Array(cols)].map((_,j) => (
+            <div key={j} className="skel" style={{
+              height:13, flex: j===0 ? '0 0 80px' : 1,
+              borderRadius:4, animationDelay: `${(i*cols+j)*30}ms`
+            }}/>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* Skeleton — karta uchun */
+export function SkeletonCard({ lines = 3 }) {
+  return (
+    <div style={{ padding:'14px 16px', display:'flex', flexDirection:'column', gap:8 }}>
+      <div className="skel" style={{ height:14, width:'60%', borderRadius:4 }}/>
+      {[...Array(lines-1)].map((_,i) => (
+        <div key={i} className="skel" style={{ height:11, width: i===lines-2 ? '40%':'85%', borderRadius:4, animationDelay:`${i*60}ms` }}/>
+      ))}
+    </div>
+  )
+}
+
+/* Skeleton — KPI karta uchun */
+export function SkeletonKPI() {
+  return (
+    <div className="kpi-card" style={{ gap:8 }}>
+      <div className="skel" style={{ width:36, height:36, borderRadius:8 }}/>
+      <div className="skel" style={{ width:'70%', height:18, borderRadius:4 }}/>
+      <div className="skel" style={{ width:'50%', height:11, borderRadius:4 }}/>
+    </div>
+  )
+}
+
 export function Modal({ open, onClose, title, size = '', children, footer }) {
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -146,13 +254,23 @@ export function Table({ cols, rows, loading, onRow, selIds, onSel }) {
       <table className="tbl">
         <thead><tr>{cols.map(c => <th key={c.k}>{c.l}</th>)}</tr></thead>
         <tbody>
-          {[...Array(5)].map((_,i) => (
+          {[...Array(6)].map((_,i) => (
             <tr key={i}>
-              {cols.map(c => <td key={c.k}><div className="skel" style={{height:14,width:'75%'}} /></td>)}
+              {cols.map(c => (
+                <td key={c.k}>
+                  <div className="skel" style={{
+                    height:13, width: c.k==='_a'?'60%':'80%',
+                    borderRadius:4, animationDelay:`${(i*cols.length)*25}ms`
+                  }}/>
+                </td>
+              ))}
             </tr>
           ))}
         </tbody>
       </table>
+      <div style={{display:'flex',justifyContent:'center',padding:'16px 0',borderTop:'1px solid var(--border)'}}>
+        <Loader size="sm" text="Yuklanmoqda..."/>
+      </div>
     </div>
   )
 

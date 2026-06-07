@@ -5,7 +5,7 @@ import {
   MdShoppingBag, MdRefresh, MdPersonAdd
 } from 'react-icons/md'
 import { api, fmt, norm } from '../../services/api.js'
-import { Modal, Confirm, Sbadge, Table, Paging, PH, ExportBtn, toast } from '../../components/ui/UI.jsx'
+import { Modal, Confirm, Sbadge, Table, Paging, PH, ExportBtn, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import OrderDetail from '../orderdetail/OrderDetail.jsx'
 import { SmsPopover } from '../../components/ui/SmsPopover.jsx'
@@ -409,7 +409,7 @@ export default function Orders() {
         {/* KANBAN */}
         {view==='kanban' && (
           loading
-            ? <div style={{padding:40,textAlign:'center',color:'var(--text3)'}}>⏳ Yuklanmoqda...</div>
+            ? <Loader size="md" text="Yuklanmoqda..."/>
             : <div className="kanban-board">
                 {COLUMNS.map(col=>(
                   <KanbanColumn key={col.key} col={col} orders={grouped[col.key]||[]}

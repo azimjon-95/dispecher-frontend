@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { MdAdd,MdEdit,MdDelete,MdFileDownload,MdPerson,MdPhone,MdDiscount,MdVisibility } from 'react-icons/md'
 import { api, fmt } from '../../services/api.js'
 import { useCRUD } from '../../hooks/useCRUD.js'
-import { Modal, Confirm, Sbadge, Table, Paging, PH, ExportBtn, toast } from '../../components/ui/UI.jsx'
+import { Modal, Confirm, Sbadge, Table, Paging, PH, ExportBtn, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import './Customers.css'
 

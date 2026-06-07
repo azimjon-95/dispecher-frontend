@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { MdAdd, MdRefresh, MdAttachMoney, MdWarning, MdStar } from 'react-icons/md'
 import { api, fmt } from '../../services/api.js'
-import { Modal, Sbadge, Table, Paging, PH, toast } from '../../components/ui/UI.jsx'
+import { Modal, Sbadge, Table, Paging, PH, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 
 const MONTHS = Array.from({length:6},(_,i)=>{
@@ -107,7 +107,7 @@ export default function Salary() {
         {/* Summary tab */}
         {tab==='summary' && (
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {loading ? <div style={{padding:40,textAlign:'center',color:'var(--text3)'}}>⏳ Yuklanmoqda...</div>
+            {loading ? <Loader size="md" text="Yuklanmoqda..."/>
               : summary.length===0 ? <div style={{padding:30,textAlign:'center',color:'var(--text3)'}}>Ma'lumot yo'q</div>
               : summary.map(emp=>(
                 <div key={emp._id} className="card" style={{padding:'12px 14px'}}>

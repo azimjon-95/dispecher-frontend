@@ -5,7 +5,7 @@ import {
   MdPhone, MdLocationOn
 } from 'react-icons/md'
 import { api, fmt } from '../../services/api.js'
-import { Modal, Confirm, Sbadge, toast } from '../../components/ui/UI.jsx'
+import { Modal, Confirm, Sbadge, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import './OrderDetail.css'
 
 /* ── Constants ── */
