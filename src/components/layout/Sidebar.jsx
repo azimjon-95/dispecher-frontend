@@ -2,7 +2,7 @@ import {
   MdDashboard, MdShoppingBag, MdLocalShipping, MdBuild,
   MdPeople, MdDirectionsCar, MdPerson, MdAttachMoney,
   MdAccountBalance, MdArchive, MdSettings, MdHome,
-  MdChevronLeft, MdChevronRight, MdSpeed
+  MdChevronLeft, MdChevronRight
 } from 'react-icons/md'
 import { Logo } from '../../assets/logo.jsx'
 import './Sidebar.css'
@@ -12,10 +12,10 @@ export default function Sidebar({ active, onNav, collapsed, onToggle, mobOpen, o
     {
       section: 'Asosiy',
       items: [
-        { id:'dashboard',   Icon:MdDashboard,     label:'Dashboard',          badge:null },
-        { id:'orders',      Icon:MdShoppingBag,   label:'Buyurtmalar',         badge:badges.orders    || null },
-        { id:'transport',   Icon:MdLocalShipping, label:'Transport',           badge:badges.transport || null },
-        { id:'workers',     Icon:MdBuild,         label:'Sex Topshiriqlari',   badge:null },
+        { id:'dashboard',   Icon:MdDashboard,     label:'Dashboard',         badge:null },
+        { id:'orders',      Icon:MdShoppingBag,   label:'Buyurtmalar',        badge:badges.orders    || null },
+        { id:'transport',   Icon:MdLocalShipping, label:'Transport',          badge:badges.transport || null },
+        { id:'workers',     Icon:MdBuild,         label:'Sex Topshiriqlari',  badge:null },
       ]
     },
     {
@@ -37,8 +37,8 @@ export default function Sidebar({ active, onNav, collapsed, onToggle, mobOpen, o
     {
       section: 'Boshqa',
       items: [
-        { id:'archive',     Icon:MdArchive,       label:'Tarix / Arxiv', badge:null },
-        { id:'settings',    Icon:MdSettings,      label:'Sozlamalar',    badge:null },
+        { id:'archive',     Icon:MdArchive,  label:'Tarix / Arxiv', badge:null },
+        { id:'settings',    Icon:MdSettings, label:'Sozlamalar',    badge:null },
       ]
     }
   ]
@@ -47,20 +47,21 @@ export default function Sidebar({ active, onNav, collapsed, onToggle, mobOpen, o
     <>
       <div className={`mob-backdrop ${mobOpen?'show':''}`} onClick={onCloseMob}/>
       <aside className={`sidebar ${collapsed?'collapsed':''} ${mobOpen?'mob-open':''}`}>
+
+        {/* ── Logo ── */}
         <div className="sb-logo">
-          {collapsed
-            ? <Logo size={32}/>
-            : <Logo size={32} showText={true}/>
-          }
+          <Logo size={34} collapsed={collapsed}/>
         </div>
 
+        {/* ── Nav ── */}
         <nav className="sb-nav">
           {NAV.map(({ section, items }) => (
             <div key={section}>
-              <div className="sb-section">{section}</div>
+              {!collapsed && <div className="sb-section">{section}</div>}
               {items.map(({ id, Icon, label, badge }) => (
-                <a key={id} href="#" className={`sb-item ${active===id?'active':''}`}
-                  data-tip={label}
+                <a key={id} href="#"
+                  className={`sb-item ${active===id?'active':''}`}
+                  title={collapsed ? label : undefined}
                   onClick={e=>{ e.preventDefault(); onNav(id); onCloseMob?.() }}>
                   <span className="sb-icon"><Icon size={18}/></span>
                   <span className="sb-label">{label}</span>
@@ -71,8 +72,9 @@ export default function Sidebar({ active, onNav, collapsed, onToggle, mobOpen, o
           ))}
         </nav>
 
+        {/* ── Collapse toggle ── */}
         <div className="sb-bottom">
-          <button className="sb-toggle" onClick={onToggle}>
+          <button className="sb-toggle" onClick={onToggle} title={collapsed?'Kengaytirish':"Yig'ish"}>
             <span className="sb-icon">
               {collapsed ? <MdChevronRight size={18}/> : <MdChevronLeft size={18}/>}
             </span>

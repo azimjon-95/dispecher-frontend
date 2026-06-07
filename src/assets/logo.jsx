@@ -1,27 +1,119 @@
-export function Logo({ size = 36, showText = false, textColor = '#e6edf3' }) {
+/**
+ * Tartib CRM — Logo Component
+ * SVG dan inline React component
+ */
+
+/* ── Faqat icon (3x3 grid) ── */
+export function LogoIcon({ size = 36 }) {
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-      <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
-        <rect x="2" y="2" width="96" height="96" rx="22" fill="url(#lg1)"/>
-        <rect x="2" y="2" width="96" height="96" rx="22" fill="url(#lg2)" opacity="0.4"/>
-        <path d="M12 65 Q24 50 36 65 Q48 80 60 65 Q72 50 84 65 Q92 73 96 68" stroke="white" strokeWidth="5.5" strokeLinecap="round" fill="none" opacity="0.95"/>
-        <path d="M12 52 Q24 37 36 52 Q48 67 60 52 Q72 37 84 52 Q92 60 96 55" stroke="white" strokeWidth="3.5" strokeLinecap="round" fill="none" opacity="0.7"/>
-        <path d="M12 39 Q24 24 36 39 Q48 54 60 39 Q72 24 84 39" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.4"/>
-        <path d="M76 8 C76 8 66 20 66 27 C66 33.6 70.5 38 76 38 C81.5 38 86 33.6 86 27 C86 20 76 8 76 8Z" fill="white" opacity="0.92"/>
-        <ellipse cx="73" cy="28" rx="4" ry="5" fill="url(#lg1)" opacity="0.5"/>
-        <path d="M22 14 L24 20 L30 22 L24 24 L22 30 L20 24 L14 22 L20 20Z" fill="white" opacity="0.85"/>
-        <defs>
-          <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#1565C0"/><stop offset="100%" stopColor="#0D47A1"/></linearGradient>
-          <linearGradient id="lg2" x1="0%" y1="0%" x2="60%" y2="100%"><stop offset="0%" stopColor="#42A5F5" stopOpacity="0.5"/><stop offset="100%" stopColor="#0D47A1" stopOpacity="0"/></linearGradient>
-        </defs>
-      </svg>
-      {showText && (
-        <div>
-          <div style={{fontSize:size*0.38,fontWeight:800,color:textColor,lineHeight:1.1,letterSpacing:'-0.3px'}}>CleanPro</div>
-          <div style={{fontSize:size*0.22,fontWeight:600,color:'#6e7681',letterSpacing:'1.2px',textTransform:'uppercase'}}>Himchishtka CRM</div>
+    <svg width={size} height={size} viewBox="0 0 480 480" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+      <circle cx="240" cy="240" r="230" fill="#0B1A3E"/>
+      <circle cx="240" cy="240" r="228" fill="none" stroke="#3B82F6" strokeWidth="2" opacity="0.3"/>
+      {/* Row 1 */}
+      <rect x="118" y="118" width="70" height="70" rx="11" fill="#3B82F6"/>
+      <rect x="205" y="118" width="70" height="70" rx="11" fill="white" opacity="0.15"/>
+      <rect x="292" y="118" width="70" height="70" rx="11" fill="white" opacity="0.15"/>
+      {/* Row 2 */}
+      <rect x="118" y="205" width="70" height="70" rx="11" fill="#06B6D4"/>
+      <rect x="205" y="205" width="70" height="70" rx="11" fill="#3B82F6"/>
+      <rect x="292" y="205" width="70" height="70" rx="11" fill="white" opacity="0.15"/>
+      {/* Row 3 */}
+      <rect x="118" y="292" width="70" height="70" rx="11" fill="white" opacity="0.15"/>
+      <rect x="205" y="292" width="70" height="70" rx="11" fill="#06B6D4"/>
+      <rect x="292" y="292" width="70" height="70" rx="11" fill="#3B82F6"/>
+      {/* H lines */}
+      <line x1="188" y1="153" x2="205" y2="153" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="275" y1="153" x2="292" y2="153" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="188" y1="240" x2="205" y2="240" stroke="#06B6D4" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="275" y1="240" x2="292" y2="240" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="188" y1="327" x2="205" y2="327" stroke="#06B6D4" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="275" y1="327" x2="292" y2="327" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      {/* V lines */}
+      <line x1="153" y1="188" x2="153" y2="205" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="240" y1="188" x2="240" y2="205" stroke="#06B6D4" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="327" y1="188" x2="327" y2="205" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="153" y1="275" x2="153" y2="292" stroke="#06B6D4" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="240" y1="275" x2="240" y2="292" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="327" y1="275" x2="327" y2="292" stroke="#06B6D4" strokeWidth="2.5" opacity="0.5"/>
+    </svg>
+  )
+}
+
+/* ── Icon + Text (Sidebar uchun) ── */
+export function Logo({ size = 36, collapsed = false, textColor = '#e6edf3' }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+      <LogoIcon size={size}/>
+      {!collapsed && (
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{
+            fontSize: size * 0.42, fontWeight: 800, color: textColor,
+            lineHeight: 1.1, letterSpacing: '-0.3px', whiteSpace: 'nowrap',
+          }}>
+            Tartib CRM
+          </div>
+          <div style={{
+            fontSize: size * 0.24, fontWeight: 500, color: '#3B82F6',
+            letterSpacing: '1px', textTransform: 'uppercase', marginTop: 1,
+            whiteSpace: 'nowrap',
+          }}>
+            Boshqaruv tizimi
+          </div>
         </div>
       )}
     </div>
   )
 }
+
+/* ── To'liq SVG (Login sahifasi uchun) ── */
+export function LogoFull({ size = 200 }) {
+  const scale = size / 680
+  return (
+    <svg width={size} height={size * (560/680)} viewBox="0 0 680 560"
+      fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+      {/* Circle bg */}
+      <circle cx="340" cy="240" r="230" fill="#0B1A3E"/>
+      <circle cx="340" cy="240" r="228" fill="none" stroke="#3B82F6" strokeWidth="2" opacity="0.3"/>
+      {/* Row 1 */}
+      <rect x="218" y="108" width="60" height="60" rx="10" fill="#3B82F6"/>
+      <rect x="310" y="108" width="60" height="60" rx="10" fill="white" opacity="0.15"/>
+      <rect x="402" y="108" width="60" height="60" rx="10" fill="white" opacity="0.15"/>
+      {/* Row 2 */}
+      <rect x="218" y="186" width="60" height="60" rx="10" fill="#06B6D4"/>
+      <rect x="310" y="186" width="60" height="60" rx="10" fill="#3B82F6"/>
+      <rect x="402" y="186" width="60" height="60" rx="10" fill="white" opacity="0.15"/>
+      {/* Row 3 */}
+      <rect x="218" y="264" width="60" height="60" rx="10" fill="white" opacity="0.15"/>
+      <rect x="310" y="264" width="60" height="60" rx="10" fill="#06B6D4"/>
+      <rect x="402" y="264" width="60" height="60" rx="10" fill="#3B82F6"/>
+      {/* H connectors */}
+      <line x1="278" y1="138" x2="310" y2="138" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="370" y1="138" x2="402" y2="138" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="278" y1="216" x2="310" y2="216" stroke="#06B6D4" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="370" y1="216" x2="402" y2="216" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="278" y1="294" x2="310" y2="294" stroke="#06B6D4" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="370" y1="294" x2="402" y2="294" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      {/* V connectors */}
+      <line x1="248" y1="168" x2="248" y2="186" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="340" y1="168" x2="340" y2="186" stroke="#06B6D4" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="432" y1="168" x2="432" y2="186" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="248" y1="246" x2="248" y2="264" stroke="#06B6D4" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="340" y1="246" x2="340" y2="264" stroke="#3B82F6" strokeWidth="2.5" opacity="0.5"/>
+      <line x1="432" y1="246" x2="432" y2="264" stroke="#06B6D4" strokeWidth="2.5" opacity="0.5"/>
+      {/* TARTIB */}
+      <text x="340" y="420" textAnchor="middle"
+        fontFamily="'Arial Black', sans-serif" fontSize="72" fontWeight="900" fill="white">
+        TARTIB
+      </text>
+      {/* CRM */}
+      <text x="340" y="462" textAnchor="middle"
+        fontFamily="Arial, sans-serif" fontSize="24" fontWeight="400" fill="#3B82F6">
+        CRM
+      </text>
+      {/* Bottom line */}
+      <line x1="240" y1="478" x2="440" y2="478" stroke="#3B82F6" strokeWidth="1" opacity="0.4"/>
+    </svg>
+  )
+}
+
 export default Logo
