@@ -1,229 +1,81 @@
 /* ══════════════════════════════════════
-   ORDER DETAIL PAGE
+   ORDER DETAIL — Premium UI
 ══════════════════════════════════════ */
 .od-wrap { animation: fadeIn .3s both; }
 
-/* ── Header info card ── */
-.od-header {
+/* ── Header card ── */
+.od-header-card {
+  margin-bottom: 16px;
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--r2);
-  padding: 16px 20px;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.od-header-left { display: flex; flex-direction: column; gap: 6px; }
-.od-order-num {
-  font-size: 22px; font-weight: 800;
-  color: var(--accent); font-family: monospace;
-  letter-spacing: -0.5px;
-}
-.od-customer { font-size: 15px; font-weight: 700; }
-.od-phone-row {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-}
-.od-address  { font-size: 13px; color: var(--text2); }
-.od-desc {
-  font-size: 12.5px; color: var(--text2);
-  font-style: italic; max-width: 500px;
-  background: var(--bg3); padding: 6px 10px;
-  border-radius: var(--r); border: 1px solid var(--border);
-  margin-top: 4px;
-}
-.od-header-right {
-  display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
-}
-.od-total-box {
-  text-align: right;
-}
-.od-total-label { font-size: 11px; color: var(--text2); }
-.od-total-val {
-  font-size: 28px; font-weight: 800;
-  color: var(--green);
-  font-family: 'Courier New', monospace;
+  padding: 18px 20px;
 }
 
-/* ── TG button (reused from transport) ── */
-.tg-btn {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 10px; border-radius: var(--r);
-  background: #229ED9; color: #fff;
-  font-size: 11px; font-weight: 700;
-  cursor: pointer; border: none;
-  transition: filter var(--t); white-space: nowrap;
-  font-family: inherit; text-decoration: none;
-}
-.tg-btn:hover { filter: brightness(1.15); }
-
-/* ── Stage pipeline ── */
-.od-pipeline {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  margin-bottom: 20px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-.od-stage {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 14px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  font-size: 12px; font-weight: 600;
-  color: var(--text3);
-  white-space: nowrap;
-  transition: all var(--t);
-  position: relative;
-}
-.od-stage:first-child { border-radius: var(--r) 0 0 var(--r); }
-.od-stage:last-child  { border-radius: 0 var(--r) var(--r) 0; }
-.od-stage + .od-stage { border-left: none; }
-
-.od-stage.done {
-  background: var(--greenbg);
-  border-color: rgba(63,185,80,.3);
-  color: var(--green);
-}
-.od-stage.current {
-  background: var(--accentbg);
-  border-color: var(--accent);
-  color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accentbg);
-  z-index: 1;
-}
-.od-stage-icon { font-size: 14px; }
-.od-stage-count {
-  font-size: 10px; font-weight: 700;
-  background: currentColor;
-  color: var(--bg2);
-  padding: 1px 5px;
-  border-radius: 99px;
-  margin-left: 2px;
-}
-
-/* ── Add item section ── */
-.od-add-section {
+/* ── Add form ── */
+.od-add-card {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--r2);
-  padding: 16px;
-  margin-bottom: 20px;
-}
-.od-add-title {
-  font-size: 14px; font-weight: 700;
+  padding: 14px 16px;
   margin-bottom: 14px;
 }
 .od-add-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+  grid-template-columns: 1.8fr 1fr 1fr 1fr auto;
   gap: 10px;
   align-items: end;
 }
-.od-add-total {
-  font-size: 14px; font-weight: 800;
-  color: var(--green); font-family: monospace;
-  padding: 8px 0;
-  white-space: nowrap;
+@media(max-width:900px) {
+  .od-add-grid { grid-template-columns: 1fr 1fr 1fr; }
 }
-
-@media (max-width: 900px) {
+@media(max-width:560px) {
   .od-add-grid { grid-template-columns: 1fr 1fr; }
 }
-@media (max-width: 560px) {
-  .od-add-grid { grid-template-columns: 1fr; }
-}
 
-/* ── Items table ── */
-.od-items-section {
+/* ── Item card ── */
+.od-item-card {
+  position: relative;
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: var(--r2);
-  overflow: hidden;
-  margin-bottom: 20px;
+  border-radius: var(--r);
+  padding: 12px 14px 12px 18px;
+  transition: border-color var(--t), box-shadow var(--t);
 }
-.od-items-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
+.od-item-card:hover {
+  border-color: var(--stage-c, var(--accent));
+  box-shadow: 0 2px 12px rgba(0,0,0,.2);
 }
-.od-items-title { font-size: 14px; font-weight: 700; }
 
-.od-items-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
-.od-items-tbl thead { background: var(--bg3); }
-.od-items-tbl thead th {
-  padding: 8px 12px; text-align: left;
-  font-size: 10px; font-weight: 700; letter-spacing: .4px;
-  text-transform: uppercase; color: var(--text2);
-  border-bottom: 1px solid var(--border); white-space: nowrap;
+/* ── Stage tabs ── */
+.od-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
 }
-.od-items-tbl tbody tr {
-  border-bottom: 1px solid var(--border);
-  transition: background var(--t);
-}
-.od-items-tbl tbody tr:last-child { border-bottom: none; }
-.od-items-tbl tbody tr:hover { background: var(--bg3); }
-.od-items-tbl tbody td { padding: 10px 12px; vertical-align: middle; }
+.od-tabs::-webkit-scrollbar { display: none; }
 
-/* ── Stage badge ── */
-.stage-badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 8px; border-radius: 99px;
-  font-size: 11px; font-weight: 600;
-}
-.stage-qabul      { background: var(--bg4);       color: var(--text2); border: 1px solid var(--border); }
-.stage-yuvish     { background: var(--accentbg);  color: var(--accent); border: 1px solid rgba(47,129,247,.2); }
-.stage-quritish   { background: var(--yellowbg);  color: var(--yellow); border: 1px solid rgba(210,153,34,.2); }
-.stage-bezak      { background: var(--purplebg);  color: var(--purple); border: 1px solid rgba(163,113,247,.2); }
-.stage-yetkazish  { background: var(--orangebg);  color: var(--orange); border: 1px solid rgba(240,136,62,.2); }
-.stage-tugallandi { background: var(--greenbg);   color: var(--green);  border: 1px solid rgba(63,185,80,.2); }
-
-/* ── Assign modal ── */
-.assign-worker-list {
+/* ── Assign modal items ── */
+.assign-driver-list {
   display: flex; flex-direction: column; gap: 6px;
-  max-height: 260px; overflow-y: auto;
+  max-height: 280px; overflow-y: auto;
 }
-.assign-worker-item {
+.assign-driver-item {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; border-radius: var(--r);
   background: var(--bg3); border: 1px solid var(--border);
   cursor: pointer; transition: all var(--t);
 }
-.assign-worker-item:hover  { border-color: var(--accent); background: var(--accentbg); }
-.assign-worker-item.sel    { border-color: var(--accent); background: var(--accentbg); }
-.assign-worker-avatar {
+.assign-driver-item:hover { border-color: var(--accent); background: var(--accentbg); }
+.assign-driver-item.sel   { border-color: var(--accent); background: var(--accentbg); }
+.assign-driver-avatar {
   width: 32px; height: 32px; border-radius: 50%;
   background: var(--yellowbg); border: 2px solid var(--yellow);
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 13px; color: var(--yellow); flex-shrink: 0;
 }
-.assign-worker-section {
-  font-size: 10px; color: var(--text2);
-  text-transform: uppercase; letter-spacing: .3px;
-}
-
-/* ── Tg notify row ── */
-.od-notify-done {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 10px; color: var(--green);
-}
-
-/* ── Footer summary ── */
-.od-summary {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.od-summary-row { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
-.od-summary-item { display: flex; flex-direction: column; }
-.od-summary-label { font-size: 11px; color: var(--text2); }
-.od-summary-value { font-size: 16px; font-weight: 800; font-family: monospace; }
+.fgrid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.fg { display: flex; flex-direction: column; gap: 4px; }

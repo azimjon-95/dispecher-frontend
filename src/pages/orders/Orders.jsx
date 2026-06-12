@@ -83,12 +83,18 @@ function KanbanCard({ order, col, drivers, employees, onDetail, onAdvance, onAss
           )}
         </div>
       )}
-      {order.description && (
+      {/* Item summary: "2 ta Gilam, 1 ta Ko'rpa" */}
+      {order.itemSummary ? (
+        <div style={{fontSize:10,color:'var(--text2)',marginBottom:3,display:'flex',alignItems:'center',gap:4}}>
+          <span>📋</span>
+          <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:140}}>{order.itemSummary}</span>
+        </div>
+      ) : order.description ? (
         <div className="kb-card-desc">{order.description}</div>
-      )}
+      ) : null}
       <div className="kb-card-footer">
         <span className="kb-card-price">{fmt.currency(order.total)}</span>
-        {order.itemCount>0 && <span className="kb-card-items">{order.itemCount} mahsulot</span>}
+        {order.itemCount>0 && <span className="kb-card-items">{order.itemCount} ta</span>}
       </div>
 
       {/* Actions */}

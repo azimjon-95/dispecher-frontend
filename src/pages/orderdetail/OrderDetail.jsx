@@ -1,91 +1,214 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   MdArrowBack, MdAdd, MdEdit, MdDelete, MdPersonAdd,
-  MdDirectionsCar, MdArrowForward, MdCheck, MdAttachMoney,
-  MdPhone, MdLocationOn
+  MdDirectionsCar, MdCheck, MdPhone, MdLocationOn,
+  MdRefresh, MdAttachMoney
 } from 'react-icons/md'
 import { api, fmt } from '../../services/api.js'
-import { Modal, Confirm, Sbadge, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
+import { Modal, Confirm, Sbadge, toast, Loader } from '../../components/ui/UI.jsx'
 import './OrderDetail.css'
 
-/* ── Constants ── */
-const ETAPLAR = [
-  { key:'qabul',      label:'Qabul',     icon:'📥', color:'var(--accent)' },
-  { key:'yuvish',     label:'Yuvish',    icon:'🫧', color:'#58a6ff' },
-  { key:'quritish',   label:'Quritish',  icon:'💨', color:'var(--orange)' },
-  { key:'bezak',      label:'Bezak',     icon:'✨', color:'var(--purple)' },
-  { key:'yetkazish',  label:'Yetkazish', icon:'🚚', color:'#f0883e' },
-  { key:'tugallandi', label:'Tayyor',    icon:'✅', color:'var(--green)' },
+/* ── Stage config ── */
+const STAGES = [
+  { key:'qabul',      label:'Qabul',    icon:'📥', color:'#3B82F6' },
+  { key:'yuvish',     label:'Yuvish',   icon:'🫧', color:'#58a6ff' },
+  { key:'quritish',   label:'Quritish', icon:'💨', color:'#f97316' },
+  { key:'bezak',      label:'Bezak',    icon:'✨', color:'#a78bfa' },
+  { key:'yetkazish',  label:'Yetkazish',icon:'🚚', color:'#f0883e' },
+  { key:'tugallandi', label:'Tayyor',   icon:'✅', color:'#22c55e' },
 ]
-const ETAP_NEXT = { qabul:'yuvish', yuvish:'quritish', quritish:'bezak', bezak:'yetkazish', yetkazish:'tugallandi', tugallandi:'tugallandi' }
-
+const NEXT = {
+  qabul:'yuvish', yuvish:'quritish', quritish:'bezak',
+  bezak:'yetkazish', yetkazish:'tugallandi', tugallandi:'tugallandi'
+}
 const ITEM_TYPES = [
-  { key:'gilam',  label:'Gilam',   unit:'sqm',  icon:'🟫', defaultPrice:15000 },
-  { key:'kurpa',  label:"Ko'rpa",  unit:'dona', icon:'🛏️', defaultPrice:25000 },
-  { key:'adyol',  label:'Adyol',   unit:'dona', icon:'🧸', defaultPrice:20000 },
-  { key:'yostiq', label:'Yostiq',  unit:'dona', icon:'💤', defaultPrice:8000  },
-  { key:'parda',  label:'Parda',   unit:'dona', icon:'🪟', defaultPrice:12000 },
-  { key:'kiyim',  label:'Kiyim',   unit:'dona', icon:'👕', defaultPrice:8000  },
-  { key:'boshqa', label:'Boshqa',  unit:'dona', icon:'📦', defaultPrice:10000 },
+  { key:'gilam',  label:'Gilam',  unit:'sqm',  icon:'🟫', price:15000 },
+  { key:'kurpa',  label:"Ko'rpa", unit:'dona', icon:'🛏️', price:25000 },
+  { key:'adyol',  label:'Adyol',  unit:'dona', icon:'🧸', price:20000 },
+  { key:'yostiq', label:'Yostiq', unit:'dona', icon:'💤', price:8000  },
+  { key:'parda',  label:'Parda',  unit:'dona', icon:'🪟', price:12000 },
+  { key:'kiyim',  label:'Kiyim',  unit:'dona', icon:'👕', price:8000  },
+  { key:'boshqa', label:'Boshqa', unit:'dona', icon:'📦', price:10000 },
 ]
-
-const EMPTY_ITEM = { itemType:'gilam', name:'Gilam', unit:'sqm', width:'', length:'', qty:1, pricePerUnit:15000, description:'' }
+const EMPTY = { itemType:'gilam', name:'Gilam', unit:'sqm', width:'', length:'', qty:1, pricePerUnit:15000 }
 
 function norm(r) {
-  if (!r || r.status !== 'fulfilled') return []
-  const v = r.value
+  const v = r?.value ?? r
   if (Array.isArray(v)) return v
   if (Array.isArray(v?.data)) return v.data
   return []
 }
 
-function StageBadge({ stage }) {
-  const e = ETAPLAR.find(x=>x.key===stage) || { label:stage, icon:'?', color:'var(--text3)' }
+/* ── Stage badge ── */
+function StagePill({ stage }) {
+  const s = STAGES.find(x=>x.key===stage) || { label:stage, icon:'?', color:'#64748b' }
   return (
     <span style={{
-      display:'inline-flex', alignItems:'center', gap:4,
-      padding:'2px 8px', borderRadius:99,
-      background: e.color+'22', color: e.color,
-      border:`1px solid ${e.color}44`,
-      fontSize:11, fontWeight:700,
+      display:'inline-flex', alignItems:'center', gap:5,
+      padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:700,
+      background:`${s.color}18`, color:s.color, border:`1px solid ${s.color}35`,
     }}>
-      {e.icon} {e.label}
+      {s.icon} {s.label}
     </span>
   )
 }
 
-function TgIcon() {
-  return <svg style={{width:12,height:12,flexShrink:0}} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248-2.012 9.48c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L6.26 14.4l-2.95-.924c-.64-.203-.654-.64.136-.948l11.52-4.443c.534-.194 1.001.13.596.163z"/></svg>
+/* ── Stage progress bar ── */
+function StageBar({ items }) {
+  const stageCounts = useMemo(() => {
+    const m = {}
+    STAGES.forEach(s => { m[s.key] = 0 })
+    items.forEach(i => { if (m[i.stage] !== undefined) m[i.stage]++ })
+    return m
+  }, [items])
+
+  const dominantIdx = useMemo(() => {
+    for (let i = STAGES.length-1; i >= 0; i--) {
+      if (items.some(x => x.stage === STAGES[i].key)) return i
+    }
+    return 0
+  }, [items])
+
+  return (
+    <div style={{ display:'flex', gap:4, marginBottom:16 }}>
+      {STAGES.map((s, idx) => {
+        const cnt   = stageCounts[s.key]
+        const done  = idx < dominantIdx
+        const cur   = idx === dominantIdx
+        return (
+          <div key={s.key} style={{
+            flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4,
+          }}>
+            <div style={{
+              width:'100%', height:4, borderRadius:99,
+              background: done ? s.color : cur ? s.color : 'var(--bg4)',
+              opacity: done ? 0.6 : cur ? 1 : 0.3,
+              transition:'all .3s',
+            }}/>
+            <div style={{
+              fontSize:9, fontWeight:cur||done?700:400,
+              color: cur ? s.color : done ? s.color : 'var(--text3)',
+              display:'flex', alignItems:'center', gap:2,
+              opacity: cur||done ? 1 : 0.4,
+            }}>
+              {s.icon} {cnt > 0 && <span style={{ background:s.color, color:'#fff', borderRadius:99, padding:'0 4px', fontSize:8 }}>{cnt}</span>}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ── Item card ── */
+function ItemCard({ item, workers, onAdvance, onAssign, onEdit, onDelete }) {
+  const stage   = STAGES.find(s => s.key === item.stage) || STAGES[0]
+  const assign  = item.assignments?.find(a => a.stage === item.stage && !a.doneAt)
+  const typeInfo= ITEM_TYPES.find(t => t.key === item.itemType)
+  const needW   = ['yuvish','quritish','bezak'].includes(item.stage)
+  const canAdv  = item.stage !== 'tugallandi'
+
+  return (
+    <div className="od-item-card" style={{ '--stage-c': stage.color, opacity: item._pending ? 0.7 : 1 }}>
+      {/* Left accent */}
+      <div style={{ position:'absolute', left:0, top:0, bottom:0, width:3, background:stage.color, borderRadius:'4px 0 0 4px' }}/>
+
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:8 }}>
+        <span style={{ fontSize:18, flexShrink:0 }}>{typeInfo?.icon || '📦'}</span>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontWeight:700, fontSize:13 }}>{item.name}</div>
+          <div style={{ fontSize:11, color:'var(--text2)', marginTop:2 }}>
+            {item.unit==='sqm'
+              ? `${item.width||0}m × ${item.length||0}m = ${item.sqm||0} kv.m · ${fmt.currency(item.pricePerUnit)}/kv.m`
+              : `${item.qty||1} dona · ${fmt.currency(item.pricePerUnit)}/dona`
+            }
+          </div>
+        </div>
+        <div style={{ textAlign:'right', flexShrink:0 }}>
+          <div style={{ fontWeight:800, fontSize:14, color:'var(--green)', fontFamily:'monospace' }}>
+            {fmt.currency(item.totalPrice)}
+          </div>
+          <StagePill stage={item.stage}/>
+        </div>
+      </div>
+
+      {/* Assigned worker */}
+      {assign && (
+        <div style={{
+          display:'flex', alignItems:'center', gap:6,
+          padding:'5px 8px', borderRadius:'var(--r)',
+          background:'rgba(163,113,247,.08)', border:'1px solid rgba(163,113,247,.15)',
+          fontSize:11, marginBottom:6,
+        }}>
+          <span>👷</span>
+          <span style={{ fontWeight:600, color:'#a78bfa' }}>{assign.workerName}</span>
+          <span style={{ color:'var(--text3)' }}>— {stage.label} bosqichida</span>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
+        {/* Assign worker button */}
+        {needW && (
+          <button className="btn btn-ghost btn-sm"
+            style={{ fontSize:11, color:'#a78bfa', borderColor:'rgba(163,113,247,.25)' }}
+            onClick={() => onAssign(item)}>
+            <MdPersonAdd size={12}/>
+            {assign ? `${assign.workerName} ✓` : 'Ishchi biriktir'}
+          </button>
+        )}
+
+        {/* Advance button */}
+        {canAdv && (assign || item.stage==='qabul') && (
+          <button className="btn btn-ghost btn-sm"
+            style={{ fontSize:11, color:'var(--green)', borderColor:'rgba(34,197,94,.25)' }}
+            onClick={() => onAdvance(item)}>
+            <MdCheck size={12}/>
+            {stage.label} tugallandi
+          </button>
+        )}
+
+        <div style={{ flex:1 }}/>
+
+        {/* Edit / Delete */}
+        <button className="btn btn-ghost btn-icon btn-sm" onClick={() => onEdit(item)}>
+          <MdEdit size={13}/>
+        </button>
+        <button className="btn btn-ghost btn-icon btn-sm" style={{ color:'var(--red)' }}
+          onClick={() => onDelete(item._id)}>
+          <MdDelete size={13}/>
+        </button>
+      </div>
+    </div>
+  )
 }
 
 /* ══════════════════════════════════════════
-   MAIN
+   MAIN COMPONENT
 ══════════════════════════════════════════ */
 export default function OrderDetail({ order: initialOrder, onBack }) {
-  const [order,    setOrder]    = useState(initialOrder)
-  const [items,    setItems]    = useState([])
-  const [workers,  setWorkers]  = useState([])
-  const [drivers,  setDrivers]  = useState([])
-  const [prices,   setPrices]   = useState([])
-  const [loading,  setLoading]  = useState(true)
-
-  /* Forms */
-  const [newItem,    setNewItem]    = useState(EMPTY_ITEM)
-  const [addingItem, setAddingItem] = useState(false)
+  const [order,   setOrder]   = useState(initialOrder)
+  const [items,   setItems]   = useState([])
+  const [workers, setWorkers] = useState([])
+  const [drivers, setDrivers] = useState([])
+  const [prices,  setPrices]  = useState([])
+  const [loading, setLoading] = useState(true)
+  const [newItem, setNewItem] = useState(EMPTY)
+  const [adding,  setAdding]  = useState(false)
 
   /* Modals */
-  const [assignWorkerModal, setAssignWorkerModal] = useState(null)
-  const [assignDriverModal, setAssignDriverModal] = useState(null)
-  const [selWorker,  setSelWorker]  = useState(null)
-  const [selDriver,  setSelDriver]  = useState(null)
-  const [delItemId,  setDelItemId]  = useState(null)
-  const [editModal,  setEditModal]  = useState(null)
-  const [editForm,   setEditForm]   = useState({})
-  const [advConfirm, setAdvConfirm] = useState(null)
+  const [assignModal, setAssignModal]   = useState(null)  // item
+  const [driverModal, setDriverModal]   = useState(false)
+  const [advModal,    setAdvModal]      = useState(null)  // item
+  const [delId,       setDelId]         = useState(null)
+  const [editModal,   setEditModal]     = useState(null)  // item
+  const [editForm,    setEditForm]      = useState({})
+  const [selWorker,   setSelWorker]     = useState(null)
+  const [selDriver,   setSelDriver]     = useState(null)
 
-  useEffect(() => { loadAll() }, [order._id])
-
-  async function loadAll() {
+  /* Load all data */
+  const loadAll = useCallback(async () => {
     setLoading(true)
     try {
       const [itsR, wsR, drR, prR] = await Promise.allSettled([
@@ -94,41 +217,42 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
         api.getDrivers(),
         api.getPrices(),
       ])
-      setItems(norm(itsR))
-      setWorkers(norm(wsR).filter(w=>w.status==='active'&&w.role==='Ishchi'))
-      setDrivers(norm(drR).filter(d=>d.status!=='dam'))
-      setPrices(norm(prR))
+      const its = norm(itsR.status==='fulfilled' ? itsR : { value:[] })
+      setItems(its)
+      setWorkers(norm(wsR.status==='fulfilled' ? wsR : { value:[] }).filter(w=>w.status==='active'&&w.role==='Ishchi'))
+      setDrivers(norm(drR.status==='fulfilled' ? drR : { value:[] }).filter(d=>d.status!=='dam'))
+      setPrices(norm(prR.status==='fulfilled' ? prR : { value:[] }))
     } catch(e) { toast(e.message,'err') }
     finally { setLoading(false) }
-  }
+  }, [order._id])
 
-  /* ── Auto-fill price on type change ── */
-  function handleTypeChange(e) {
-    const type   = e.target.value
-    const found  = ITEM_TYPES.find(t=>t.key===type)
-    const priceRec = prices.find(p=>p.itemType===type)
+  useEffect(() => { loadAll() }, [loadAll])
+
+  /* ── Item type change ── */
+  function onTypeChange(e) {
+    const type = e.target.value
+    const t    = ITEM_TYPES.find(x => x.key === type)
+    const pr   = prices.find(p => p.itemType === type)
     setNewItem(p => ({
-      ...p,
-      itemType:     type,
-      name:         found?.label || '',
-      unit:         found?.unit  || 'dona',
-      pricePerUnit: priceRec?.price || found?.defaultPrice || '',
+      ...p, itemType:type, name:t?.label||'',
+      unit:t?.unit||'dona', pricePerUnit:pr?.price||t?.price||0,
     }))
   }
 
   /* ── Preview price ── */
   const previewPrice = useMemo(() => {
-    if (newItem.unit==='sqm') return Math.round(parseFloat(newItem.width||0)*parseFloat(newItem.length||0)*(parseFloat(newItem.pricePerUnit)||0))
+    if (newItem.unit==='sqm')
+      return Math.round(parseFloat(newItem.width||0)*parseFloat(newItem.length||0)*(parseFloat(newItem.pricePerUnit)||0))
     return Math.round((parseInt(newItem.qty)||1)*(parseFloat(newItem.pricePerUnit)||0))
   }, [newItem])
 
   /* ── Add item ── */
   async function addItem() {
-    if (addingItem) return
-    if (!newItem.name) { toast('Mahsulot nomini kiriting!','err'); return }
+    if (adding) return
     if (!newItem.pricePerUnit) { toast('Narxni kiriting!','err'); return }
-    if (newItem.unit==='sqm' && (!newItem.width||!newItem.length)) { toast("Eni va uzunligini kiriting!",'err'); return }
-
+    if (newItem.unit==='sqm' && (!newItem.width||!newItem.length)) {
+      toast('Eni va uzunligini kiriting!','err'); return
+    }
     const payload = {
       orderId:      order._id,
       orderNumber:  order.number,
@@ -139,203 +263,264 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
       pricePerUnit: parseFloat(newItem.pricePerUnit)||0,
     }
     const sqm   = payload.unit==='sqm' ? Math.round(parseFloat(payload.width||0)*parseFloat(payload.length||0)*100)/100 : 0
-    const price = payload.unit==='sqm' ? Math.round(sqm*(payload.pricePerUnit||0)) : Math.round((payload.qty||1)*(payload.pricePerUnit||0))
+    const price = payload.unit==='sqm' ? Math.round(sqm*payload.pricePerUnit) : Math.round((payload.qty||1)*payload.pricePerUnit)
 
-    // Optimistic
-    const tempId = '_tmp_'+Date.now()
-    const temp   = { _id:tempId, ...payload, sqm, totalPrice:price, stage:'qabul', assignments:[], _pending:true }
-    setItems(p=>[...p, temp])
-    setNewItem(EMPTY_ITEM)
-    setAddingItem(true)
-
+    const tempId = '_tmp_' + Date.now()
+    setItems(p => [...p, { _id:tempId, ...payload, sqm, totalPrice:price, stage:'qabul', assignments:[], _pending:true }])
+    setNewItem(EMPTY)
+    setAdding(true)
     try {
-      const rec   = await api.createOrderItem(payload)
-      const saved = rec?.data || rec
+      const res   = await api.createOrderItem(payload)
+      const saved = res?.data || res
       if (saved?._id) {
-        setItems(p=>p.map(i=>i._id===tempId?saved:i))
-        toast(`"${saved.name}" qo'shildi ✅`,'ok')
-        // Update order total
-        setOrder(o=>({...o, total:(o.total||0)+price, itemCount:(o.itemCount||0)+1}))
-      } else {
-        toast(`"${payload.name}" saqlandi (offline)`,'inf')
-      }
+        setItems(p => p.map(i => i._id===tempId ? saved : i))
+        setOrder(o => ({ ...o, total:(o.total||0)+price, itemCount:(o.itemCount||0)+1 }))
+        toast(`"${saved.name}" qo'shildi ✅`, 'ok')
+      } else { toast(`"${payload.name}" offline saqlandi`, 'inf') }
     } catch(e) {
-      setItems(p=>p.filter(i=>i._id!==tempId))
-      setNewItem(payload)
-      toast(e.message,'err')
-    } finally { setAddingItem(false) }
+      setItems(p => p.filter(i => i._id!==tempId))
+      toast(e.message, 'err')
+    }
+    setAdding(false)
   }
 
-  /* ── Assign worker to item (stage O'ZGARMAYDI) ── */
-  async function confirmAssignWorker() {
-    if (!selWorker) { toast('Ishchini tanlang','err'); return }
+  /* ── Assign worker ── */
+  async function confirmAssign() {
+    if (!selWorker) return
+    const w = workers.find(x => x._id===selWorker)
     try {
-      const res = await api.assignWorker(assignWorkerModal._id, selWorker, assignWorkerModal.stage)
-      if (res) {
-        const data = res?.data || res
-        setItems(p=>p.map(i=>i._id===assignWorkerModal._id ? (data.item||i) : i))
-        toast(`${data.worker?.name || 'Ishchi'} biriktirildi ✅`,'ok')
-      }
+      const res = await api.assignWorker(assignModal._id, selWorker, assignModal.stage)
+      const data = res?.data || res
+      if (data?.item) setItems(p => p.map(i => i._id===assignModal._id ? data.item : i))
+      toast(`${w?.name} biriktirildi ✅`, 'ok')
     } catch(e) { toast(e.message,'err') }
-    setAssignWorkerModal(null); setSelWorker(null)
+    setAssignModal(null); setSelWorker(null)
   }
 
-  /* ── Advance stage (done click) ── */
+  /* ── Advance stage ── */
   async function doAdvance(item) {
     try {
-      const res = await api.advanceStage(item._id)
+      const res  = await api.advanceStage(item._id)
       const data = res?.data || res
-      setItems(p=>p.map(i=>i._id===item._id?(data.item||{...i,stage:data.nextStage||i.stage}):i))
-      const label = ETAPLAR.find(e=>e.key===data.nextStage)?.label || data.nextStage
-      toast(`"${item.name}" → ${label} ✅`,'ok')
-      if (data.earned > 0) toast(`💰 Ishchi balansiga +${fmt.currency(data.earned)} yozildi`,'ok')
-      // Bezak tugasa → avto yetkazish
-      if (data.nextStage==='yetkazish') toast('🚚 Yetkazish topshirig\'i avtomatik yaratildi!','ok')
+      setItems(p => p.map(i => i._id===item._id ? (data.item||{...i,stage:data.nextStage||i.stage}) : i))
+      const nextLabel = STAGES.find(s=>s.key===data.nextStage)?.label || ''
+      toast(`"${item.name}" → ${nextLabel} ✅`, 'ok')
+      if (data.earned>0) toast(`💰 Ishchi +${fmt.currency(data.earned)} oldi`, 'ok')
+      if (data.nextStage==='yetkazish') toast('🚚 Yetkazish topshirig\'i yaratildi!','ok')
       if (data.orderStatus) setOrder(o=>({...o, status:data.orderStatus}))
     } catch(e) { toast(e.message,'err') }
-    setAdvConfirm(null)
+    setAdvModal(null)
   }
 
-  /* ── Assign driver to order (for yetkazish) ── */
-  async function confirmAssignDriver() {
-    if (!selDriver) { toast('Shafyorni tanlang','err'); return }
-    const dr = drivers.find(d=>d._id===selDriver)
+  /* ── Assign driver ── */
+  async function confirmDriver() {
+    if (!selDriver) return
+    const dr = drivers.find(d => d._id===selDriver)
     try {
-      await api.updateOrder(order._id, { driver: dr.name })
-      setOrder(o=>({...o, driver:dr.name}))
-      toast(`${dr.name} buyurtmaga biriktirildi ✅`,'ok')
+      await api.updateOrder(order._id, { driver:dr.name })
+      setOrder(o => ({ ...o, driver:dr.name }))
+      toast(`${dr.name} biriktirildi ✅`, 'ok')
     } catch(e) { toast(e.message,'err') }
-    setAssignDriverModal(null); setSelDriver(null)
+    setDriverModal(false); setSelDriver(null)
   }
 
   /* ── Delete item ── */
   async function doDelete() {
+    const del = items.find(i => i._id===delId)
     try {
-      await api.deleteOrderItem(delItemId, order._id)
-      const del = items.find(i=>i._id===delItemId)
-      setItems(p=>p.filter(i=>i._id!==delItemId))
-      if (del) setOrder(o=>({...o, total:Math.max(0,(o.total||0)-(del.totalPrice||0)), itemCount:Math.max(0,(o.itemCount||0)-1)}))
-      toast("O'chirildi",'inf')
+      await api.deleteOrderItem(delId, order._id)
+      setItems(p => p.filter(i => i._id!==delId))
+      if (del) setOrder(o => ({ ...o,
+        total:    Math.max(0,(o.total||0)-(del.totalPrice||0)),
+        itemCount:Math.max(0,(o.itemCount||0)-1),
+      }))
+      toast("O'chirildi", 'inf')
     } catch(e) { toast(e.message,'err') }
-    setDelItemId(null)
+    setDelId(null)
   }
 
-  /* ── Computed ── */
-  const totalPrice    = items.reduce((s,i)=>s+(i.totalPrice||0),0)
-  const stageCounts   = useMemo(()=>{ const c={}; ETAPLAR.forEach(e=>{c[e.key]=0}); items.forEach(i=>{if(c[i.stage]!==undefined)c[i.stage]++}); return c },[items])
-  const dominantStage = useMemo(()=>{
-    const priority = ['yetkazish','bezak','quritish','yuvish','qabul','tugallandi']
-    for (const s of priority) { if (items.some(i=>i.stage===s)) return s }
-    return 'qabul'
-  },[items])
+  /* ── Edit save ── */
+  async function saveEdit() {
+    try {
+      const res  = await api.updateOrderItem(editModal, editForm)
+      const saved = res?.data || res
+      setItems(p => p.map(i => i._id===editModal ? (saved||{...i,...editForm}) : i))
+      toast('Yangilandi ✅','ok')
+    } catch(e) { toast(e.message,'err') }
+    setEditModal(null)
+  }
+
+  /* Totals */
+  const totalPrice = items.reduce((s,i)=>s+(i.totalPrice||0),0)
+
+  /* Item summary string */
+  const itemSummary = useMemo(() => {
+    const counts = {}
+    items.forEach(i => {
+      const n = i.name || i.itemType || 'Mahsulot'
+      counts[n] = (counts[n]||0)+1
+    })
+    return Object.entries(counts).map(([n,c])=>`${c} ta ${n}`).join(', ')
+  }, [items])
+
+  const inputStyle = {
+    display:'flex', flex:1, flexDirection:'column', gap:4
+  }
 
   return (
     <div className="od-wrap">
-      {/* Back */}
-      <button className="btn btn-ghost btn-sm" onClick={onBack} style={{marginBottom:14}}>
-        <MdArrowBack size={15}/> Orqaga
-      </button>
-
-      {/* ── Order header ── */}
-      <div className="od-header">
-        <div className="od-header-left">
-          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
-            <div className="od-order-num">{order.number}</div>
-            <StageBadge stage={order.status?.replace('da','').replace('_qilindi','') || dominantStage}/>
-          </div>
-          <div className="od-customer">{order.customer}</div>
-          {order.phone && (
-            <div className="od-phone-row" style={{display:'flex',alignItems:'center',gap:8,marginTop:4}}>
-              <a href={`https://t.me/+${(order.phone||'').replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer"
-                style={{display:'inline-flex',alignItems:'center',gap:5,padding:'3px 8px',borderRadius:99,background:'rgba(34,158,217,.15)',color:'#229ED9',textDecoration:'none',fontSize:12,fontWeight:600}}>
-                <TgIcon/> {order.phone}
-              </a>
-            </div>
-          )}
-          {order.address && <div style={{fontSize:12,color:'var(--text2)',marginTop:4,display:'flex',alignItems:'center',gap:4}}><MdLocationOn size={13}/> {order.address}</div>}
-          {order.description && <div style={{fontSize:12,color:'var(--text3)',marginTop:3,fontStyle:'italic'}}>📋 {order.description}</div>}
-          {order.driver && (
-            <div style={{marginTop:6,display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:600,color:'var(--orange)'}}>
-              <MdDirectionsCar size={14}/> Shafyor: {order.driver}
-              <button className="btn btn-ghost btn-sm" style={{fontSize:10,padding:'2px 6px'}} onClick={()=>{setAssignDriverModal(true);setSelDriver(null)}}>
-                🔄 Almashtirish
-              </button>
-            </div>
-          )}
-        </div>
-        <div className="od-header-right">
-          <div className="od-total-box">
-            <div className="od-total-label">Jami narx</div>
-            <div className="od-total-val" style={{color:'var(--green)'}}>{fmt.currency(totalPrice)}</div>
-          </div>
-          <div style={{display:'flex',gap:6,marginTop:8,flexWrap:'wrap'}}>
-            {!order.driver && (
-              <button className="btn btn-primary btn-sm" onClick={()=>{setAssignDriverModal(true);setSelDriver(null)}}>
-                <MdDirectionsCar size={13}/> Shafyor biriktirish
-              </button>
-            )}
-          </div>
-        </div>
+      {/* ── Back ── */}
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+        <button className="btn btn-ghost btn-sm" onClick={onBack}>
+          <MdArrowBack size={15}/> Orqaga
+        </button>
+        <button className="btn btn-ghost btn-icon btn-sm" onClick={loadAll} title="Yangilash">
+          <MdRefresh size={15}/>
+        </button>
       </div>
 
-      {/* ── Pipeline progress ── */}
-      <div className="od-pipeline">
-        {ETAPLAR.map(e=>{
-          const count   = stageCounts[e.key]||0
-          const allIdx  = ETAPLAR.findIndex(x=>x.key===e.key)
-          const domIdx  = ETAPLAR.findIndex(x=>x.key===dominantStage)
-          const isDone  = allIdx < domIdx
-          const isCur   = e.key === dominantStage
+      {/* ── Order header card ── */}
+      <div className="card od-header-card">
+        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+          <div>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
+              <span style={{ fontSize:22, fontWeight:900, color:'var(--accent)', fontFamily:'monospace' }}>
+                {order.number}
+              </span>
+              <StagePill stage={order.status?.replace('da','').replace('_qilindi','') || 'qabul'}/>
+              {order.driver && (
+                <span style={{ fontSize:11, color:'var(--orange)', display:'flex', alignItems:'center', gap:4 }}>
+                  <MdDirectionsCar size={13}/> {order.driver}
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize:16, fontWeight:700, marginBottom:4 }}>{order.customer}</div>
+            {order.phone && (
+              <a href={`https://t.me/+${(order.phone||'').replace(/\D/g,'')}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:12,
+                  color:'#229ED9', background:'rgba(34,158,217,.1)',
+                  padding:'3px 8px', borderRadius:99, textDecoration:'none', marginBottom:4 }}>
+                <MdPhone size={11}/> {order.phone}
+              </a>
+            )}
+            {order.address && (
+              <div style={{ fontSize:11, color:'var(--text2)', display:'flex', alignItems:'center', gap:4 }}>
+                <MdLocationOn size={12}/> {order.address}
+              </div>
+            )}
+            {itemSummary && (
+              <div style={{ fontSize:11, color:'var(--text2)', marginTop:4, display:'flex', alignItems:'center', gap:4 }}>
+                📋 {itemSummary}
+              </div>
+            )}
+          </div>
+
+          <div style={{ textAlign:'right' }}>
+            <div style={{ fontSize:11, color:'var(--text2)', marginBottom:2 }}>Jami narx</div>
+            <div style={{ fontSize:22, fontWeight:900, color:'var(--green)', fontFamily:'monospace' }}>
+              {fmt.currency(totalPrice)}
+            </div>
+            <div style={{ display:'flex', gap:6, marginTop:8, justifyContent:'flex-end', flexWrap:'wrap' }}>
+              <button className="btn btn-primary btn-sm"
+                onClick={() => { setDriverModal(true); setSelDriver(null) }}>
+                <MdDirectionsCar size={13}/>
+                {order.driver ? 'Shafyor almashtir' : 'Shafyor biriktir'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Stage progress */}
+        {items.length > 0 && (
+          <div style={{ marginTop:14 }}>
+            <StageBar items={items}/>
+          </div>
+        )}
+      </div>
+
+      {/* ── Stage tabs ── */}
+      <div style={{ display:'flex', gap:4, marginBottom:14, overflowX:'auto', padding:'2px 0' }}>
+        {STAGES.map(s => {
+          const cnt = items.filter(i=>i.stage===s.key).length
           return (
-            <div key={e.key} className={`od-stage ${isDone?'done':''} ${isCur?'current':''}`}
-              style={{ '--stage-color': e.color }}>
-              <span className="od-stage-icon">{e.icon}</span>
-              <span className="od-stage-label">{e.label}</span>
-              {count>0 && <span className="od-stage-count">{count}</span>}
+            <div key={s.key} style={{
+              display:'flex', alignItems:'center', gap:5,
+              padding:'6px 12px', borderRadius:'var(--r)', flexShrink:0,
+              background: cnt>0 ? `${s.color}14` : 'var(--bg2)',
+              border: `1px solid ${cnt>0 ? s.color+'30' : 'var(--border)'}`,
+              fontSize:12, fontWeight:cnt>0?700:400,
+              color: cnt>0 ? s.color : 'var(--text3)',
+            }}>
+              {s.icon} {s.label}
+              {cnt>0 && (
+                <span style={{ background:s.color, color:'#fff', borderRadius:99,
+                  width:16, height:16, display:'flex', alignItems:'center', justifyContent:'center',
+                  fontSize:9, fontWeight:800 }}>{cnt}</span>
+              )}
             </div>
           )
         })}
       </div>
 
       {/* ── Add item form ── */}
-      <div className="od-add-section">
-        <div className="od-add-title"><MdAdd size={15}/> Mahsulot qo'shish</div>
+      <div className="card od-add-card">
+        <div style={{ fontWeight:700, fontSize:13, marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
+          <MdAdd size={16} style={{ color:'var(--accent)' }}/> Mahsulot qo'shish
+        </div>
+
         <div className="od-add-grid">
-          <div className="fg">
+          {/* Type */}
+          <div style={inputStyle}>
             <label className="flabel">Turi</label>
-            <select className="fselect" value={newItem.itemType} onChange={handleTypeChange}>
-              {ITEM_TYPES.map(t=><option key={t.key} value={t.key}>{t.icon} {t.label}</option>)}
+            <select className="fselect" value={newItem.itemType} onChange={onTypeChange}>
+              {ITEM_TYPES.map(t => (
+                <option key={t.key} value={t.key}>{t.icon} {t.label}</option>
+              ))}
             </select>
           </div>
 
-          {newItem.unit==='sqm' ? (<>
-            <div className="fg"><label className="flabel">Eni (m)</label>
-              <input className="finput" type="number" step="0.1" min="0" placeholder="2.5"
-                value={newItem.width} onChange={e=>setNewItem(p=>({...p,width:e.target.value}))}/></div>
-            <div className="fg"><label className="flabel">Uzunligi (m)</label>
-              <input className="finput" type="number" step="0.1" min="0" placeholder="3.0"
-                value={newItem.length} onChange={e=>setNewItem(p=>({...p,length:e.target.value}))}/></div>
-          </>) : (
-            <div className="fg"><label className="flabel">Soni</label>
+          {/* Size or qty */}
+          {newItem.unit==='sqm' ? (
+            <>
+              <div style={inputStyle}>
+                <label className="flabel">Eni (m)</label>
+                <input className="finput" type="number" step="0.1" min="0" placeholder="2.5"
+                  value={newItem.width}
+                  onChange={e => setNewItem(p=>({...p,width:e.target.value}))}/>
+              </div>
+              <div style={inputStyle}>
+                <label className="flabel">Uzunligi (m)</label>
+                <input className="finput" type="number" step="0.1" min="0" placeholder="3.0"
+                  value={newItem.length}
+                  onChange={e => setNewItem(p=>({...p,length:e.target.value}))}/>
+              </div>
+            </>
+          ) : (
+            <div style={inputStyle}>
+              <label className="flabel">Soni</label>
               <input className="finput" type="number" min="1" value={newItem.qty}
-                onChange={e=>setNewItem(p=>({...p,qty:e.target.value}))}/></div>
+                onChange={e => setNewItem(p=>({...p,qty:e.target.value}))}/>
+            </div>
           )}
 
-          <div className="fg">
-            <label className="flabel">Narx (1 {newItem.unit==='sqm'?'kv.m':'dona'})</label>
-            <input className="finput" type="number" min="0" placeholder="15000"
-              value={newItem.pricePerUnit} onChange={e=>setNewItem(p=>({...p,pricePerUnit:e.target.value}))}/>
+          {/* Price */}
+          <div style={inputStyle}>
+            <label className="flabel">Narx / {newItem.unit==='sqm'?'kv.m':'dona'}</label>
+            <input className="finput" type="number" min="0" value={newItem.pricePerUnit}
+              onChange={e => setNewItem(p=>({...p,pricePerUnit:e.target.value}))}/>
           </div>
 
-          <div className="fg">
-            <label className="flabel">&nbsp;</label>
-            <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <span style={{fontFamily:'monospace',fontWeight:800,fontSize:14,color:'var(--green)'}}>
-                = {fmt.currency(previewPrice)}
+          {/* Total + button */}
+          <div style={{ display:'flex', flexDirection:'column', gap:4, justifyContent:'flex-end' }}>
+            <label className="flabel">Jami</label>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ fontWeight:800, fontSize:15, fontFamily:'monospace', color:'var(--green)', minWidth:80 }}>
+                {fmt.currency(previewPrice)}
               </span>
-              <button className="btn btn-primary" onClick={addItem} disabled={addingItem}
-                style={{whiteSpace:'nowrap',opacity:addingItem?.7:1}}>
-                {addingItem?'⏳':'➕ Qo\'shish'}
+              <button className="btn btn-primary" onClick={addItem} disabled={adding}
+                style={{ whiteSpace:'nowrap', opacity:adding?0.7:1 }}>
+                {adding ? '⏳' : <><MdAdd size={14}/> Qo'shish</>}
               </button>
             </div>
           </div>
@@ -343,99 +528,47 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
       </div>
 
       {/* ── Items list ── */}
-      <div className="od-items-section">
-        <div className="od-items-title">
-          📦 Mahsulotlar — {items.length} ta
-          {totalPrice>0 && <span style={{marginLeft:8,fontFamily:'monospace',color:'var(--green)'}}>{fmt.currency(totalPrice)}</span>}
+      <div className="card" style={{ padding:0 }}>
+        {/* Header */}
+        <div style={{
+          display:'flex', alignItems:'center', justifyContent:'space-between',
+          padding:'12px 16px', borderBottom:'1px solid var(--border)',
+        }}>
+          <div style={{ fontWeight:700, fontSize:13 }}>
+            📦 Mahsulotlar — {items.length} ta
+            {totalPrice > 0 && (
+              <span style={{ marginLeft:8, fontFamily:'monospace', color:'var(--green)', fontSize:14 }}>
+                {fmt.currency(totalPrice)}
+              </span>
+            )}
+          </div>
+          {itemSummary && (
+            <div style={{ fontSize:11, color:'var(--text2)', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+              {itemSummary}
+            </div>
+          )}
         </div>
 
+        {/* List */}
         {loading ? (
-          <div style={{padding:32,textAlign:'center',color:'var(--text3)'}}>⏳ Yuklanmoqda...</div>
+          <div style={{ padding:32, display:'flex', justifyContent:'center' }}>
+            <Loader size="md" text="Mahsulotlar yuklanmoqda..."/>
+          </div>
         ) : items.length===0 ? (
-          <div style={{padding:32,textAlign:'center',color:'var(--text3)'}}>
-            <div style={{fontSize:28,marginBottom:8}}>📭</div>
-            Mahsulot qo'shilmagan. Yuqoridan qo'shing.
+          <div style={{ padding:40, textAlign:'center', color:'var(--text3)' }}>
+            <div style={{ fontSize:32, marginBottom:8 }}>📭</div>
+            <div>Mahsulot qo'shilmagan. Yuqoridan qo'shing.</div>
           </div>
         ) : (
-          <div className="od-items-list">
-            {items.map(item=>{
-              const etap  = ETAPLAR.find(e=>e.key===item.stage) || ETAPLAR[0]
-              const assign = item.assignments?.find(a=>a.stage===item.stage&&!a.doneAt)
-              const canAdv = item.stage!=='tugallandi'
-              const needWorker = ['yuvish','quritish','bezak'].includes(item.stage)
-
-              return (
-                <div key={item._id} className="od-item-card" style={{opacity:item._pending?.7:1, '--item-color':etap.color}}>
-                  {/* Item header */}
-                  <div className="od-item-hd">
-                    <div style={{display:'flex',alignItems:'center',gap:8,flex:1}}>
-                      <span style={{fontSize:16}}>{ITEM_TYPES.find(t=>t.key===item.itemType)?.icon||'📦'}</span>
-                      <div>
-                        <div style={{fontWeight:700,fontSize:13}}>{item.name}</div>
-                        <div style={{fontSize:11,color:'var(--text2)'}}>
-                          {item.unit==='sqm'
-                            ? `${item.width||0} × ${item.length||0} = ${item.sqm||0} kv.m`
-                            : `${item.qty||1} dona`
-                          }
-                          {' · '}{fmt.currency(item.pricePerUnit)}/{item.unit==='sqm'?'kv.m':'dona'}
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{display:'flex',alignItems:'center',gap:8}}>
-                      <span style={{fontFamily:'monospace',fontWeight:800,color:'var(--green)',fontSize:13}}>
-                        {fmt.currency(item.totalPrice)}
-                      </span>
-                      <StageBadge stage={item.stage}/>
-                      {item._pending && <span style={{fontSize:9,color:'var(--yellow)',fontWeight:700}}>⏳</span>}
-                    </div>
-                  </div>
-
-                  {/* Assigned worker */}
-                  {assign && (
-                    <div style={{padding:'5px 10px',background:'var(--bg3)',borderRadius:'var(--r)',margin:'4px 0',fontSize:11,display:'flex',alignItems:'center',gap:6}}>
-                      👷 <span style={{fontWeight:600}}>{assign.workerName}</span>
-                      <span style={{color:'var(--text3)'}}>{etap.label} bosqichida ishlayapti</span>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="od-item-actions">
-                    {/* Ishchi biriktirish */}
-                    {needWorker && (
-                      <button className="btn btn-ghost btn-sm"
-                        style={{fontSize:11,color:'var(--purple)',borderColor:'rgba(163,113,247,.3)'}}
-                        onClick={()=>{setAssignWorkerModal(item);setSelWorker(assign?.workerId||null)}}>
-                        <MdPersonAdd size={12}/>
-                        {assign ? `${assign.workerName} ✓` : 'Ishchi biriktirish'}
-                      </button>
-                    )}
-
-                    {/* Bosqichni tugatdi → keyingiga */}
-                    {canAdv && assign && (
-                      <button className="btn btn-ghost btn-sm"
-                        style={{fontSize:11,color:'var(--green)',borderColor:'rgba(63,185,80,.3)'}}
-                        onClick={()=>setAdvConfirm(item)}>
-                        <MdCheck size={12}/>
-                        {etap.label} tugallandi → {ETAPLAR.find(e=>e.key===ETAP_NEXT[item.stage])?.label}
-                      </button>
-                    )}
-
-                    {/* Agar assign yo'q va qabul bosqichida */}
-                    {item.stage==='qabul' && !assign && (
-                      <button className="btn btn-ghost btn-sm"
-                        style={{fontSize:11,color:'var(--yellow)',borderColor:'rgba(210,153,34,.3)'}}
-                        onClick={()=>setAdvConfirm(item)}>
-                        <MdArrowForward size={12}/> Yuvishga o'tkazish
-                      </button>
-                    )}
-
-                    <div style={{flex:1}}/>
-                    <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditForm({...item});setEditModal(item._id)}}><MdEdit size={13}/></button>
-                    <button className="btn btn-ghost btn-icon btn-sm" style={{color:'var(--red)'}} onClick={()=>setDelItemId(item._id)}><MdDelete size={13}/></button>
-                  </div>
-                </div>
-              )
-            })}
+          <div style={{ padding:'8px 12px', display:'flex', flexDirection:'column', gap:8 }}>
+            {items.map(item => (
+              <ItemCard key={item._id} item={item} workers={workers}
+                onAdvance={i => setAdvModal(i)}
+                onAssign={i => { setAssignModal(i); setSelWorker(item.assignments?.find(a=>a.stage===i.stage&&!a.doneAt)?.workerId||null) }}
+                onEdit={i => { setEditForm({...i}); setEditModal(i._id) }}
+                onDelete={id => setDelId(id)}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -443,56 +576,50 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
       {/* ══ MODALS ══ */}
 
       {/* Assign worker */}
-      <Modal open={!!assignWorkerModal} onClose={()=>{setAssignWorkerModal(null);setSelWorker(null)}}
-        title={`👷 Ishchi biriktirish — ${assignWorkerModal?.name||''}`} size="sm"
+      <Modal open={!!assignModal} onClose={()=>{setAssignModal(null);setSelWorker(null)}}
+        title={`👷 Ishchi biriktirish — ${assignModal?.name||''}`} size="sm"
         footer={<>
-          <button className="btn btn-ghost" onClick={()=>{setAssignWorkerModal(null);setSelWorker(null)}}>Bekor</button>
-          <button className="btn btn-primary" onClick={confirmAssignWorker} disabled={!selWorker}>✅ Biriktirish</button>
-        </>}
-      >
-        <div style={{fontSize:12,color:'var(--text2)',marginBottom:10}}>
-          Bosqich: <StageBadge stage={assignWorkerModal?.stage||'qabul'}/>
+          <button className="btn btn-ghost" onClick={()=>{setAssignModal(null);setSelWorker(null)}}>Bekor</button>
+          <button className="btn btn-primary" onClick={confirmAssign} disabled={!selWorker}>✅ Biriktirish</button>
+        </>}>
+        <div style={{ fontSize:12, color:'var(--text2)', marginBottom:10 }}>
+          Bosqich: <StagePill stage={assignModal?.stage||'qabul'}/>
         </div>
-        <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:260,overflowY:'auto'}}>
+        <div style={{ display:'flex', flexDirection:'column', gap:6, maxHeight:260, overflowY:'auto' }}>
           {workers.length===0
-            ? <div style={{textAlign:'center',padding:20,color:'var(--text3)'}}>Faol ishchi topilmadi</div>
-            : workers.map(w=>(
-                <div key={w._id}
-                  className={`assign-driver-item ${selWorker===w._id?'sel':''}`}
-                  onClick={()=>setSelWorker(w._id)}
-                >
-                  <div className="assign-driver-avatar" style={{background:'var(--purplebg)',borderColor:'var(--purple)',color:'var(--purple)'}}>{w.name[0]}</div>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:700,fontSize:13}}>{w.name}</div>
-                    <div style={{fontSize:11,color:'var(--text2)'}}>{w.section} · Balans: {fmt.currency(w.balance)}</div>
-                  </div>
-                  <Sbadge s={w.status}/>
+            ? <div style={{ textAlign:'center', padding:20, color:'var(--text3)' }}>Faol ishchi topilmadi</div>
+            : workers.map(w => (
+              <div key={w._id}
+                className={`assign-driver-item ${selWorker===w._id?'sel':''}`}
+                onClick={()=>setSelWorker(w._id)}>
+                <div className="assign-driver-avatar" style={{background:'var(--purplebg)',borderColor:'var(--purple)',color:'var(--purple)'}}>{w.name?.[0]}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700,fontSize:13}}>{w.name}</div>
+                  <div style={{fontSize:11,color:'var(--text2)'}}>{w.section} · Balans: {fmt.currency(w.balance)}</div>
                 </div>
-              ))
+                <Sbadge s={w.status}/>
+              </div>
+            ))
           }
         </div>
       </Modal>
 
       {/* Assign driver */}
-      <Modal open={!!assignDriverModal} onClose={()=>{setAssignDriverModal(null);setSelDriver(null)}}
+      <Modal open={driverModal} onClose={()=>{setDriverModal(false);setSelDriver(null)}}
         title="🚗 Shafyor biriktirish" size="sm"
         footer={<>
-          <button className="btn btn-ghost" onClick={()=>{setAssignDriverModal(null);setSelDriver(null)}}>Bekor</button>
-          <button className="btn btn-primary" onClick={confirmAssignDriver} disabled={!selDriver}>✅ Biriktirish</button>
-        </>}
-      >
+          <button className="btn btn-ghost" onClick={()=>{setDriverModal(false);setSelDriver(null)}}>Bekor</button>
+          <button className="btn btn-primary" onClick={confirmDriver} disabled={!selDriver}>✅ Biriktirish</button>
+        </>}>
         {order.driver && (
           <div style={{padding:'7px 10px',background:'var(--orangebg)',borderRadius:'var(--r)',marginBottom:10,fontSize:12,color:'var(--orange)',fontWeight:600}}>
-            ⚠️ Hozirgi shafyor: {order.driver}
+            ⚠️ Hozirgi: {order.driver}
           </div>
         )}
         <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:280,overflowY:'auto'}}>
           {drivers.map(d=>(
-            <div key={d._id}
-              className={`assign-driver-item ${selDriver===d._id?'sel':''}`}
-              onClick={()=>setSelDriver(d._id)}
-            >
-              <div className="assign-driver-avatar">{d.name[0]}</div>
+            <div key={d._id} className={`assign-driver-item ${selDriver===d._id?'sel':''}`} onClick={()=>setSelDriver(d._id)}>
+              <div className="assign-driver-avatar">{d.name?.[0]}</div>
               <div style={{flex:1}}>
                 <div style={{fontWeight:700,fontSize:13}}>{d.name}</div>
                 <div style={{fontSize:11,color:'var(--text2)'}}>{d.car} · {d.plate}</div>
@@ -504,35 +631,62 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
       </Modal>
 
       {/* Advance confirm */}
-      <Modal open={!!advConfirm} onClose={()=>setAdvConfirm(null)}
-        title={`✅ Bosqichni tugatish — ${advConfirm?.name||''}`} size="sm"
+      <Modal open={!!advModal} onClose={()=>setAdvModal(null)}
+        title={`✅ Bosqichni tugatish`} size="sm"
         footer={<>
-          <button className="btn btn-ghost" onClick={()=>setAdvConfirm(null)}>Bekor</button>
-          <button className="btn btn-success" onClick={()=>doAdvance(advConfirm)}>✅ Tugallandi</button>
-        </>}
-      >
-        <div style={{padding:'12px 14px',background:'var(--bg3)',borderRadius:'var(--r)',fontSize:13}}>
-          <div style={{fontWeight:700,marginBottom:6}}>{advConfirm?.name}</div>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <StageBadge stage={advConfirm?.stage||'qabul'}/>
-            <span style={{color:'var(--text3)'}}>→</span>
-            <StageBadge stage={ETAP_NEXT[advConfirm?.stage||'qabul']||'yuvish'}/>
+          <button className="btn btn-ghost" onClick={()=>setAdvModal(null)}>Bekor</button>
+          <button className="btn btn-success" onClick={()=>doAdvance(advModal)}>✅ Tugallandi</button>
+        </>}>
+        {advModal && (
+          <div style={{padding:'12px 14px',background:'var(--bg3)',borderRadius:'var(--r)'}}>
+            <div style={{fontWeight:700,marginBottom:8}}>{advModal.name}</div>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <StagePill stage={advModal.stage}/>
+              <span style={{color:'var(--text3)'}}>→</span>
+              <StagePill stage={NEXT[advModal.stage]||'yuvish'}/>
+            </div>
+            {['yuvish','quritish','bezak'].includes(advModal.stage) && (
+              <div style={{marginTop:8,fontSize:11,color:'var(--green)',fontWeight:600}}>
+                💰 Ishchi balansiga qo'shiladi
+              </div>
+            )}
+            {advModal.stage==='bezak' && (
+              <div style={{marginTop:4,fontSize:11,color:'var(--orange)',fontWeight:600}}>
+                🚚 Yetkazish topshirig'i avtomatik yaratiladi!
+              </div>
+            )}
           </div>
-          {['yuvish','quritish','bezak'].includes(advConfirm?.stage) && (
-            <div style={{marginTop:8,fontSize:11,color:'var(--green)',fontWeight:600}}>
-              💰 Ishchi balansiga qo'shiladi
-            </div>
+        )}
+      </Modal>
+
+      {/* Edit item */}
+      <Modal open={!!editModal} onClose={()=>setEditModal(null)}
+        title="✏️ Mahsulot tahrirlash" size="sm"
+        footer={<>
+          <button className="btn btn-ghost" onClick={()=>setEditModal(null)}>Bekor</button>
+          <button className="btn btn-primary" onClick={saveEdit}>Saqlash</button>
+        </>}>
+        <div className="fgrid2">
+          {editForm.unit==='sqm' ? <>
+            <div className="fg"><label className="flabel">Eni (m)</label>
+              <input className="finput" type="number" step="0.1" value={editForm.width||''}
+                onChange={e=>setEditForm(p=>({...p,width:+e.target.value}))}/></div>
+            <div className="fg"><label className="flabel">Uzunligi (m)</label>
+              <input className="finput" type="number" step="0.1" value={editForm.length||''}
+                onChange={e=>setEditForm(p=>({...p,length:+e.target.value}))}/></div>
+          </> : (
+            <div className="fg"><label className="flabel">Soni</label>
+              <input className="finput" type="number" value={editForm.qty||1}
+                onChange={e=>setEditForm(p=>({...p,qty:+e.target.value}))}/></div>
           )}
-          {advConfirm?.stage==='bezak' && (
-            <div style={{marginTop:4,fontSize:11,color:'#f0883e',fontWeight:600}}>
-              🚚 Bezak tugasa yetkazib berish topshirig'i avtomatik yaratiladi!
-            </div>
-          )}
+          <div className="fg"><label className="flabel">Narx</label>
+            <input className="finput" type="number" value={editForm.pricePerUnit||''}
+              onChange={e=>setEditForm(p=>({...p,pricePerUnit:+e.target.value}))}/></div>
         </div>
       </Modal>
 
       {/* Delete confirm */}
-      <Confirm open={!!delItemId} onClose={()=>setDelItemId(null)} onOk={doDelete}
+      <Confirm open={!!delId} onClose={()=>setDelId(null)} onOk={doDelete}
         title="Mahsulotni o'chirish" msg="Bu mahsulotni o'chirishni xohlaysizmi?" danger/>
     </div>
   )

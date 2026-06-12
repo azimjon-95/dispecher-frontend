@@ -156,12 +156,12 @@ export const api = {
   deleteOrder: id  => mutate('delete', `/orders/${id}`, null),
 
   /* Order Items */
-  getOrderItems:   orderId => withRetry(() => http.get(`/orders/${orderId}/items`)),
-  createOrderItem: b       => mutate('post', `/orders/${b.orderId}/items`, b),
-  updateOrderItem: (id,b)  => mutate('put', `/orders/${b.orderId||'x'}/items/${id}`, b),
-  deleteOrderItem: (id, orderId) => mutate('delete', `/orders/${orderId||'x'}/items/${id}`, null),
-  assignWorker:    (itemId, workerId, stage) => mutate('post', `/orders/x/items/${itemId}/assign`, { workerId, stage }),
-  advanceStage:    itemId => mutate('post', `/orders/x/items/${itemId}/advance`, {}),
+  getOrderItems:   orderId => withRetry(() => http.get(`/order-items?orderId=${orderId}`)),
+  createOrderItem: b       => mutate('post', '/order-items', b),
+  updateOrderItem: (id,b)  => mutate('put', `/order-items/${id}`, b),
+  deleteOrderItem: (id, orderId) => mutate('delete', `/order-items/${id}`, null),
+  assignWorker:    (itemId, workerId, stage) => mutate('post', `/order-items/${itemId}/assign`, { workerId, stage }),
+  advanceStage:    itemId => mutate('post', `/order-items/${itemId}/advance`, {}),
 
   /* Prices */
   getPrices:   () => withRetry(() => http.get('/prices')),
