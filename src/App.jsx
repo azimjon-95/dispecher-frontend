@@ -28,7 +28,20 @@ export default function App() {
     try {
       const token = localStorage.getItem('token')
       const saved = localStorage.getItem('user')
-      if (token && saved) return JSON.parse(saved)
+      if (!token || !saved) return null
+
+      // JWT muddatini tekshirish (client-side)
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          // Token muddati o'tgan — tozala
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+          return null
+        }
+      } catch {}
+
+      return JSON.parse(saved)
     } catch {}
     return null
   })
@@ -40,6 +53,23 @@ export default function App() {
 
   /* Real-time badge counts */
   const [badges, setBadges] = useState({ orders: 0, transport: 0 })
+
+  /* ── Token expired listener ── */
+  useEffect(() => {
+    function onAuthExpired(e) {
+      // Token yaroqsiz — localStorage tozalab loginga o'tkazamiz
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      setUser(null)
+      // Toast chiqarish (agar import qilingan bo'lsa)
+      try {
+        const toastFn = window.__toast
+        if (toastFn) toastFn(e.detail?.msg || 'Sessiya tugadi. Qayta kiring.', 'err')
+      } catch {}
+    }
+    window.addEventListener('auth:expired', onAuthExpired)
+    return () => window.removeEventListener('auth:expired', onAuthExpired)
+  }, [])
 
   const networkStatus = useNetworkStatus()
 

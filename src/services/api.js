@@ -15,8 +15,26 @@ http.interceptors.request.use(cfg => {
   return cfg
 })
 http.interceptors.response.use(
-  r   => r.data,
-  err => Promise.reject(new Error(err?.response?.data?.error || err?.message || 'Server xatosi'))
+  r => r.data,
+  err => {
+    const status = err?.response?.status
+    // 401 yoki 403 — token yaroqsiz yoki muddati o'tgan
+    if (status === 401 || status === 403) {
+      // LocalStorage tozala
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      // Toast chiqar (agar mavjud bo'lsa)
+      try {
+        const event = new CustomEvent('auth:expired', {
+          detail: { msg: 'Sessiya muddati tugadi. Qayta kiring.' }
+        })
+        window.dispatchEvent(event)
+      } catch {}
+      // Login sahifasiga yo'naltir (hard reload)
+      setTimeout(() => { window.location.href = '/' }, 800)
+    }
+    return Promise.reject(new Error(err?.response?.data?.error || err?.message || 'Server xatosi'))
+  }
 )
 
 /* ── Online state ── */
