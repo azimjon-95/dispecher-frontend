@@ -11,6 +11,8 @@ import { Modal, Confirm, Sbadge, Table, Paging, PH, toast, Loader, SkeletonKPI }
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import './Finance.css'
 
+const isMob = () => window.innerWidth <= 768
+
 const CATS_KIRIM  = ['Buyurtma','Uy xizmati','Avans qaytarish','Boshqa kirim']
 const CATS_CHIQIM = ['Kimyoviy moddalar','Kommunal (svet/suv/gaz)','Arenda','Transport xarajat','Bank xizmati','Maosh','Jihozlar','Boshqa chiqim']
 const ALL_CATS    = [...CATS_KIRIM,...CATS_CHIQIM]
@@ -97,6 +99,221 @@ ${rows.map(r=>`<tr><td>${r.date||''}</td><td class="${r.type}">${r.type==='kirim
   setTimeout(() => w?.print(), 500)
 }
 
+
+/* ══════════════════════════════════════════
+   MOBILE FINANCE — iOS style
+══════════════════════════════════════════ */
+function MobileFinance({ crud, filtered, monthFin, kirim, chiqim, foyda, allBal,
+  month, setMonth, typeF, setTypeF, srch, setSrch, catF, setCatF,
+  setForm, setModal, setDelId, EMPTY }) {
+
+  const [activeType, setActiveType] = useState('') // '' | 'kirim' | 'chiqim'
+
+  const rows = useMemo(() => {
+    let r = monthFin
+    if (activeType) r = r.filter(f => f.type === activeType)
+    if (srch) r = r.filter(f => (f.description||'').toLowerCase().includes(srch.toLowerCase()))
+    return r
+  }, [monthFin, activeType, srch])
+
+  return (
+    <div style={{ paddingBottom:90 }}>
+
+      {/* ── Hero card ── */}
+      <div style={{
+        background:'linear-gradient(160deg,#0d1f0d 0%,#0d1117 100%)',
+        padding:'16px 16px 20px', position:'relative', overflow:'hidden',
+      }}>
+        <div style={{position:'absolute',top:-40,right:-40,width:160,height:160,borderRadius:'50%',
+          background:'rgba(34,197,94,.1)',filter:'blur(30px)',pointerEvents:'none'}}/>
+
+        {/* Month nav */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+          <button onClick={()=>setMonth(prevMonth(month))} style={{
+            width:34,height:34,borderRadius:10,background:'rgba(255,255,255,.06)',
+            border:'1px solid rgba(255,255,255,.1)',color:'white',cursor:'pointer',
+            display:'flex',alignItems:'center',justifyContent:'center',
+          }}><MdArrowBack size={16}/></button>
+          <span style={{fontSize:16,fontWeight:700,color:'white'}}>{monthLabel(month)}</span>
+          <button onClick={()=>setMonth(nextMonth(month))} disabled={month>=THIS_MONTH} style={{
+            width:34,height:34,borderRadius:10,background:'rgba(255,255,255,.06)',
+            border:'1px solid rgba(255,255,255,.1)',color:month>=THIS_MONTH?'rgba(255,255,255,.2)':'white',
+            cursor:month>=THIS_MONTH?'not-allowed':'pointer',
+            display:'flex',alignItems:'center',justifyContent:'center',
+          }}><MdArrowForward size={16}/></button>
+        </div>
+
+        {/* Main metric */}
+        <div style={{
+          background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.08)',
+          borderRadius:18,padding:'14px 16px',
+        }}>
+          <div style={{fontSize:11,color:'rgba(255,255,255,.4)',fontWeight:600,
+            textTransform:'uppercase',letterSpacing:'1px',marginBottom:6}}>
+            Jami kirim
+          </div>
+          <div style={{fontSize:30,fontWeight:900,color:'#22c55e',fontFamily:'monospace',
+            letterSpacing:'-1px',marginBottom:10}}>
+            {fmt.currency(kirim)}
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            {[
+              {lbl:'Chiqim', val:fmt.currency(chiqim), c:'#f85149'},
+              {lbl:'Balans', val:fmt.currency(allBal),  c:allBal>=0?'#22c55e':'#f85149'},
+            ].map(it=>(
+              <div key={it.lbl}>
+                <div style={{fontSize:11,color:'rgba(255,255,255,.35)',marginBottom:1}}>{it.lbl}</div>
+                <div style={{fontSize:14,fontWeight:700,color:it.c,fontFamily:'monospace'}}>{it.val}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Type filter tabs ── */}
+      <div style={{display:'flex',gap:8,padding:'12px 16px 6px'}}>
+        {[
+          {key:'',       label:'Hammasi', color:'var(--text)', bg:'var(--bg3)'},
+          {key:'kirim',  label:'↑ Kirim', color:'#22c55e',    bg:'rgba(34,197,94,.12)'},
+          {key:'chiqim', label:'↓ Chiqim',color:'#f85149',    bg:'rgba(248,81,73,.12)'},
+        ].map(t=>(
+          <button key={t.key} onClick={()=>setActiveType(t.key)} style={{
+            flex:1, padding:'9px 6px', borderRadius:12,
+            background:activeType===t.key ? t.bg : 'var(--bg2)',
+            border:`1px solid ${activeType===t.key ? (t.color==='var(--text)'?'var(--border)':t.color+'50') : 'var(--border)'}`,
+            color:activeType===t.key ? t.color : 'var(--text3)',
+            fontSize:13, fontWeight:700, cursor:'pointer',
+            WebkitTapHighlightColor:'transparent',
+            transition:'all .15s',
+          }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* ── Search ── */}
+      <div style={{padding:'4px 16px 8px'}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,
+          background:'var(--bg2)',border:'1px solid var(--border)',
+          borderRadius:12,padding:'8px 12px'}}>
+          <span style={{fontSize:15,flexShrink:0}}>🔍</span>
+          <input placeholder="Tavsif qidirish..."
+            value={srch} onChange={e=>setSrch(e.target.value)}
+            style={{flex:1,background:'none',border:'none',outline:'none',
+              color:'var(--text)',fontSize:14,fontFamily:'inherit'}}/>
+          {srch && <button onClick={()=>setSrch('')} style={{background:'none',border:'none',
+            color:'var(--text3)',cursor:'pointer',fontSize:16,lineHeight:1}}>✕</button>}
+        </div>
+      </div>
+
+      {/* ── Foyda strip ── */}
+      <div style={{margin:'0 16px 10px',padding:'10px 14px',
+        background:foyda>=0?'rgba(34,197,94,.08)':'rgba(248,81,73,.08)',
+        border:`1px solid ${foyda>=0?'rgba(34,197,94,.2)':'rgba(248,81,73,.2)'}`,
+        borderRadius:12,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <span style={{fontSize:13,color:'var(--text2)',fontWeight:500}}>Sof foyda</span>
+        <span style={{fontSize:16,fontWeight:800,fontFamily:'monospace',
+          color:foyda>=0?'#22c55e':'#f85149'}}>{fmt.currency(foyda)}</span>
+      </div>
+
+      {/* ── Transactions list ── */}
+      <div style={{padding:'0 16px',display:'flex',flexDirection:'column',gap:6}}>
+        {crud.loading ? (
+          [...Array(4)].map((_,i)=>(
+            <div key={i} style={{height:72,borderRadius:14,background:'var(--bg2)',
+              animation:'mobSkel 1.4s ease-in-out infinite',animationDelay:i*80+'ms'}}/>
+          ))
+        ) : rows.length===0 ? (
+          <div style={{textAlign:'center',padding:'40px 0',color:'var(--text3)'}}>
+            <div style={{fontSize:36,marginBottom:8}}>🔍</div>
+            <div style={{fontSize:13}}>Tranzaksiya topilmadi</div>
+          </div>
+        ) : rows.map(f=>(
+          <div key={f._id} style={{
+            background:'var(--bg2)',border:'1px solid var(--border)',
+            borderRadius:14,padding:'12px 14px',
+            display:'flex',alignItems:'center',gap:12,
+            position:'relative',overflow:'hidden',
+          }}>
+            {/* Left accent */}
+            <div style={{position:'absolute',left:0,top:0,bottom:0,width:3,
+              background:f.type==='kirim'?'#22c55e':'#f85149',borderRadius:'14px 0 0 14px'}}/>
+
+            {/* Icon */}
+            <div style={{
+              width:40,height:40,borderRadius:12,flexShrink:0,
+              background:f.type==='kirim'?'rgba(34,197,94,.12)':'rgba(248,81,73,.12)',
+              display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,
+            }}>
+              {f.type==='kirim' ? '↑' : '↓'}
+            </div>
+
+            {/* Info */}
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:600,fontSize:13,
+                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{f.description}</div>
+              <div style={{fontSize:11,color:'var(--text3)',marginTop:2,display:'flex',gap:6}}>
+                <span>{f.date}</span>
+                {f.category && <span>· {f.category}</span>}
+              </div>
+            </div>
+
+            {/* Amount + actions */}
+            <div style={{textAlign:'right',flexShrink:0}}>
+              <div style={{
+                fontWeight:800,fontFamily:'monospace',fontSize:14,
+                color:f.type==='kirim'?'#22c55e':'#f85149',
+              }}>
+                {f.type==='kirim'?'+':'-'}{fmt.currency(f.amount)}
+              </div>
+              <div style={{display:'flex',gap:4,marginTop:4,justifyContent:'flex-end'}}>
+                <button onClick={()=>{setForm({...f});setModal('edit')}} style={{
+                  padding:'3px 8px',borderRadius:6,fontSize:10,fontWeight:600,
+                  background:'rgba(59,130,246,.12)',color:'#3B82F6',
+                  border:'1px solid rgba(59,130,246,.2)',cursor:'pointer',
+                }}>✏️</button>
+                <button onClick={()=>setDelId(f._id)} style={{
+                  padding:'3px 8px',borderRadius:6,fontSize:10,fontWeight:600,
+                  background:'rgba(248,81,73,.12)',color:'#f85149',
+                  border:'1px solid rgba(248,81,73,.2)',cursor:'pointer',
+                }}>🗑</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── FAB ── */}
+      <div style={{position:'fixed',bottom:74,right:20,display:'flex',flexDirection:'column',gap:10,zIndex:200}}>
+        <button onClick={()=>{setForm({...EMPTY,type:'chiqim'});setModal('create')}} style={{
+          width:48,height:48,borderRadius:'50%',
+          background:'linear-gradient(135deg,#f85149,#c0392b)',
+          color:'white',border:'none',cursor:'pointer',fontSize:22,fontWeight:800,
+          display:'flex',alignItems:'center',justifyContent:'center',
+          boxShadow:'0 4px 16px rgba(248,81,73,.4)',
+          WebkitTapHighlightColor:'transparent',
+          transition:'transform .12s',
+        }}
+          onTouchStart={e=>e.currentTarget.style.transform='scale(.9)'}
+          onTouchEnd={e=>e.currentTarget.style.transform='scale(1)'}
+        >↓</button>
+        <button onClick={()=>{setForm({...EMPTY,type:'kirim'});setModal('create')}} style={{
+          width:54,height:54,borderRadius:'50%',
+          background:'linear-gradient(135deg,#22c55e,#15803d)',
+          color:'white',border:'none',cursor:'pointer',fontSize:24,fontWeight:800,
+          display:'flex',alignItems:'center',justifyContent:'center',
+          boxShadow:'0 4px 20px rgba(34,197,94,.4)',
+          WebkitTapHighlightColor:'transparent',
+          transition:'transform .12s',
+        }}
+          onTouchStart={e=>e.currentTarget.style.transform='scale(.9)'}
+          onTouchEnd={e=>e.currentTarget.style.transform='scale(1)'}
+        ><MdAdd size={26}/></button>
+      </div>
+
+      <style>{`@keyframes mobSkel{0%,100%{opacity:.4}50%{opacity:.8}}`}</style>
+    </div>
+  )
+}
+
 export default function Finance() {
   const crud    = useCRUD({ getAll:api.getFinance, create:api.createFinance, update:api.updateFinance, remove:api.deleteFinance }, ['description','category'])
   const [modal,    setModal]    = useState(null)
@@ -110,6 +327,12 @@ export default function Finance() {
   const [salData,  setSalData]  = useState([])
   const [orders,   setOrders]   = useState([])
   const set = k => e => setForm(p=>({...p,[k]:e.target.value}))
+  const [mobile, setMobile] = useState(isMob())
+  useEffect(() => {
+    const fn = () => setMobile(isMob())
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
 
   useEffect(() => {
     if (view === 'report') loadReportData()
@@ -177,6 +400,48 @@ export default function Finance() {
       </div>
     )},
   ]
+
+  /* ── MOBILE VIEW ── */
+  if (mobile && view !== 'report') return (
+    <ErrorBoundary>
+      <MobileFinance
+        crud={crud} filtered={filtered} monthFin={monthFin}
+        kirim={kirim} chiqim={chiqim} foyda={foyda} allBal={allBal}
+        month={month} setMonth={setMonth}
+        typeF={typeF} setTypeF={setTypeF}
+        srch={srch} setSrch={setSrch}
+        catF={catF} setCatF={setCatF}
+        setForm={setForm} setModal={setModal} setDelId={setDelId}
+        EMPTY={EMPTY}
+      />
+      {/* Modals */}
+      <Modal open={modal==='create'||modal==='edit'} onClose={()=>setModal(null)}
+        title={modal==='create'?(form.type==='kirim'?'💰 Kirim':'💸 Chiqim'):'✏️ Tahrirlash'} size="sm"
+        footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>Bekor</button>
+          <button className={`btn ${form.type==='kirim'?'btn-success':'btn-danger'}`} onClick={save}>Saqlash</button></>}>
+        <div style={{display:'flex',gap:6,marginBottom:10}}>
+          {['kirim','chiqim'].map(t=>(
+            <button key={t} className={`btn btn-sm ${form.type===t?(t==='kirim'?'btn-success':'btn-danger'):'btn-ghost'}`}
+              onClick={()=>setForm(p=>({...p,type:t,category:t==='kirim'?'Buyurtma':'Kimyoviy moddalar'}))}>
+              {t==='kirim'?'↑ Kirim':'↓ Chiqim'}
+            </button>
+          ))}
+        </div>
+        <div className="fg"><label className="flabel">Kategoriya</label>
+          <select className="fselect" value={form.category} onChange={set('category')}>
+            {(form.type==='kirim'?CATS_KIRIM:CATS_CHIQIM).map(c=><option key={c}>{c}</option>)}
+          </select></div>
+        <div className="fg"><label className="flabel">Tavsif *</label>
+          <input className="finput" value={form.description} onChange={set('description')} autoFocus/></div>
+        <div className="fg"><label className="flabel">Miqdor *</label>
+          <input className="finput" type="number" value={form.amount} onChange={set('amount')}/></div>
+        <div className="fg"><label className="flabel">Sana</label>
+          <input className="finput" type="date" value={form.date} onChange={set('date')}/></div>
+      </Modal>
+      <Confirm open={!!delId} onClose={()=>setDelId(null)} onOk={()=>{crud.remove(delId);setDelId(null)}}
+        title="O'chirish" msg="Bu tranzaksiyani o'chirasizmi?" danger/>
+    </ErrorBoundary>
+  )
 
   /* ── REPORT VIEW ── */
   if (view === 'report') {
