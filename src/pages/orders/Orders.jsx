@@ -11,6 +11,8 @@ import OrderDetail from '../orderdetail/OrderDetail.jsx'
 import { SmsPopover } from '../../components/ui/SmsPopover.jsx'
 import './Orders.css'
 
+const isMob = () => window.innerWidth <= 768
+
 /* ── Constants ── */
 const COLUMNS = [
   { key:'yangi',         label:'Yangi',        icon:'📞', color:'var(--accent)',  desc:"Qo'ng'iroq qildi, navbat kutmoqda" },
@@ -178,6 +180,238 @@ function KanbanColumn({ col, orders, drivers, employees, onColClick, onDetail, o
   )
 }
 
+
+/* ══════════════════════════════════════════
+   MOBILE ORDERS — Tab filter + vertical list
+══════════════════════════════════════════ */
+function MobileCard({ order, onDetail, onAdvance, onAssign }) {
+  const col   = COLUMNS.find(x=>x.key===order.status)
+  const color = col?.color || 'var(--accent)'
+  const canAdv = !!NEXT_STATUS[order.status]
+
+  return (
+    <div onClick={()=>onDetail(order)} style={{
+      background:'var(--bg2)',
+      border:'1px solid var(--border)',
+      borderRadius:14,
+      padding:'12px 14px',
+      display:'flex', gap:12,
+      alignItems:'flex-start',
+      position:'relative',
+      overflow:'hidden',
+      WebkitTapHighlightColor:'transparent',
+      cursor:'pointer',
+    }}
+      onTouchStart={e=>e.currentTarget.style.opacity='.7'}
+      onTouchEnd={e=>e.currentTarget.style.opacity='1'}
+    >
+      {/* Left accent */}
+      <div style={{position:'absolute',left:0,top:0,bottom:0,width:3,background:color,borderRadius:'14px 0 0 14px'}}/>
+
+      {/* Content */}
+      <div style={{flex:1,paddingLeft:4}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
+          <span style={{fontFamily:'monospace',fontWeight:800,fontSize:13,color}}>{order.number}</span>
+          <span style={{fontSize:11,fontWeight:700,color:'var(--green)',fontFamily:'monospace'}}>
+            {fmt.currency(order.total)}
+          </span>
+        </div>
+        <div style={{fontWeight:700,fontSize:14,marginBottom:3}}>{order.customer}</div>
+        {order.phone && (
+          <div style={{fontSize:12,color:'var(--text2)',display:'flex',alignItems:'center',gap:4,marginBottom:3}}>
+            <MdPhone size={11}/>{order.phone}
+          </div>
+        )}
+        {order.itemSummary && (
+          <div style={{fontSize:11,color:'var(--text2)',marginBottom:6,display:'flex',alignItems:'center',gap:4}}>
+            📋 {order.itemSummary}
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div style={{display:'flex',gap:6,flexWrap:'wrap'}} onClick={e=>e.stopPropagation()}>
+          {/* Shafyor */}
+          {(order.status==='yangi'||order.status==='yetkazishda') && (
+            <button onClick={()=>onAssign(order)} style={{
+              padding:'5px 10px',borderRadius:8,fontSize:11,fontWeight:700,
+              background:'rgba(210,153,34,.12)',color:'var(--yellow)',
+              border:'1px solid rgba(210,153,34,.2)',cursor:'pointer',
+              display:'flex',alignItems:'center',gap:4,
+            }}>
+              <MdDirectionsCar size={12}/>{order.driver||'Shafyor'}
+            </button>
+          )}
+          {/* Keyingi bosqich */}
+          {canAdv && (
+            <button onClick={()=>onAdvance(order)} style={{
+              padding:'5px 10px',borderRadius:8,fontSize:11,fontWeight:700,
+              background:`${color}18`,color,
+              border:`1px solid ${color}40`,cursor:'pointer',
+              display:'flex',alignItems:'center',gap:4,
+            }}>
+              <MdArrowForward size={12}/>{NEXT_LABEL[order.status]}
+            </button>
+          )}
+          {/* Batafsil */}
+          <button onClick={()=>onDetail(order)} style={{
+            padding:'5px 10px',borderRadius:8,fontSize:11,fontWeight:700,
+            background:'rgba(59,130,246,.12)',color:'#3B82F6',
+            border:'1px solid rgba(59,130,246,.2)',cursor:'pointer',
+          }}>
+            📦 Ichiga
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MobileOrders({ orders, loading, onDetail, onAdvance, onAssign, onAssignWorker, openCreate }) {
+  const [activeTab, setActiveTab] = useState('yangi')
+  const [search,    setSearch]    = useState('')
+
+  const filtered = useMemo(() => {
+    const list = orders.filter(o => o.status === activeTab)
+    if (!search.trim()) return list
+    const q = search.toLowerCase()
+    return list.filter(o =>
+      o.customer?.toLowerCase().includes(q) ||
+      o.phone?.includes(q) ||
+      o.number?.toLowerCase().includes(q)
+    )
+  }, [orders, activeTab, search])
+
+  const grouped = useMemo(() => {
+    const m = {}
+    COLUMNS.forEach(c => { m[c.key] = 0 })
+    orders.forEach(o => { if (m[o.status] !== undefined) m[o.status]++ })
+    return m
+  }, [orders])
+
+  return (
+    <div style={{paddingBottom:90}}>
+
+      {/* ── Tab bar (horizontal scroll) ── */}
+      <div style={{
+        display:'flex', gap:6, overflowX:'auto',
+        padding:'10px 16px 6px',
+        scrollbarWidth:'none', msOverflowStyle:'none',
+        position:'sticky', top:52, zIndex:50,
+        background:'var(--bg)',
+        borderBottom:'1px solid var(--border)',
+      }}>
+        {COLUMNS.map(col => {
+          const cnt    = grouped[col.key] || 0
+          const isAct  = activeTab === col.key
+          return (
+            <button key={col.key} onClick={()=>setActiveTab(col.key)} style={{
+              flexShrink:0,
+              display:'flex', alignItems:'center', gap:5,
+              padding:'6px 12px', borderRadius:99,
+              background: isAct ? col.color+'20' : 'var(--bg2)',
+              border:`1px solid ${isAct ? col.color+'60' : 'var(--border)'}`,
+              color: isAct ? col.color : 'var(--text3)',
+              fontSize:12, fontWeight:700,
+              cursor:'pointer',
+              WebkitTapHighlightColor:'transparent',
+              transition:'all .15s',
+            }}>
+              <span>{col.icon}</span>
+              <span>{col.label}</span>
+              {cnt > 0 && (
+                <span style={{
+                  background: isAct ? col.color : 'var(--bg3)',
+                  color: isAct ? 'white' : 'var(--text3)',
+                  borderRadius:99, fontSize:10, fontWeight:800,
+                  padding:'1px 5px', minWidth:18, textAlign:'center',
+                }}>
+                  {cnt}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* ── Search ── */}
+      <div style={{padding:'10px 16px 6px'}}>
+        <div style={{
+          display:'flex', alignItems:'center', gap:8,
+          background:'var(--bg2)', border:'1px solid var(--border)',
+          borderRadius:12, padding:'8px 12px',
+        }}>
+          <span style={{fontSize:15, flexShrink:0}}>🔍</span>
+          <input placeholder="Mijoz, telefon, raqam..."
+            value={search} onChange={e=>setSearch(e.target.value)}
+            style={{flex:1,background:'none',border:'none',outline:'none',
+              color:'var(--text)',fontSize:14,fontFamily:'inherit'}}/>
+          {search && (
+            <button onClick={()=>setSearch('')} style={{background:'none',border:'none',
+              color:'var(--text3)',cursor:'pointer',fontSize:16,lineHeight:1}}>✕</button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Stage header ── */}
+      {(() => {
+        const col = COLUMNS.find(c=>c.key===activeTab)
+        return (
+          <div style={{padding:'4px 16px 8px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <span style={{fontSize:16}}>{col?.icon}</span>
+              <span style={{fontSize:14,fontWeight:700,color:col?.color}}>{col?.label}</span>
+            </div>
+            <span style={{fontSize:12,color:'var(--text3)'}}>{filtered.length} ta</span>
+          </div>
+        )
+      })()}
+
+      {/* ── Cards list ── */}
+      <div style={{padding:'0 16px', display:'flex', flexDirection:'column', gap:8}}>
+        {loading ? (
+          [...Array(3)].map((_,i)=>(
+            <div key={i} style={{height:100,borderRadius:14,background:'var(--bg2)',
+              animation:'mobSkel 1.4s ease-in-out infinite',animationDelay:i*100+'ms'}}/>
+          ))
+        ) : filtered.length === 0 ? (
+          <div style={{textAlign:'center',padding:'40px 0',color:'var(--text3)'}}>
+            <div style={{fontSize:36,marginBottom:8}}>📭</div>
+            <div style={{fontSize:13}}>{search ? 'Topilmadi' : "Bu bosqichda buyurtma yo'q"}</div>
+          </div>
+        ) : (
+          filtered.map(o => (
+            <MobileCard key={o._id} order={o}
+              onDetail={onDetail}
+              onAdvance={onAdvance}
+              onAssign={o=>onAssign(o)}
+            />
+          ))
+        )}
+      </div>
+
+      {/* ── FAB: Yangi buyurtma ── */}
+      <button onClick={openCreate} style={{
+        position:'fixed', bottom:74, right:20,
+        width:54, height:54, borderRadius:'50%',
+        background:'linear-gradient(135deg,#3B82F6,#1D4ED8)',
+        color:'white', border:'none', cursor:'pointer',
+        fontSize:26, fontWeight:700,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        boxShadow:'0 4px 20px rgba(59,130,246,.5)',
+        zIndex:200,
+        transition:'transform .15s',
+      }}
+        onTouchStart={e=>e.currentTarget.style.transform='scale(.9)'}
+        onTouchEnd={e=>e.currentTarget.style.transform='scale(1)'}
+      >
+        <MdAdd size={28}/>
+      </button>
+
+      <style>{`@keyframes mobSkel{0%,100%{opacity:.4}50%{opacity:.8}}`}</style>
+    </div>
+  )
+}
+
 /* ══════════════════════════════════════════
    MAIN ORDERS PAGE
 ══════════════════════════════════════════ */
@@ -189,6 +423,13 @@ export default function Orders() {
   const [view,        setView]        = useState('kanban')
   const [colView,     setColView]     = useState(null)
   const [detail,      setDetail]      = useState(null)
+  const [mobile,      setMobile]      = useState(isMob())
+
+  useEffect(() => {
+    const fn = () => setMobile(isMob())
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
 
   /* Modals */
   const [formModal,       setFormModal]       = useState(null)
@@ -388,6 +629,22 @@ export default function Orders() {
   ]
 
   if (detail) return <ErrorBoundary><OrderDetail order={detail} onBack={()=>setDetail(null)}/></ErrorBoundary>
+
+  // Mobile layout
+  if (mobile) return (
+    <ErrorBoundary>
+      <MobileOrders
+        orders={orders} loading={loading}
+        onDetail={setDetail}
+        onAdvance={advanceOrder}
+        onAssign={o=>{setAssignModal(o);setSelDriver(null)}}
+        onAssignWorker={o=>{setAssignWorkerMod(o);setSelWorker(null)}}
+        openCreate={openCreate}
+      />
+      {/* Shared modals — same as desktop */}
+      {renderModals()}
+    </ErrorBoundary>
+  )
 
   return (
     <ErrorBoundary>
