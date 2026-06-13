@@ -410,12 +410,12 @@ export default function HomeService() {
       </Modal>
       <Modal open={!!doneModal} onClose={()=>{setDoneModal(null);setSelWorkers([])}}
         title="✅ Xizmatni yakunlash" size="sm"
-        footer={<><button className="btn btn-ghost" onClick={()=>setDoneModal(null)}>Bekor</button><button className="btn btn-success" onClick={markDone}>Yakunlash</button></>}>
+        footer={<><button className="btn btn-ghost" onClick={()=>setDoneModal(null)}>Bekor</button><button className="btn btn-success" onClick={complete}>Yakunlash</button></>}>
         <div className="fg"><label className="flabel">Jami summa</label><input className="finput" type="number" value={doneForm.totalAmount} onChange={e=>setDoneForm(p=>({...p,totalAmount:e.target.value}))}/></div>
         <div className="fg"><label className="flabel">To'langan</label><input className="finput" type="number" value={doneForm.paidAmount} onChange={e=>setDoneForm(p=>({...p,paidAmount:e.target.value}))}/></div>
         <div className="fg"><label className="flabel">Izoh</label><textarea className="ftextarea" rows={2} value={doneForm.description} onChange={e=>setDoneForm(p=>({...p,description:e.target.value}))}/></div>
       </Modal>
-      <Confirm open={!!delId} onClose={()=>setDelId(null)} onOk={()=>{deleteService(delId);setDelId(null)}} title="O'chirish" msg="Bu xizmatni o'chirasizmi?" danger/>
+      <Confirm open={!!delId} onClose={()=>setDelId(null)} onOk={async()=>{try{await api.deleteHomeService(delId);setServices(p=>p.filter(s=>s._id!==delId));toast("O'chirildi",'inf')}catch(e){toast(e.message,'err')}finally{setDelId(null)}}} title="O'chirish" msg="Bu xizmatni o'chirasizmi?" danger/>
     </ErrorBoundary>
   )
 
