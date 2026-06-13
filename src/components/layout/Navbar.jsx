@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { bus } from '../../services/realtime.js'
 import {
   MdDashboard, MdShoppingBag, MdLocalShipping, MdConstruction,
   MdPeople, MdDirectionsCar, MdPerson, MdAttachMoney,
@@ -194,6 +195,35 @@ function NotifBell({ notifications, onNav }) {
   )
 }
 
+
+function LiveBadge() {
+  const [ok, setOk] = useState(true)
+  useEffect(() => {
+    const off1 = bus.on('socket:connected',    () => setOk(true))
+    const off2 = bus.on('socket:disconnected', () => setOk(false))
+    return () => { off1(); off2() }
+  }, [])
+  return (
+    <div className="nb-live" style={{
+      background: ok ? 'rgba(34,197,94,.12)' : 'rgba(245,158,11,.12)',
+      border: `1px solid ${ok ? 'rgba(34,197,94,.3)' : 'rgba(245,158,11,.3)'}`,
+      color: ok ? '#22c55e' : '#f59e0b',
+      borderRadius: 8, padding: '3px 8px',
+      fontSize: 11, fontWeight: 700,
+      display: 'flex', alignItems: 'center', gap: 5,
+    }}>
+      <span style={{
+        width: 6, height: 6, borderRadius: '50%',
+        background: ok ? '#22c55e' : '#f59e0b',
+        animation: ok ? 'livePulse 1.5s infinite' : 'none',
+        display: 'inline-block',
+      }}/>
+      {ok ? 'LIVE' : 'Polling'}
+      <style>{`@keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
+    </div>
+  )
+}
+
 export default function Navbar({ active, collapsed, theme, onTheme, onBurger, user, onLogout, networkStatus, notifications=[], onNav }) {
   const [showUser, setShowUser] = useState(false)
   const [title, sub] = TITLES[active] || ['Panel', '']
@@ -227,9 +257,7 @@ export default function Navbar({ active, collapsed, theme, onTheme, onBurger, us
         />
       )}
 
-      <div className="nb-live">
-        <span className="nb-live-dot"/>LIVE
-      </div>
+      <LiveBadge/>
 
       {/* ── Notification Bell ── */}
       <NotifBell notifications={notifications} onNav={onNav}/>

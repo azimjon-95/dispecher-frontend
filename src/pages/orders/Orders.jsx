@@ -10,6 +10,7 @@ import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import OrderDetail from '../orderdetail/OrderDetail.jsx'
 import { SmsPopover } from '../../components/ui/SmsPopover.jsx'
 import './Orders.css'
+import { useRealtime } from '../../services/realtime.js'
 
 const isMob = () => window.innerWidth <= 768
 
@@ -448,6 +449,11 @@ export default function Orders() {
   const PAGE_SIZE = 15
 
   useEffect(() => { loadAll() }, [])
+
+  // Real-time yangilanish
+  useRealtime(['refresh:orders', 'refresh:all'], () => {
+    loadAll()
+  })
 
   /* Save form draft on change */
   useEffect(() => {

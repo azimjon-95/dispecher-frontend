@@ -3,6 +3,7 @@ import { MdRefresh, MdAdd, MdChevronRight, MdTrendingUp, MdTrendingDown } from '
 import { api, fmt } from '../../services/api.js'
 import { Modal, toast } from '../../components/ui/UI.jsx'
 import './Dashboard.css'
+import { useRealtime } from '../../services/realtime.js'
 
 const today    = new Date().toISOString().slice(0,10)
 const isMob    = () => window.innerWidth <= 768
@@ -527,6 +528,9 @@ export default function Dashboard({ onNav }) {
     window.addEventListener('resize', fn)
     return () => window.removeEventListener('resize', fn)
   }, [])
+
+  // Real-time: dashboard har 15s yoki yangi data kelganda
+  useRealtime(['refresh:orders','refresh:dashboard','refresh:all'], () => { load() })
 
   async function load() {
     setLoading(true)

@@ -9,6 +9,7 @@ import { api, fmt } from '../../services/api.js'
 import { Modal, Confirm, Sbadge, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import './Transport.css'
+import { useRealtime, bus } from '../../services/realtime.js'
 const isMob = () => window.innerWidth <= 768
 
 const STATUSES     = ['yangi','jarayonda','yetkazildi','bekor']
@@ -785,6 +786,8 @@ export default function Transport() {
     window.addEventListener('resize', fn)
     return () => window.removeEventListener('resize', fn)
   }, [])
+
+  useRealtime(['refresh:orders','refresh:transport','refresh:all'], () => { loadAll() })
 
   return (
     <ErrorBoundary>
