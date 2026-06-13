@@ -53,7 +53,8 @@ export default function App() {
   const [theme,     setTheme]     = useState(() => localStorage.getItem('theme') || 'dark')
 
   /* Real-time badge counts */
-  const [badges, setBadges] = useState({ orders: 0, transport: 0 })
+  const [badges,        setBadges]        = useState({ orders: 0, transport: 0 })
+  const [notifications, setNotifications] = useState([])
 
   /* ── Token expired listener ── */
   useEffect(() => {
@@ -99,10 +100,62 @@ export default function App() {
       const deliveries= norm(del.value   || [])
       const pickups   = norm(pick.value  || [])
 
+      const activeOrders     = orders.filter(o => !['tugallandi','bekor'].includes(o.status))
+      const pendingDeliveries= deliveries.filter(t => t.status !== 'yetkazildi' && t.status !== 'bekor')
+      const pendingPickups   = pickups.filter(t => t.status !== 'yetkazildi' && t.status !== 'bekor')
+
       setBadges({
-        orders:    orders.filter(o => !['tugallandi','bekor'].includes(o.status)).length,
-        transport: [...deliveries,...pickups].filter(t => t.status !== 'yetkazildi' && t.status !== 'bekor').length,
+        orders:    activeOrders.length,
+        transport: [...pendingDeliveries,...pendingPickups].length,
       })
+
+      // Build notifications list
+      const notifs = []
+      const now = new Date()
+      const timeAgo = (date) => {
+        const d = new Date(date)
+        const diff = Math.floor((now - d) / 60000)
+        if (diff < 1)   return 'Hozir'
+        if (diff < 60)  return `${diff} daqiqa oldin`
+        if (diff < 1440)return `${Math.floor(diff/60)} soat oldin`
+        return `${Math.floor(diff/1440)} kun oldin`
+      }
+
+      // Yangi buyurtmalar
+      const newOrders = activeOrders.filter(o => o.status === 'yangi').slice(0, 3)
+      newOrders.forEach(o => notifs.push({
+        id: 'ord_' + o._id, type:'order', read:false, nav:'orders',
+        title: `Yangi buyurtma: ${o.number}`,
+        body: `${o.customer} · ${o.phone || ''} ${o.address ? '· '+o.address : ''}`.trim(),
+        time: timeAgo(o.createdAt || now),
+      }))
+
+      // Yetkazishda
+      pendingDeliveries.slice(0,2).forEach(t => notifs.push({
+        id: 'del_' + t._id, type:'transport', read:false, nav:'transport',
+        title: `Yetkazish kutilmoqda: ${t.order || t.number || ''}`,
+        body: `${t.customer || ''} · ${t.address || ''}`.trim(),
+        time: timeAgo(t.createdAt || now),
+      }))
+
+      // Olib kelish
+      pendingPickups.slice(0,2).forEach(t => notifs.push({
+        id: 'pck_' + t._id, type:'transport', read: notifs.length > 3, nav:'transport',
+        title: `Olib kelish: ${t.order || t.number || ''}`,
+        body: `${t.customer || ''} · ${t.address || ''}`.trim(),
+        time: timeAgo(t.createdAt || now),
+      }))
+
+      // Qarzdor mijozlar
+      const debtors = orders.filter(o => (o.debt||0) > 0 || (o.status==='tugallandi'&&!o.paid&&o.total>0)).slice(0,2)
+      debtors.forEach(o => notifs.push({
+        id: 'dbt_' + o._id, type:'debt', read:true, nav:'finance',
+        title: `Qarz: ${o.customer}`,
+        body: `${o.number} · ${o.total?.toLocaleString?.() || 0} so'm to'lanmagan`,
+        time: timeAgo(o.createdAt || now),
+      }))
+
+      setNotifications(notifs.slice(0, 15))
     } catch {}
   }, [user])
 
@@ -202,6 +255,8 @@ export default function App() {
         onBurger={() => setMobOpen(true)}
         onLogout={handleLogout}
         networkStatus={networkStatus}
+        notifications={notifications}
+        onNav={navigate}
       />
       <main className={`page-wrap ${collapsed ? 'collapsed' : ''}`}>
         {PAGES[page] ?? <Dashboard onNav={navigate} />}
