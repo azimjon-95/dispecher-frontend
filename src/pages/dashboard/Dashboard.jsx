@@ -23,14 +23,14 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
     <div style={{
       minHeight:'100vh',
       background:'var(--bg)',
-      paddingBottom:100,
+      paddingBottom:80,
       overflowX:'hidden',
     }}>
 
       {/* ══ HERO STRIP ══ */}
       <div style={{
         background:'linear-gradient(160deg,#1a1f3a 0%,#0d1117 100%)',
-        padding:'20px 20px 28px',
+        padding:'14px 16px 20px',
         position:'relative',
         overflow:'hidden',
       }}>
@@ -79,10 +79,11 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
 
       {/* ══ KPI SCROLL STRIP ══ */}
       <div style={{
-        display:'flex',gap:10,
-        overflowX:'auto',padding:'16px 20px 4px',
+        display:'flex',gap:8,
+        overflowX:'auto',padding:'12px 16px 2px',
         scrollbarWidth:'none',
         WebkitOverflowScrolling:'touch',
+        msOverflowStyle:'none',
       }}>
         {[
           {emoji:'📦',lbl:'Faol buyurtma',val:loading?'…':stats?.activeOrders||0,c:'#3B82F6',nav:'orders'},
@@ -97,7 +98,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
             background:'var(--bg2)',
             border:'1px solid var(--border)',
             borderRadius:18,
-            minWidth:110,
+            minWidth:100,
             cursor:'pointer',
             WebkitTapHighlightColor:'transparent',
             textAlign:'left',
@@ -114,7 +115,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
       </div>
 
       {/* ══ QUICK ACTIONS ══ */}
-      <div style={{padding:'16px 20px 0'}}>
+      <div style={{padding:'10px 16px 0'}}>
         <div style={{
           display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,
         }}>
@@ -126,7 +127,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
           ].map(q=>(
             <button key={q.lbl} onClick={q.action} style={{
               display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
-              gap:6,padding:'14px 6px',
+              gap:6,padding:'12px 6px',
               background:'var(--bg2)',
               border:'1px solid var(--border)',
               borderRadius:18,
@@ -149,7 +150,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
         </div>
 
         {/* Ikkinchi qator */}
-        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginTop:8}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:7,marginTop:7}}>
           {[
             {emoji:'🏠',lbl:'Uyga xizmat', c:'#8b5cf6', action:()=>onNav?.('homeservice')},
             {emoji:'🔧',lbl:'Sex ishi',    c:'#f97316', action:()=>onNav?.('workers')},
@@ -158,7 +159,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
           ].map(q=>(
             <button key={q.lbl} onClick={q.action} style={{
               display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
-              gap:6,padding:'14px 6px',
+              gap:6,padding:'12px 6px',
               background:'var(--bg2)',
               border:'1px solid var(--border)',
               borderRadius:18,
@@ -181,7 +182,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
       </div>
 
       {/* ══ DAVOMAT CARD ══ */}
-      <div style={{padding:'16px 20px 0'}}>
+      <div style={{padding:'10px 16px 0'}}>
         <div style={{
           background:'var(--bg2)',
           border:'1px solid var(--border)',
@@ -247,7 +248,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
 
       {/* ══ QARZLAR CARD ══ */}
       {debtOrders.length > 0 && (
-        <div style={{padding:'12px 20px 0'}}>
+        <div style={{padding:'8px 16px 0'}}>
           <div style={{
             background:'var(--bg2)',
             border:'1px solid rgba(248,81,73,.2)',
@@ -292,7 +293,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
       )}
 
       {/* ══ MOLIYA CARD ══ */}
-      <div style={{padding:'12px 20px 0'}}>
+      <div style={{padding:'8px 16px 0'}}>
         <div style={{
           background:'var(--bg2)',
           border:'1px solid var(--border)',
@@ -327,7 +328,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
       </div>
 
       {/* ══ TIZIM HOLATI ══ */}
-      <div style={{padding:'12px 20px 0'}}>
+      <div style={{padding:'8px 16px 0'}}>
         <div style={{
           background:'var(--bg2)',
           border:'1px solid var(--border)',

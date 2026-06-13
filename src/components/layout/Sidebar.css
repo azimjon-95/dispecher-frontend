@@ -104,7 +104,23 @@
   z-index: 99; animation: fadeIn var(--t) both;
 }
 @media (max-width: 768px) {
-  .sidebar { transform: translateX(-100%); width: var(--sidebar-w) !important; z-index: 200; }
-  .sidebar.mob-open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.4); }
+  /* Sidebar mobilda default yashirin — faqat mob-open bilan ko'rinadi */
+  .sidebar {
+    transform: translateX(-100%);
+    width: 240px !important;
+    z-index: 200;
+    transition: transform .3s cubic-bezier(.25,.46,.45,.94);
+    border-right: 1px solid var(--border);
+  }
+  .sidebar.mob-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 32px rgba(0,0,0,.5);
+  }
   .mob-backdrop.show { display: block; }
+
+  /* Sidebar ichidagi label lar mob-open da ko'rinsin */
+  .sidebar .sb-label  { opacity: 1 !important; width: auto !important; }
+  .sidebar .sb-section{ opacity: 1 !important; }
+  .sidebar .sb-badge  { opacity: 1 !important; }
+  .sidebar .sb-logo   { padding: 14px 16px !important; }
 }

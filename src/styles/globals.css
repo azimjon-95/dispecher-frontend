@@ -88,7 +88,13 @@ body {
 .page-wrap.collapsed { margin-left: var(--sidebar-col); }
 
 @media (max-width: 768px) {
-  .page-wrap { margin-left: 0 !important; padding: 14px; }
+  .page-wrap {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    margin-top: var(--navbar-h);
+  }
+  /* Mobile da navbar h kichikroq */
+  :root { --navbar-h: 52px; }
 }
 
 /* ── Shared Card ── */

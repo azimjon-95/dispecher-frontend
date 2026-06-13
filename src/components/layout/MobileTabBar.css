@@ -1,0 +1,64 @@
+/* ── Mobile Tab Bar ── */
+.mob-tabbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mob-tabbar {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(var(--bg2-rgb, 22,27,34), .96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    padding: 6px 0 env(safe-area-inset-bottom, 8px);
+    gap: 0;
+  }
+
+  .mob-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 4px 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .12s;
+    position: relative;
+  }
+
+  .mob-tab:active { transform: scale(.88); }
+
+  .mob-tab-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    color: var(--text3);
+    transition: all .2s;
+  }
+
+  .mob-tab.active .mob-tab-icon {
+    background: rgba(59,130,246,.15);
+    color: #3B82F6;
+  }
+
+  .mob-tab-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text3);
+    transition: color .2s;
+  }
+
+  .mob-tab.active .mob-tab-label {
+    color: #3B82F6;
+    font-weight: 700;
+  }
+}
