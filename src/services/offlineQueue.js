@@ -1,101 +1,138 @@
-/* ═══════════════════════════════════════════════════
-   OFFLINE QUEUE — Internet uzilsa ham ishlaydi
-   IndexedDB + localStorage fallback
-═══════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   OFFLINE QUEUE v2 — IndexedDB + localStorage fallback
+   Barcha mutation so'rovlar offline holatda saqlanadi
+   Internet qaytganda avtomatik sinxronlanadi
+═══════════════════════════════════════════════════════ */
 
-const DB_NAME    = 'dispecher_offline'
-const DB_VERSION = 1
-const STORE_NAME = 'queue'
+const DB_NAME    = 'tartib_crm_offline'
+const DB_VERSION = 2
+const STORE      = 'queue'
+const META_STORE = 'meta'
 
-let db = null
+let _db = null
 
-/* ── Open IndexedDB ── */
+/* ── IndexedDB ochish ── */
 async function openDB() {
-  if (db) return db
+  if (_db) return _db
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION)
+
     req.onupgradeneeded = e => {
       const d = e.target.result
-      if (!d.objectStoreNames.contains(STORE_NAME)) {
-        d.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true })
+      if (!d.objectStoreNames.contains(STORE)) {
+        const s = d.createObjectStore(STORE, { keyPath:'id', autoIncrement:true })
+        s.createIndex('ts',     'ts',     { unique:false })
+        s.createIndex('url',    'url',    { unique:false })
+        s.createIndex('status', 'status', { unique:false })
+      }
+      if (!d.objectStoreNames.contains(META_STORE)) {
+        d.createObjectStore(META_STORE, { keyPath:'key' })
       }
     }
-    req.onsuccess  = e => { db = e.target.result; resolve(db) }
-    req.onerror    = e => reject(e.target.error)
+
+    req.onsuccess = e => { _db = e.target.result; resolve(_db) }
+    req.onerror   = e => reject(e.target.error)
   })
 }
 
-/* ── Add to queue ── */
+/* ── Queue ga qo'shish ── */
 export async function enqueue(item) {
-  try {
-    const d    = await openDB()
-    const tx   = d.transaction(STORE_NAME, 'readwrite')
-    const store = tx.objectStore(STORE_NAME)
-    store.add({ ...item, ts: Date.now() })
-    return true
-  } catch {
-    // localStorage fallback
-    try {
-      const q = JSON.parse(localStorage.getItem('offlineQueue') || '[]')
-      q.push({ ...item, ts: Date.now() })
-      localStorage.setItem('offlineQueue', JSON.stringify(q.slice(-200)))
-      return true
-    } catch { return false }
+  const entry = {
+    ...item,
+    ts:       Date.now(),
+    status:   'pending',
+    retries:  0,
+    maxRetry: 5,
   }
-}
-
-/* ── Get all queued items ── */
-export async function getQueue() {
   try {
-    const d     = await openDB()
-    const tx    = d.transaction(STORE_NAME, 'readonly')
-    const store = tx.objectStore(STORE_NAME)
+    const d  = await openDB()
+    const tx = d.transaction(STORE, 'readwrite')
     return new Promise((resolve, reject) => {
-      const req = store.getAll()
-      req.onsuccess = e => resolve(e.target.result || [])
-      req.onerror   = e => reject(e.target.error)
+      const req = tx.objectStore(STORE).add(entry)
+      req.onsuccess = () => resolve(req.result)
+      req.onerror   = () => reject(req.error)
     })
   } catch {
-    try {
-      return JSON.parse(localStorage.getItem('offlineQueue') || '[]')
-    } catch { return [] }
+    /* localStorage fallback */
+    const q = _lsGet()
+    q.push({ ...entry, id: Date.now() })
+    _lsSet(q.slice(-300))
+    return Date.now()
   }
 }
 
-/* ── Remove item from queue ── */
+/* ── Hammani olish ── */
+export async function getQueue() {
+  try {
+    const d  = await openDB()
+    const tx = d.transaction(STORE, 'readonly')
+    return new Promise((resolve, reject) => {
+      const req = tx.objectStore(STORE).getAll()
+      req.onsuccess = () => resolve(req.result || [])
+      req.onerror   = () => reject(req.error)
+    })
+  } catch {
+    return _lsGet()
+  }
+}
+
+/* ── Bitta o'chirish ── */
 export async function dequeue(id) {
   try {
-    const d     = await openDB()
-    const tx    = d.transaction(STORE_NAME, 'readwrite')
-    const store = tx.objectStore(STORE_NAME)
-    store.delete(id)
+    const d  = await openDB()
+    const tx = d.transaction(STORE, 'readwrite')
+    return new Promise((resolve, reject) => {
+      const req = tx.objectStore(STORE).delete(id)
+      req.onsuccess = () => resolve()
+      req.onerror   = () => reject(req.error)
+    })
   } catch {
-    try {
-      const q = JSON.parse(localStorage.getItem('offlineQueue') || '[]')
-      localStorage.setItem('offlineQueue', JSON.stringify(q.filter(i => i.id !== id)))
-    } catch {}
+    const q = _lsGet().filter(i => i.id !== id)
+    _lsSet(q)
   }
 }
 
-/* ── Clear all queue ── */
+/* ── Retry count yangilash ── */
+export async function updateRetry(id, retries) {
+  try {
+    const d  = await openDB()
+    const tx = d.transaction(STORE, 'readwrite')
+    const store = tx.objectStore(STORE)
+    return new Promise((resolve, reject) => {
+      const get = store.get(id)
+      get.onsuccess = () => {
+        if (!get.result) { resolve(); return }
+        const upd = store.put({ ...get.result, retries, status:'retrying' })
+        upd.onsuccess = () => resolve()
+        upd.onerror   = () => reject(upd.error)
+      }
+      get.onerror = () => reject(get.error)
+    })
+  } catch { /* silent */ }
+}
+
+/* ── Soni ── */
+export async function queueSize() {
+  try {
+    const q = await getQueue()
+    return q.length
+  } catch { return 0 }
+}
+
+/* ── Hammasini tozalash ── */
 export async function clearQueue() {
   try {
-    const d     = await openDB()
-    const tx    = d.transaction(STORE_NAME, 'readwrite')
-    tx.objectStore(STORE_NAME).clear()
-  } catch {
-    localStorage.removeItem('offlineQueue')
-  }
+    const d  = await openDB()
+    const tx = d.transaction(STORE, 'readwrite')
+    tx.objectStore(STORE).clear()
+    localStorage.removeItem('tartib_offline_q')
+  } catch {}
 }
 
-/* ── Queue size ── */
-export async function queueSize() {
-  const q = await getQueue()
-  return q.length
+/* ── localStorage helpers ── */
+function _lsGet() {
+  try { return JSON.parse(localStorage.getItem('tartib_offline_q') || '[]') } catch { return [] }
 }
-
-/* ── Summary for debugging ── */
-export async function summary() {
-  const items = await getQueue()
-  return items.map(i => ({ id:i.id, method:i.method, url:i.url, ts:i.ts }))
+function _lsSet(arr) {
+  try { localStorage.setItem('tartib_offline_q', JSON.stringify(arr)) } catch {}
 }

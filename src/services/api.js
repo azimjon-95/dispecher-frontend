@@ -37,10 +37,33 @@ http.interceptors.response.use(
   }
 )
 
-/* ── Online state ── */
+/* ── Online state — kuchli aniqlash ── */
 let _online = navigator.onLine
-window.addEventListener('online',  () => { _online = true;  syncOfflineQueue() })
+
+// navigator.onLine har doim ishonchli emas
+// Server ping bilan tekshiramiz
+let _lastPing = 0
+async function pingServer() {
+  try {
+    await fetch(BASE_URL + '/health', { method:'HEAD', signal: AbortSignal.timeout(3000) })
+    if (!_online) { _online = true; window.dispatchEvent(new Event('online')) }
+    return true
+  } catch {
+    if (_online) { _online = false; window.dispatchEvent(new Event('offline')) }
+    return false
+  }
+}
+
+// Har 8 soniyada ping (faqat online tuyulsa)
+setInterval(() => {
+  if (navigator.onLine) pingServer()
+  else if (_online) { _online = false; window.dispatchEvent(new Event('offline')) }
+}, 8000)
+
+window.addEventListener('online',  () => { pingServer() })
 window.addEventListener('offline', () => { _online = false })
+
+export function isOnline() { return _online }
 
 /* ── Normalize → always array ── */
 export function norm(res) {
@@ -161,7 +184,6 @@ export async function syncOfflineQueue() {
 }
 
 export const getQueueSize = queueSize
-export const isOnline     = () => _online
 
 export const api = {
   /* Auth */
