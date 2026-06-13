@@ -144,6 +144,10 @@ export default function Employees() {
         <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setForm({...row,salaryType:row.salaryType||'Oylik'});setModal('edit')}}>
           <MdEdit size={15}/>
         </button>
+        <button className="btn btn-ghost btn-sm" style={{fontSize:11,color:'var(--purple)'}}
+          onClick={async e=>{e.stopPropagation();try{const r=await api.generatePinEmp(row._id);toast(`📌 ${r.name} PIN: ${r.pin}`,'ok')}catch(e2){toast(e2.message,'err')}}}>
+          🔑 PIN
+        </button>
         <button className="btn btn-ghost btn-icon btn-sm" style={{color:'var(--red)'}} onClick={()=>setDelId(row._id)}>
           <MdDelete size={15}/>
         </button>
