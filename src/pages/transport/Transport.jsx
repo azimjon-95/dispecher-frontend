@@ -160,9 +160,13 @@ function TaskPanel({ title, icon, color, type, apiFns, drivers, allOrders, onDri
     try {
       const tasks  = norm(await apiFns.getAll())
       // Auto-merge from orders
-      const statusKey = type === 'pickup' ? 'qabul_qilindi' : 'yetkazishda'
+      // pickup = yangi/qabul_qilindi (olib kelish kerak)
+      // delivery = yetkazishda (olib borish kerak)
+      const pickupStatuses   = ['yangi', 'qabul_qilindi', 'qabul']
+      const deliveryStatuses = ['yetkazishda']
+      const statusKeys = type === 'pickup' ? pickupStatuses : deliveryStatuses
       const autoTasks = allOrders
-        .filter(o => o.driver && o.status === statusKey)
+        .filter(o => statusKeys.includes(o.status))
         .map(o => orderToTask(o, type))
       const existing = new Set(tasks.map(t => String(t.orderId||t.order)))
       const merged   = [...tasks, ...autoTasks.filter(t => !existing.has(String(t.orderId)))]
@@ -611,9 +615,13 @@ function MobileTaskPanel({ type, color, apiFns, drivers, allOrders, onDriverChan
     setLoading(true)
     try {
       const tasks = norm(await apiFns.getAll())
-      const statusKey = type === 'pickup' ? 'qabul_qilindi' : 'yetkazishda'
+      // pickup = yangi/qabul_qilindi (olib kelish kerak)
+      // delivery = yetkazishda (olib borish kerak)
+      const pickupStatuses   = ['yangi', 'qabul_qilindi', 'qabul']
+      const deliveryStatuses = ['yetkazishda']
+      const statusKeys = type === 'pickup' ? pickupStatuses : deliveryStatuses
       const autoTasks = allOrders
-        .filter(o => o.driver && o.status === statusKey)
+        .filter(o => statusKeys.includes(o.status))
         .map(o => orderToTask(o, type))
       const existing = new Set(tasks.map(t => String(t.orderId||t.order)))
       setRows([...tasks, ...autoTasks.filter(t => !existing.has(String(t.orderId)))])
