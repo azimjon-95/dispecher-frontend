@@ -6,6 +6,7 @@ import {
 import { api, fmt } from '../../services/api.js'
 import { Modal, Confirm, Sbadge, Table, Paging, PH, ExportBtn, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
+const isMob = () => window.innerWidth <= 768
 
 const STATUSES = ['rejalashtirilgan','jarayonda','bajarildi','bekor']
 const STATUS_COLORS = {
@@ -22,6 +23,255 @@ function norm(r) {
   return []
 }
 
+
+/* ══════════════════════════════════════════
+   MOBILE HOME SERVICE — iOS style
+══════════════════════════════════════════ */
+function MobServiceCard({ sv, onEdit, onDone, onDelete }) {
+  const color = STATUS_COLORS[sv.status] || 'var(--text3)'
+  const isDone = sv.status === 'bajarildi'
+  const isPlan = sv.status === 'rejalashtirilgan'
+
+  return (
+    <div style={{
+      background:'var(--bg2)', border:'1px solid var(--border)',
+      borderRadius:16, overflow:'hidden', position:'relative',
+    }}>
+      <div style={{height:3, background:`linear-gradient(90deg,${color},${color}66)`}}/>
+      <div style={{padding:'12px 14px'}}>
+        {/* Header */}
+        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:8}}>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:700,fontSize:15,marginBottom:2}}>{sv.customer}</div>
+            {sv.phone && (
+              <a href={`tel:${sv.phone}`} style={{
+                display:'inline-flex',alignItems:'center',gap:4,
+                fontSize:12,color:'#229ED9',textDecoration:'none',
+              }}>
+                <MdPhone size={11}/>{sv.phone}
+              </a>
+            )}
+          </div>
+          <span style={{
+            fontSize:11,fontWeight:700,padding:'3px 9px',borderRadius:99,
+            background:color+'18',color,border:`1px solid ${color}30`,flexShrink:0,
+          }}>{sv.status}</span>
+        </div>
+
+        {/* Address */}
+        {sv.address && (
+          <div style={{
+            display:'flex',alignItems:'flex-start',gap:6,
+            padding:'7px 10px',borderRadius:10,
+            background:'var(--bg3)',marginBottom:8,
+            fontSize:12,color:'var(--text2)',lineHeight:1.4,
+          }}>
+            <MdLocationOn size={13} style={{color:'#f97316',flexShrink:0,marginTop:1}}/>
+            <span>{sv.address}</span>
+          </div>
+        )}
+
+        {/* Date + Amount row */}
+        <div style={{display:'flex',gap:8,marginBottom:10}}>
+          {sv.scheduledDate && (
+            <div style={{
+              flex:1,padding:'7px 10px',borderRadius:10,
+              background:'var(--bg3)',fontSize:11,color:'var(--text2)',
+              display:'flex',alignItems:'center',gap:5,
+            }}>
+              📅 {sv.scheduledDate} {sv.scheduledTime && `· ${sv.scheduledTime}`}
+            </div>
+          )}
+          {sv.totalAmount > 0 && (
+            <div style={{
+              padding:'7px 12px',borderRadius:10,
+              background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.2)',
+              fontSize:13,fontWeight:800,color:'#22c55e',fontFamily:'monospace',
+            }}>
+              {fmt.currency(sv.totalAmount)}
+            </div>
+          )}
+        </div>
+
+        {/* Ishchilar */}
+        {sv.workers?.length > 0 && (
+          <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}}>
+            {sv.workers.map((w,i)=>(
+              <span key={i} style={{
+                fontSize:10,fontWeight:600,padding:'2px 7px',borderRadius:99,
+                background:'rgba(139,92,246,.12)',color:'#8b5cf6',
+                border:'1px solid rgba(139,92,246,.2)',
+              }}>👷 {w.workerName}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div style={{display:'flex',gap:6}}>
+          {isPlan && (
+            <button onClick={()=>onDone(sv)} style={{
+              flex:1,padding:'8px',borderRadius:10,cursor:'pointer',
+              background:'rgba(34,197,94,.12)',color:'#22c55e',
+              border:'1px solid rgba(34,197,94,.25)',
+              fontSize:12,fontWeight:700,
+              display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+              WebkitTapHighlightColor:'transparent',
+            }}>
+              <MdCheckCircle size={14}/> Yakunlash
+            </button>
+          )}
+          <button onClick={()=>onEdit(sv)} style={{
+            width:36,height:36,borderRadius:10,cursor:'pointer',
+            background:'rgba(59,130,246,.1)',color:'#3B82F6',
+            border:'1px solid rgba(59,130,246,.2)',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            WebkitTapHighlightColor:'transparent',
+          }}><MdEdit size={15}/></button>
+          <button onClick={()=>onDelete(sv._id)} style={{
+            width:36,height:36,borderRadius:10,cursor:'pointer',
+            background:'rgba(248,81,73,.1)',color:'#f85149',
+            border:'1px solid rgba(248,81,73,.2)',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            WebkitTapHighlightColor:'transparent',
+          }}><MdDelete size={15}/></button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MobHomeService({ services, loading, workers, onAdd, onEdit, onDone, onDelete, search, setSearch, statusF, setStatusF }) {
+  const total   = services.length
+  const planned = services.filter(s=>s.status==='rejalashtirilgan').length
+  const done    = services.filter(s=>s.status==='bajarildi').length
+  const income  = services.filter(s=>s.status==='bajarildi').reduce((s,x)=>s+(x.totalAmount||0),0)
+
+  const filtered = useMemo(()=>{
+    let r = services
+    if (statusF) r = r.filter(s=>s.status===statusF)
+    if (search)  r = r.filter(s=>(s.customer||'').toLowerCase().includes(search.toLowerCase())||(s.phone||'').includes(search)||(s.address||'').toLowerCase().includes(search.toLowerCase()))
+    return r
+  },[services,statusF,search])
+
+  return (
+    <div style={{paddingBottom:90}}>
+      {/* Hero */}
+      <div style={{
+        background:'linear-gradient(160deg,#1a0d1a 0%,#0d1117 100%)',
+        padding:'14px 16px 18px',position:'relative',overflow:'hidden',
+      }}>
+        <div style={{position:'absolute',top:-40,right:-40,width:150,height:150,
+          borderRadius:'50%',background:'rgba(139,92,246,.12)',filter:'blur(30px)',pointerEvents:'none'}}/>
+        <div style={{fontSize:11,color:'rgba(255,255,255,.4)',fontWeight:600,
+          textTransform:'uppercase',letterSpacing:'1px',marginBottom:6}}>Uyga xizmat</div>
+        <div style={{fontSize:28,fontWeight:900,color:'#8b5cf6',fontFamily:'monospace',marginBottom:10}}>
+          {total} ta
+        </div>
+        {/* Stats row */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+          {[
+            {lbl:'Rejalash',val:planned,c:'#3B82F6',emoji:'📅'},
+            {lbl:'Bajarildi',val:done,c:'#22c55e',emoji:'✅'},
+            {lbl:'Daromad',val:fmt.currency(income),c:'#22c55e',emoji:'💰',small:true},
+          ].map(s=>(
+            <div key={s.lbl} style={{
+              background:'rgba(255,255,255,.05)',
+              border:'1px solid rgba(255,255,255,.08)',
+              borderRadius:12,padding:'10px 10px',
+            }}>
+              <div style={{fontSize:14,marginBottom:3}}>{s.emoji}</div>
+              <div style={{
+                fontWeight:900,color:s.c,fontFamily:'monospace',
+                fontSize:s.small?12:18,lineHeight:1,marginBottom:2,
+              }}>{s.val}</div>
+              <div style={{fontSize:10,color:'rgba(255,255,255,.35)'}}>{s.lbl}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Status filter pills */}
+      <div style={{
+        display:'flex',gap:6,overflowX:'auto',
+        padding:'10px 16px 6px',scrollbarWidth:'none',
+      }}>
+        {[{key:'',label:'Barchasi',emoji:'📋'},...STATUSES.map(s=>({key:s,label:s,emoji:s==='rejalashtirilgan'?'📅':s==='jarayonda'?'🔄':s==='bajarildi'?'✅':'❌'}))].map(t=>{
+          const isAct = statusF === t.key
+          const c = t.key ? STATUS_COLORS[t.key]||'var(--text3)' : 'var(--text2)'
+          return (
+            <button key={t.key} onClick={()=>setStatusF(t.key)} style={{
+              flexShrink:0,display:'flex',alignItems:'center',gap:5,
+              padding:'7px 12px',borderRadius:99,cursor:'pointer',
+              background:isAct?`${c}20`:'var(--bg2)',
+              border:`1px solid ${isAct?c+'60':'var(--border)'}`,
+              color:isAct?c:'var(--text3)',
+              fontSize:12,fontWeight:700,
+              WebkitTapHighlightColor:'transparent',transition:'all .15s',
+            }}>
+              <span>{t.emoji}</span><span>{t.label}</span>
+            </button>
+          )
+        })}
+        <style>{`::-webkit-scrollbar{display:none}`}</style>
+      </div>
+
+      {/* Search */}
+      <div style={{padding:'4px 16px 10px'}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,
+          background:'var(--bg2)',border:'1px solid var(--border)',
+          borderRadius:12,padding:'8px 12px'}}>
+          <span style={{fontSize:15,flexShrink:0}}>🔍</span>
+          <input placeholder="Mijoz, manzil..."
+            value={search} onChange={e=>setSearch(e.target.value)}
+            style={{flex:1,background:'none',border:'none',outline:'none',
+              color:'var(--text)',fontSize:14,fontFamily:'inherit'}}/>
+          {search&&<button onClick={()=>setSearch('')} style={{background:'none',border:'none',
+            color:'var(--text3)',cursor:'pointer',fontSize:16}}>✕</button>}
+        </div>
+      </div>
+
+      {/* Count */}
+      <div style={{padding:'0 16px 8px',fontSize:12,color:'var(--text3)'}}>
+        {filtered.length} ta xizmat
+      </div>
+
+      {/* Cards */}
+      <div style={{padding:'0 16px',display:'flex',flexDirection:'column',gap:8}}>
+        {loading ? (
+          [...Array(3)].map((_,i)=>(
+            <div key={i} style={{height:120,borderRadius:14,background:'var(--bg2)',
+              animation:'mobSkel 1.4s ease-in-out infinite',animationDelay:i*80+'ms'}}/>
+          ))
+        ) : filtered.length===0 ? (
+          <div style={{textAlign:'center',padding:'40px 0',color:'var(--text3)'}}>
+            <div style={{fontSize:36,marginBottom:8}}>🏠</div>
+            <div style={{fontSize:13}}>Xizmat topilmadi</div>
+          </div>
+        ) : filtered.map(sv=>(
+          <MobServiceCard key={sv._id} sv={sv}
+            onEdit={onEdit} onDone={onDone} onDelete={onDelete}/>
+        ))}
+      </div>
+
+      {/* FAB */}
+      <button onClick={onAdd} style={{
+        position:'fixed',bottom:74,right:20,
+        width:54,height:54,borderRadius:'50%',
+        background:'linear-gradient(135deg,#8b5cf6,#6d28d9)',
+        color:'white',border:'none',cursor:'pointer',
+        display:'flex',alignItems:'center',justifyContent:'center',
+        boxShadow:'0 4px 20px rgba(139,92,246,.5)',zIndex:200,
+        WebkitTapHighlightColor:'transparent',transition:'transform .12s',
+      }}
+        onTouchStart={e=>e.currentTarget.style.transform='scale(.9)'}
+        onTouchEnd={e=>e.currentTarget.style.transform='scale(1)'}
+      ><MdAdd size={26}/></button>
+
+      <style>{`@keyframes mobSkel{0%,100%{opacity:.4}50%{opacity:.8}}`}</style>
+    </div>
+  )
+}
+
 export default function HomeService() {
   const [services,   setServices]   = useState([])
   const [workers,    setWorkers]    = useState([])
@@ -36,6 +286,12 @@ export default function HomeService() {
   const [statusF,    setStatusF]    = useState('')
   const [page,       setPage]       = useState(1)
   const PAGE = 15
+  const [mobile, setMobile] = useState(isMob())
+  useEffect(() => {
+    const fn = () => setMobile(isMob())
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
 
   useEffect(() => { loadAll() }, [])
 
@@ -122,6 +378,46 @@ export default function HomeService() {
       </div>
     )},
   ]
+
+  // Mobile render
+  if (mobile) return (
+    <ErrorBoundary>
+      <MobHomeService
+        services={services} loading={loading} workers={workers}
+        onAdd={()=>{setForm(EMPTY);setFormModal('create')}}
+        onEdit={sv=>{setForm({...sv});setFormModal('edit')}}
+        onDone={sv=>{setDoneModal(sv);setDoneForm({totalAmount:sv.totalAmount||'',paidAmount:'',description:''});setSelWorkers(sv.workers?.map(w=>w.workerId)||[])}}
+        onDelete={id=>setDelId(id)}
+        search={search} setSearch={setSearch}
+        statusF={statusF} setStatusF={setStatusF}
+      />
+      {/* Shared Modals */}
+      <Modal open={formModal==='create'||formModal==='edit'} onClose={()=>setFormModal(null)}
+        title={formModal==='create'?'🏠 Yangi uy xizmati':'✏️ Tahrirlash'} size="lg"
+        footer={<><button className="btn btn-ghost" onClick={()=>setFormModal(null)}>Bekor</button><button className="btn btn-primary" onClick={save}>Saqlash</button></>}>
+        <div className="fg"><label className="flabel">Mijoz ismi *</label><input className="finput" value={form.customer} onChange={set('customer')} autoFocus/></div>
+        <div className="fg"><label className="flabel">Telefon *</label><input className="finput" placeholder="+998 90 000 00 00" value={form.phone} onChange={set('phone')}/></div>
+        <div className="fg"><label className="flabel">Manzil *</label><input className="finput" value={form.address} onChange={set('address')}/></div>
+        <div className="fgrid2">
+          <div className="fg"><label className="flabel">Sana</label><input className="finput" type="date" value={form.scheduledDate} onChange={set('scheduledDate')}/></div>
+          <div className="fg"><label className="flabel">Vaqt</label><input className="finput" type="time" value={form.scheduledTime} onChange={set('scheduledTime')}/></div>
+        </div>
+        <div className="fgrid2">
+          <div className="fg"><label className="flabel">Summa</label><input className="finput" type="number" value={form.totalAmount} onChange={set('totalAmount')}/></div>
+          <div className="fg"><label className="flabel">Ishchi %</label><input className="finput" type="number" min="0" max="100" value={form.workerPercent} onChange={set('workerPercent')}/></div>
+        </div>
+        <div className="fg"><label className="flabel">Tavsif</label><textarea className="ftextarea" rows={2} value={form.description} onChange={set('description')}/></div>
+      </Modal>
+      <Modal open={!!doneModal} onClose={()=>{setDoneModal(null);setSelWorkers([])}}
+        title="✅ Xizmatni yakunlash" size="sm"
+        footer={<><button className="btn btn-ghost" onClick={()=>setDoneModal(null)}>Bekor</button><button className="btn btn-success" onClick={markDone}>Yakunlash</button></>}>
+        <div className="fg"><label className="flabel">Jami summa</label><input className="finput" type="number" value={doneForm.totalAmount} onChange={e=>setDoneForm(p=>({...p,totalAmount:e.target.value}))}/></div>
+        <div className="fg"><label className="flabel">To'langan</label><input className="finput" type="number" value={doneForm.paidAmount} onChange={e=>setDoneForm(p=>({...p,paidAmount:e.target.value}))}/></div>
+        <div className="fg"><label className="flabel">Izoh</label><textarea className="ftextarea" rows={2} value={doneForm.description} onChange={e=>setDoneForm(p=>({...p,description:e.target.value}))}/></div>
+      </Modal>
+      <Confirm open={!!delId} onClose={()=>setDelId(null)} onOk={()=>{deleteService(delId);setDelId(null)}} title="O'chirish" msg="Bu xizmatni o'chirasizmi?" danger/>
+    </ErrorBoundary>
+  )
 
   return (
     <ErrorBoundary>
