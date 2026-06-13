@@ -8,7 +8,6 @@ import Orders    from './pages/orders/Orders.jsx'
 import Transport from './pages/transport/Transport.jsx'
 import Workers   from './pages/workers/Workers.jsx'
 import Employees from './pages/employees/Employees.jsx'
-import Drivers   from './pages/drivers/Drivers.jsx'
 import Customers from './pages/customers/Customers.jsx'
 import Finance   from './pages/finance/Finance.jsx'
 import Salary    from './pages/salary/Salary.jsx'
@@ -226,7 +225,6 @@ export default function App() {
     transport: <Transport />,
     workers:   <Workers />,
     employees: <Employees />,
-    drivers:   <Drivers />,
     customers: <Customers />,
     finance:   <Finance />,
     salary:    <Salary />,

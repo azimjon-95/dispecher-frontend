@@ -21,8 +21,7 @@ export default function Sidebar({ active, onNav, collapsed, onToggle, mobOpen, o
     {
       section: 'Hodimlar',
       items: [
-        { id:'employees',   Icon:MdPeople,        label:'Xodimlar',   badge:null },
-        { id:'drivers',     Icon:MdDirectionsCar, label:'Shafyorlar', badge:null },
+        { id:'employees',   Icon:MdPeople,        label:'Hodimlar',   badge:null },
         { id:'customers',   Icon:MdPerson,        label:'Mijozlar',   badge:null },
       ]
     },
