@@ -86,23 +86,6 @@ function calcExpected(emp) {
 export default function Employees() {
   const [tab, setTab] = useState('employees') // 'employees' | 'drivers'
 
-  if (tab === 'drivers') return (
-    <div>
-      <div style={{display:'flex',gap:6,padding:'0 0 16px',borderBottom:'1px solid var(--border)',marginBottom:16}}>
-        {[
-          {key:'employees', label:'👷 Xodimlar'},
-          {key:'drivers',   label:'🚗 Shafyorlar'},
-        ].map(t=>(
-          <button key={t.key} onClick={()=>setTab(t.key)}
-            className={`btn btn-sm ${tab===t.key?'btn-primary':'btn-ghost'}`}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-      <Drivers/>
-    </div>
-  )
-
   const crud = useCRUD(
     { getAll:api.getEmployees, create:api.createEmployee, update:api.updateEmployee, remove:api.deleteEmployee },
     ['name','phone']
@@ -177,6 +160,7 @@ export default function Employees() {
 
   return (
     <ErrorBoundary>
+      {/* Tab switcher */}
       <div style={{display:'flex',gap:6,marginBottom:16}}>
         {[
           {key:'employees', label:'👷 Xodimlar'},
@@ -188,6 +172,12 @@ export default function Employees() {
           </button>
         ))}
       </div>
+
+      {/* Drivers tab */}
+      {tab === 'drivers' && <Drivers/>}
+
+      {/* Employees tab */}
+      {tab === 'employees' && <>
       <div className="employees-wrap">
         <PH title="👥 Xodimlar" sub={`${crud.total} ta xodim`}
           actions={<>
@@ -304,6 +294,8 @@ export default function Employees() {
           onOk={async()=>{await crud.remove(delId);setDelId(null)}}
           title="Xodimni o'chirish" msg="Bu xodimni o'chirishni xohlaysizmi?" danger/>
       </div>
+      </>
+      }
     </ErrorBoundary>
   )
 }
