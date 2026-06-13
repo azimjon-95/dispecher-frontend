@@ -9,6 +9,7 @@ import { api, fmt } from '../../services/api.js'
 import { Modal, Confirm, Sbadge, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import './Transport.css'
+const isMob = () => window.innerWidth <= 768
 
 const STATUSES     = ['yangi','jarayonda','yetkazildi','bekor']
 const DRIVER_COLORS= ['#3fb950','#58a6ff','#f0883e','#bc8cff','#ff7b72','#ffa657']
@@ -35,6 +36,109 @@ function orderToTask(order, type) {
     driver:    order.driver||'', status:'yangi', type, auto:true,
     totalPrice:order.total||0,  amountDue:order.total||0,
   }
+}
+
+
+/* ══════════════════════════════════════════
+   MOBILE TASK CARD — iOS style
+══════════════════════════════════════════ */
+function MobileTaskCard({ row, type, drivers, onAssign, onSendTg, sending }) {
+  const color = type === 'delivery' ? '#3fb950' : '#f0883e'
+  const hasDriver = !!row.driver
+
+  return (
+    <div style={{
+      background: 'var(--bg2)',
+      border: '1px solid var(--border)',
+      borderRadius: 16,
+      overflow: 'hidden',
+      position: 'relative',
+    }}>
+      {/* Top accent bar */}
+      <div style={{height:3, background:`linear-gradient(90deg,${color},${color}88)`}}/>
+
+      <div style={{padding:'12px 14px'}}>
+        {/* Header row */}
+        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:8}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+              <span style={{
+                fontFamily:'monospace',fontWeight:800,fontSize:14,color,
+              }}>{row.order}</span>
+              {row.auto && (
+                <span style={{
+                  fontSize:9,fontWeight:700,padding:'1px 5px',borderRadius:4,
+                  background:'rgba(59,130,246,.15)',color:'#3B82F6',
+                }}>AUTO</span>
+              )}
+            </div>
+            <div style={{fontSize:14,fontWeight:700,color:'var(--text)'}}>{row.customer}</div>
+          </div>
+          {/* TG button */}
+          {row.phone && (
+            <a href={tgLink(row.phone,'Salom!')} target="_blank" rel="noopener noreferrer"
+              style={{
+                display:'flex',alignItems:'center',gap:4,
+                padding:'5px 10px',borderRadius:99,
+                background:'rgba(34,158,217,.12)',
+                border:'1px solid rgba(34,158,217,.25)',
+                color:'#229ED9',fontSize:11,fontWeight:700,
+                textDecoration:'none',flexShrink:0,
+              }}>
+              <TgIcon/> TG
+            </a>
+          )}
+        </div>
+
+        {/* Address */}
+        {row.address && (
+          <div style={{
+            display:'flex',alignItems:'flex-start',gap:6,
+            padding:'7px 10px',borderRadius:10,
+            background:'var(--bg3)',marginBottom:8,
+            fontSize:12,color:'var(--text2)',lineHeight:1.4,
+          }}>
+            <MdLocationOn size={14} style={{color,flexShrink:0,marginTop:1}}/>
+            <span>{row.address}</span>
+          </div>
+        )}
+
+        {/* Driver + Actions */}
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
+          {/* Driver status */}
+          <button onClick={()=>onAssign(row)} style={{
+            flex:1,display:'flex',alignItems:'center',gap:6,
+            padding:'8px 12px',borderRadius:10,cursor:'pointer',
+            background: hasDriver ? `${color}12` : 'var(--bg3)',
+            border: `1px solid ${hasDriver ? color+'40' : 'var(--border)'}`,
+            color: hasDriver ? color : 'var(--text3)',
+            fontSize:12,fontWeight:600,
+            WebkitTapHighlightColor:'transparent',
+          }}>
+            <MdDirectionsCar size={14}/>
+            {hasDriver ? row.driver : 'Shafyor biriktirish'}
+            {hasDriver && <MdSwapHoriz size={12} style={{marginLeft:'auto',opacity:.6}}/>}
+          </button>
+
+          {/* Send TG to customer */}
+          {row.phone && (
+            <button onClick={()=>onSendTg(row)} disabled={sending===row._id} style={{
+              padding:'8px 12px',borderRadius:10,cursor:'pointer',
+              background: row.tgSent ? 'rgba(34,197,94,.12)' : 'rgba(34,158,217,.12)',
+              border: `1px solid ${row.tgSent ? 'rgba(34,197,94,.3)' : 'rgba(34,158,217,.3)'}`,
+              color: row.tgSent ? '#22c55e' : '#229ED9',
+              fontSize:12,fontWeight:700,
+              display:'flex',alignItems:'center',gap:4,
+              WebkitTapHighlightColor:'transparent',
+            }}>
+              <MdSend size={13}/>
+              {row.tgSent ? 'Yuborildi' : 'Xabar'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 /* ════════════════════════════════
@@ -489,11 +593,156 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
 /* ════════════════════════════════
    MAIN TRANSPORT
 ════════════════════════════════ */
+
+/* ══════════════════════════════════════════
+   MOBILE TASK PANEL
+══════════════════════════════════════════ */
+function MobileTaskPanel({ type, color, apiFns, drivers, allOrders, onDriverChange }) {
+  const [rows,    setRows]    = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search,  setSearch]  = useState('')
+  const [assign,  setAssign]  = useState(null)
+  const [selDrv,  setSelDrv]  = useState(null)
+  const [sending, setSending] = useState(null)
+
+  useEffect(() => { load() }, [allOrders, type])
+
+  async function load() {
+    setLoading(true)
+    try {
+      const tasks = norm(await apiFns.getAll())
+      const statusKey = type === 'pickup' ? 'qabul_qilindi' : 'yetkazishda'
+      const autoTasks = allOrders
+        .filter(o => o.driver && o.status === statusKey)
+        .map(o => orderToTask(o, type))
+      const existing = new Set(tasks.map(t => String(t.orderId||t.order)))
+      setRows([...tasks, ...autoTasks.filter(t => !existing.has(String(t.orderId)))])
+    } catch { setRows([]) }
+    setLoading(false)
+  }
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase()
+    return rows.filter(r => !q || r.order?.includes(q) || r.customer?.toLowerCase().includes(q))
+  }, [rows, search])
+
+  async function confirmAssign() {
+    if (!selDrv) return
+    const dr = drivers.find(d=>d._id===selDrv)
+    if (!dr) return
+    try {
+      await apiFns.update(assign._id, { driver: dr.name })
+      setRows(p=>p.map(r=>r._id===assign._id?{...r,driver:dr.name}:r))
+      onDriverChange?.(dr.name, 'band')
+      if (dr.phone) {
+        const url = tgLink(dr.phone, `🚗 Yangi topshiriq!\n📋 ${assign.order}\n👤 ${assign.customer}\n📍 ${assign.address}`)
+        window.open(url, '_blank')
+      }
+      toast(`${dr.name} biriktirildi ✅`, 'ok')
+    } catch(e) { toast(e.message,'err') }
+    setAssign(null); setSelDrv(null)
+  }
+
+  async function sendTg(row) {
+    setSending(row._id)
+    const msg = type==='delivery'
+      ? `📦 Buyurtmangiz ${row.order} tayyor!\n👤 ${row.customer}\n📍 ${row.address}`
+      : `🚗 Shafyor yo'lda!\n📋 ${row.order}`
+    window.open(tgLink(row.phone, msg), '_blank')
+    setRows(p=>p.map(r=>r._id===row._id?{...r,tgSent:true}:r))
+    setSending(null)
+  }
+
+  return (
+    <div>
+      {/* Search */}
+      <div style={{
+        display:'flex',alignItems:'center',gap:8,
+        background:'var(--bg2)',border:'1px solid var(--border)',
+        borderRadius:12,padding:'8px 12px',marginBottom:10,
+      }}>
+        <span style={{fontSize:15,flexShrink:0}}>🔍</span>
+        <input placeholder="Buyurtma raqam yoki mijoz..."
+          value={search} onChange={e=>setSearch(e.target.value)}
+          style={{flex:1,background:'none',border:'none',outline:'none',
+            color:'var(--text)',fontSize:14,fontFamily:'inherit'}}/>
+        {search && <button onClick={()=>setSearch('')} style={{background:'none',border:'none',
+          color:'var(--text3)',cursor:'pointer',fontSize:16}}>✕</button>}
+      </div>
+
+      {/* Count */}
+      <div style={{fontSize:12,color:'var(--text3)',marginBottom:8,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <span>{filtered.length} ta topshiriq</span>
+        <button onClick={load} style={{background:'none',border:'none',color:'var(--text3)',cursor:'pointer',fontSize:12,display:'flex',alignItems:'center',gap:3}}>
+          <MdRefresh size={13}/> Yangilash
+        </button>
+      </div>
+
+      {/* Cards */}
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {loading ? (
+          [...Array(3)].map((_,i)=>(
+            <div key={i} style={{height:100,borderRadius:14,background:'var(--bg2)',
+              animation:'mobSkel 1.4s ease-in-out infinite',animationDelay:i*80+'ms'}}/>
+          ))
+        ) : filtered.length===0 ? (
+          <div style={{textAlign:'center',padding:'36px 0',color:'var(--text3)'}}>
+            <div style={{fontSize:36,marginBottom:8}}>📭</div>
+            <div style={{fontSize:13}}>Topshiriq yo'q</div>
+          </div>
+        ) : filtered.map(row=>(
+          <MobileTaskCard key={row._id} row={row} type={type}
+            drivers={drivers}
+            onAssign={r=>{setAssign(r);setSelDrv(null)}}
+            onSendTg={sendTg}
+            sending={sending}
+          />
+        ))}
+      </div>
+
+      {/* Assign modal */}
+      <Modal open={!!assign} onClose={()=>{setAssign(null);setSelDrv(null)}}
+        title={`🚗 Shafyor — ${assign?.order||''}`} size="sm"
+        footer={<>
+          <button className="btn btn-ghost" onClick={()=>{setAssign(null);setSelDrv(null)}}>Bekor</button>
+          <button className="btn btn-primary" onClick={confirmAssign} disabled={!selDrv}>✅ Biriktirish + TG</button>
+        </>}>
+        {assign && (
+          <div style={{padding:'7px 10px',background:'var(--bg3)',borderRadius:'var(--r)',marginBottom:10,fontSize:12}}>
+            <div style={{fontWeight:700}}>{assign.customer}</div>
+            <div style={{color:'var(--text2)',marginTop:2}}>{assign.address}</div>
+          </div>
+        )}
+        <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:260,overflowY:'auto'}}>
+          {drivers.length===0
+            ? <div style={{textAlign:'center',padding:20,color:'var(--text3)'}}>Shafyor topilmadi</div>
+            : drivers.map(d=>(
+              <div key={d._id}
+                className={`assign-driver-item ${selDrv===d._id?'sel':''}`}
+                onClick={()=>setSelDrv(d._id)}>
+                <div className="assign-driver-avatar">{d.name?.[0]}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700,fontSize:13}}>{d.name}</div>
+                  <div style={{fontSize:11,color:'var(--text2)'}}>{d.car} · {d.plate}</div>
+                </div>
+                <Sbadge s={d.status}/>
+              </div>
+            ))
+          }
+        </div>
+      </Modal>
+
+      <style>{`@keyframes mobSkel{0%,100%{opacity:.4}50%{opacity:.8}}`}</style>
+    </div>
+  )
+}
+
 export default function Transport() {
   const [drivers,         setDrivers]         = useState([])
   const [orders,          setOrders]           = useState([])
   const [driverLocations, setDriverLocations]  = useState({})
   const [mobileTab,       setMobileTab]        = useState('delivery')
+  // mobile state added below in return
 
   useEffect(() => { loadAll() }, [])
 
@@ -522,51 +771,138 @@ export default function Transport() {
     },
   }
 
+  const [mobile, setMobile] = useState(isMob())
+  useEffect(() => {
+    const fn = () => setMobile(isMob())
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
+
   return (
     <ErrorBoundary>
       <div className="transport-wrap">
-        <div className="ph">
-          <div>
-            <div className="ph-title">🚛 Transport</div>
-            <div className="ph-sub">Olib Kelish · Olib Ketish · Live Xarita</div>
-          </div>
-          <div className="ph-actions">
-            <button className="btn btn-ghost btn-sm" onClick={loadAll}><MdRefresh size={15}/> Yangilash</button>
-          </div>
-        </div>
 
-        {/* Mobile tabs */}
-        <div className="tp-tabs">
-          {['delivery','pickup','map'].map(t=>(
-            <button key={t} className={`tp-tab ${mobileTab===t?'active':''}`} onClick={()=>setMobileTab(t)}>
-              {t==='delivery'?'🚚 Olib Ketish':t==='pickup'?'📮 Olib Kelish':'🗺️ Xarita'}
+        {/* ── MOBILE LAYOUT ── */}
+        {mobile && (
+          <div style={{paddingBottom:90}}>
+            {/* Hero stats */}
+            <div style={{
+              background:'linear-gradient(160deg,#0d1a0d 0%,#0d1117 100%)',
+              padding:'14px 16px 16px',
+              display:'flex',gap:10,
+            }}>
+              {[
+                {emoji:'🚚',lbl:'Olib ketish',val:orders.filter(o=>o.status==='yetkazishda'&&o.driver).length,c:'#3fb950'},
+                {emoji:'📮',lbl:'Olib kelish', val:orders.filter(o=>o.status==='qabul_qilindi'&&o.driver).length,c:'#f0883e'},
+                {emoji:'🚗',lbl:'Online',      val:Object.values(driverLocations).filter(d=>d.online).length,c:'#58a6ff'},
+              ].map(s=>(
+                <div key={s.lbl} style={{
+                  flex:1,background:'rgba(255,255,255,.05)',
+                  border:'1px solid rgba(255,255,255,.08)',
+                  borderRadius:14,padding:'10px 10px',textAlign:'center',
+                }}>
+                  <div style={{fontSize:18,marginBottom:3}}>{s.emoji}</div>
+                  <div style={{fontSize:20,fontWeight:900,color:s.c,fontFamily:'monospace'}}>{s.val}</div>
+                  <div style={{fontSize:10,color:'rgba(255,255,255,.35)',marginTop:1}}>{s.lbl}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tab switcher */}
+            <div style={{
+              display:'flex',gap:0,margin:'0 16px',marginTop:12,
+              background:'var(--bg2)',borderRadius:12,
+              border:'1px solid var(--border)',overflow:'hidden',
+            }}>
+              {[
+                {key:'delivery',label:'🚚 Olib Ketish',color:'#3fb950'},
+                {key:'pickup',  label:'📮 Olib Kelish',color:'#f0883e'},
+                {key:'map',     label:'🗺️ Xarita',      color:'#58a6ff'},
+              ].map((t,i)=>(
+                <button key={t.key} onClick={()=>setMobileTab(t.key)} style={{
+                  flex:1,padding:'10px 4px',
+                  background:mobileTab===t.key?`${t.color}18`:'transparent',
+                  border:'none',borderRight:i<2?'1px solid var(--border)':'none',
+                  color:mobileTab===t.key?t.color:'var(--text3)',
+                  fontSize:11,fontWeight:700,cursor:'pointer',
+                  transition:'all .2s',WebkitTapHighlightColor:'transparent',
+                }}>{t.label}</button>
+              ))}
+            </div>
+
+            {/* Content */}
+            <div style={{padding:'12px 16px 0'}}>
+              {mobileTab !== 'map' && (
+                <MobileTaskPanel
+                  type={mobileTab}
+                  color={mobileTab==='delivery'?'#3fb950':'#f0883e'}
+                  apiFns={apiFns[mobileTab]}
+                  drivers={drivers}
+                  allOrders={orders}
+                  onDriverChange={onDriverChange}
+                />
+              )}
+              {mobileTab === 'map' && (
+                <div style={{borderRadius:14,overflow:'hidden',border:'1px solid var(--border)'}}>
+                  <LiveMap
+                    drivers={drivers}
+                    driverLocations={driverLocations}
+                    setDriverLocations={setDriverLocations}
+                    orders={orders}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Refresh FAB */}
+            <button onClick={loadAll} style={{
+              position:'fixed',bottom:74,right:20,
+              width:46,height:46,borderRadius:'50%',
+              background:'var(--bg2)',border:'1px solid var(--border)',
+              color:'var(--text2)',cursor:'pointer',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              boxShadow:'0 4px 16px rgba(0,0,0,.3)',zIndex:200,
+            }}>
+              <MdRefresh size={20}/>
             </button>
-          ))}
-        </div>
-
-        {/* Desktop: two panels side by side */}
-        <div className="tp-grid">
-          <div className={mobileTab==='pickup' || mobileTab==='map' ? 'tp-panel' : 'tp-panel active'}>
-            <TaskPanel title="Olib Ketish" icon="🚚" color="#3fb950"
-              type="delivery" apiFns={apiFns.delivery}
-              drivers={drivers} allOrders={orders} onDriverChange={onDriverChange}/>
           </div>
-          <div className={mobileTab==='delivery' || mobileTab==='map' ? 'tp-panel' : 'tp-panel active'}>
-            <TaskPanel title="Olib Kelish" icon="📮" color="#f0883e"
-              type="pickup" apiFns={apiFns.pickup}
-              drivers={drivers} allOrders={orders} onDriverChange={onDriverChange}/>
-          </div>
-        </div>
+        )}
 
-        {/* Live Map — always visible on desktop */}
-        <div style={mobileTab!=='map'?{}:{display:'block'}}>
-          <LiveMap
-            drivers={drivers}
-            driverLocations={driverLocations}
-            setDriverLocations={setDriverLocations}
-            orders={orders}
-          />
-        </div>
+        {/* ── DESKTOP LAYOUT ── */}
+        {!mobile && (<>
+          <div className="ph">
+            <div>
+              <div className="ph-title">🚛 Transport</div>
+              <div className="ph-sub">Olib Kelish · Olib Ketish · Live Xarita</div>
+            </div>
+            <div className="ph-actions">
+              <button className="btn btn-ghost btn-sm" onClick={loadAll}><MdRefresh size={15}/> Yangilash</button>
+            </div>
+          </div>
+          <div className="tp-tabs">
+            {['delivery','pickup','map'].map(t=>(
+              <button key={t} className={`tp-tab ${mobileTab===t?'active':''}`} onClick={()=>setMobileTab(t)}>
+                {t==='delivery'?'🚚 Olib Ketish':t==='pickup'?'📮 Olib Kelish':'🗺️ Xarita'}
+              </button>
+            ))}
+          </div>
+          <div className="tp-grid">
+            <div className={mobileTab==='pickup'||mobileTab==='map'?'tp-panel':'tp-panel active'}>
+              <TaskPanel title="Olib Ketish" icon="🚚" color="#3fb950"
+                type="delivery" apiFns={apiFns.delivery}
+                drivers={drivers} allOrders={orders} onDriverChange={onDriverChange}/>
+            </div>
+            <div className={mobileTab==='delivery'||mobileTab==='map'?'tp-panel':'tp-panel active'}>
+              <TaskPanel title="Olib Kelish" icon="📮" color="#f0883e"
+                type="pickup" apiFns={apiFns.pickup}
+                drivers={drivers} allOrders={orders} onDriverChange={onDriverChange}/>
+            </div>
+          </div>
+          <div style={mobileTab!=='map'?{}:{display:'block'}}>
+            <LiveMap drivers={drivers} driverLocations={driverLocations}
+              setDriverLocations={setDriverLocations} orders={orders}/>
+          </div>
+        </>)}
       </div>
     </ErrorBoundary>
   )
