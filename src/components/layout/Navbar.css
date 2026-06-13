@@ -94,7 +94,7 @@
 /* Mobile */
 @media (max-width: 768px) {
   .navbar       { left: 0 !important; padding: 0 12px; gap: 8px; }
-  .nb-burger    { display: flex; }
+  .nb-burger    { display: none; }  /* Bottom TabBar bor, burger kerak emas */
   .nb-search    { display: none; }
   .nb-live      { display: none; }
   .nb-page-sub  { display: none; }
