@@ -646,7 +646,7 @@ export default function Orders() {
       <Modal open={!!assignModal} onClose={()=>{setAssignModal(null);setSelDriver(null)}}
         title="🚗 Shafyor biriktirish" size="sm"
         footer={<><button className="btn btn-ghost" onClick={()=>{setAssignModal(null);setSelDriver(null)}}>Bekor</button>
-          <button className="btn btn-primary" onClick={confirmAssign} disabled={!selDriver}>✅ Biriktirish</button></>}>
+          <button className="btn btn-primary" onClick={confirmAssignDriver} disabled={!selDriver}>✅ Biriktirish</button></>}>
         <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:280,overflowY:'auto'}}>
           {drivers.map(d=>(
             <div key={d._id} className={`assign-driver-item ${selDriver===d._id?'sel':''}`} onClick={()=>setSelDriver(d._id)}>
@@ -659,7 +659,7 @@ export default function Orders() {
         </div>
       </Modal>
       {/* Confirm delete */}
-      <Confirm open={!!delId} onClose={()=>setDelId(null)} onOk={deleteOrder}
+      <Confirm open={!!delId} onClose={()=>setDelId(null)} onOk={doDelete}
         title="Buyurtmani o'chirish" msg="O'chirishni xohlaysizmi?" danger/>
     </ErrorBoundary>
   )
