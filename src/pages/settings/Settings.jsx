@@ -103,8 +103,8 @@ function TelegramTab() {
         <div className="fg" style={{ marginBottom: 10 }}>
           <label className="flabel">BOT_TOKEN *</label>
           <div style={{ display: 'flex', gap: 6 }}>
-            <PwdField value={cfg.BOT_TOKEN} onChange={v=>{s('BOT_TOKEN')({target:{value:v}});setHasToken(false)}}
-              placeholder={hasToken ? "••• Token saqlangan — yangi token kiriting" : "1234567890:ABCDef..."}/>
+            <PwdField value={cfg.BOT_TOKEN} onChange={s('BOT_TOKEN')}
+              placeholder="1234567890:ABCDef..."/>
             <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { navigator.clipboard?.writeText(cfg.BOT_TOKEN); toast('Nusxa olindi', 'ok') }}><MdContentCopy size={14}/></button>
           </div>
         </div>
