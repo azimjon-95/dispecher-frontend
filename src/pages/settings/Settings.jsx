@@ -45,7 +45,8 @@ function ResultBox({ res }) {
 
 /* ── TELEGRAM TAB ── */
 function TelegramTab() {
-  const [cfg,   setCfg]   = useState({ BOT_TOKEN:'', BOT_USERNAME:'', ADMIN_CHAT_ID:'', WEBAPP_URL:'' })
+  const [cfg,      setCfg]   = useState({ BOT_TOKEN:'', BOT_USERNAME:'', ADMIN_CHAT_ID:'', WEBAPP_URL:'' })
+  const [hasToken, setHasToken] = useState(false)
   const [load,  setLoad]  = useState(true)
   const [save,  setSave]  = useState(false)
   const [test,  setTest]  = useState(false)
@@ -91,8 +92,8 @@ function TelegramTab() {
           <div style={{ fontWeight: 700, fontSize: 15 }}>Telegram Bot sozlamalari</div>
           <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>DB da saqlanadi — serverni qayta ishga tushirish shart emas</div>
         </div>
-        <div style={{ padding: '4px 12px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: cfg.BOT_TOKEN ? 'var(--greenbg)' : 'var(--redbg)', color: cfg.BOT_TOKEN ? 'var(--green)' : 'var(--red)' }}>
-          {cfg.BOT_TOKEN ? '🟢 Sozlangan' : '🔴 Sozlanmagan'}
+        <div style={{ padding: '4px 12px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: (hasToken || cfg.BOT_TOKEN) ? 'var(--greenbg)' : 'var(--redbg)', color: (hasToken || cfg.BOT_TOKEN) ? 'var(--green)' : 'var(--red)' }}>
+          {(hasToken || cfg.BOT_TOKEN) ? '🟢 Sozlangan' : '🔴 Sozlanmagan'}
         </div>
       </div>
 
@@ -102,7 +103,8 @@ function TelegramTab() {
         <div className="fg" style={{ marginBottom: 10 }}>
           <label className="flabel">BOT_TOKEN *</label>
           <div style={{ display: 'flex', gap: 6 }}>
-            <PwdField value={cfg.BOT_TOKEN} onChange={s('BOT_TOKEN')} placeholder="1234567890:ABCDef..."/>
+            <PwdField value={cfg.BOT_TOKEN} onChange={v=>{s('BOT_TOKEN')({target:{value:v}});setHasToken(false)}}
+              placeholder={hasToken ? "••• Token saqlangan — yangi token kiriting" : "1234567890:ABCDef..."}/>
             <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { navigator.clipboard?.writeText(cfg.BOT_TOKEN); toast('Nusxa olindi', 'ok') }}><MdContentCopy size={14}/></button>
           </div>
         </div>
