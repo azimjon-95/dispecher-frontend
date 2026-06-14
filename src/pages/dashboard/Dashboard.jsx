@@ -535,10 +535,15 @@ export default function Dashboard({ onNav }) {
   async function load() {
     setLoading(true)
     try {
-      const [stR,finR,attR,ordR] = await Promise.allSettled([
+      const [stR,finR,attR,ordR,botR] = await Promise.allSettled([
         api.getDashStats(), api.getFinance(), api.getAttendanceToday(), api.getOrders(),
+        api.getTgSettings(),
       ])
-      if (stR.status==='fulfilled') setStats(stR.value)
+      if (stR.status==='fulfilled') {
+        const st = stR.value || {}
+        const bot = botR.status==='fulfilled' ? botR.value : {}
+        setStats({ ...st, botActive: !!(bot?.BOT_TOKEN || bot?._botActive) })
+      }
       setFinance(Array.isArray(finR.value) ? finR.value : finR.value?.data||[])
       if (attR.status==='fulfilled') setAttendance(attR.value)
       const ords = Array.isArray(ordR.value) ? ordR.value : ordR.value?.data||[]
