@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { MdAdd, MdEdit, MdDelete, MdSave, MdContentCopy, MdSend, MdRefresh, MdVisibility, MdVisibilityOff, MdCheckCircle, MdError } from 'react-icons/md'
 import { Modal, toast } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
+const isMob = () => window.innerWidth <= 768
 import './Settings.css'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -328,6 +329,12 @@ const TABS = [
 
 export default function Settings() {
   const [tab,    setTab]    = useState('telegram')
+  const [mobile, setMobile] = useState(isMob())
+  useEffect(() => {
+    const fn = () => setMobile(isMob())
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
   const [prices, setPrices] = useState(INIT_PRICES)
   const [modal,  setModal]  = useState(null)
   const [pform,  setPform]  = useState({})
@@ -341,6 +348,225 @@ export default function Settings() {
     else { setPrices(p => p.map(x => x._id===pform._id ? {...x,...pform} : x)); toast('Yangilandi','ok') }
     setModal(null)
   }
+
+  const TABS_MOBILE = [
+    { id:'telegram', label:'Telegram Bot', icon:'✈️', color:'#229ED9' },
+    { id:'sms-api',  label:'SMS Provayder', icon:'📱', color:'#22c55e' },
+    { id:'sms-tmpl', label:'SMS Shablonlar', icon:'📝', color:'#f59e0b' },
+    { id:'prices',   label:'Narxlar',        icon:'💰', color:'#8b5cf6' },
+    { id:'roles',    label:'Rollar',         icon:'👥', color:'#3B82F6' },
+    { id:'company',  label:'Kompaniya',      icon:'🏢', color:'#f97316' },
+  ]
+
+  if (mobile) return (
+    <ErrorBoundary>
+      <div style={{paddingBottom:90}}>
+
+        {/* Tab pills */}
+        <div style={{
+          display:'flex',gap:6,overflowX:'auto',
+          padding:'10px 16px 6px',scrollbarWidth:'none',
+          position:'sticky',top:52,zIndex:50,
+          background:'var(--bg)',borderBottom:'1px solid var(--border)',
+        }}>
+          {TABS_MOBILE.map(t=>{
+            const isAct = tab===t.id
+            return (
+              <button key={t.id} onClick={()=>setTab(t.id)} style={{
+                flexShrink:0,display:'flex',alignItems:'center',gap:5,
+                padding:'6px 12px',borderRadius:99,cursor:'pointer',
+                background:isAct?`${t.color}20`:'var(--bg2)',
+                border:`1px solid ${isAct?t.color+'60':'var(--border)'}`,
+                color:isAct?t.color:'var(--text3)',
+                fontSize:12,fontWeight:700,
+                WebkitTapHighlightColor:'transparent',
+              }}>
+                {t.icon} {t.label}
+              </button>
+            )
+          })}
+          <style>{`::-webkit-scrollbar{display:none}`}</style>
+        </div>
+
+        {/* Active section header */}
+        {(()=>{
+          const t = TABS_MOBILE.find(x=>x.id===tab)
+          return (
+            <div style={{
+              margin:'12px 16px 8px',
+              padding:'12px 14px',
+              background:`${t.color}10`,
+              border:`1px solid ${t.color}25`,
+              borderRadius:14,
+              display:'flex',alignItems:'center',gap:10,
+            }}>
+              <span style={{fontSize:22}}>{t.icon}</span>
+              <div>
+                <div style={{fontWeight:700,fontSize:14,color:'var(--text)'}}>{t.label}</div>
+                <div style={{fontSize:11,color:'var(--text3)',marginTop:1}}>
+                  {tab==='telegram' && 'Bot token va admin ID sozlang'}
+                  {tab==='sms-api'  && 'SMS provayderni tanlang va sozlang'}
+                  {tab==='sms-tmpl' && 'Avtomatik xabarlar matnini tahrirlang'}
+                  {tab==='prices'   && 'Gilam yuvish narxlarini belgilang'}
+                  {tab==='roles'    && 'Foydalanuvchi huquqlarini sozlang'}
+                  {tab==='company'  && 'Kompaniya ma\'lumotlarini kiriting'}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* Content */}
+        <div style={{padding:'0 16px'}}>
+          {tab==='telegram' && <TelegramTab/>}
+          {tab==='sms-api'  && <SmsApiTab/>}
+
+          {tab==='sms-tmpl' && (
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              {[
+                {label:'📥 Olib kelish',   def:'Salom, {ism}! Buyurtma #{raqam} qabul qilindi. Shafyor yo\'lda. Tartib CRM'},
+                {label:'📦 Yetkazish',     def:'Salom, {ism}! Buyurtma #{raqam} tayyor, yetkazilmoqda. Tartib CRM'},
+                {label:'🔄 Holat',         def:'Salom, {ism}! Buyurtma #{raqam} holati: {status}. Tartib CRM'},
+                {label:'📍 GPS so\'rash',  def:'Salom, {ism}! Joylashuvingizni yuboring.'},
+              ].map((t,i)=>(
+                <div key={i} style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:14,padding:'12px 14px'}}>
+                  <div style={{fontSize:12,fontWeight:700,color:'var(--text2)',marginBottom:7}}>{t.label}</div>
+                  <textarea defaultValue={t.def} rows={2} style={{
+                    width:'100%',background:'var(--bg3)',border:'1px solid var(--border)',
+                    borderRadius:9,padding:'8px 10px',color:'var(--text)',
+                    fontSize:13,fontFamily:'inherit',resize:'none',outline:'none',
+                  }}/>
+                  <div style={{fontSize:10,color:'var(--text3)',marginTop:4}}>
+                    Mavjud: {'{ism}'} {'{raqam}'} {'{status}'}
+                  </div>
+                </div>
+              ))}
+              <button className="btn btn-primary" style={{marginTop:4}}
+                onClick={()=>toast('Shablonlar saqlandi ✅','ok')}>
+                💾 Saqlash
+              </button>
+            </div>
+          )}
+
+          {tab==='prices' && (
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {prices.map(p=>(
+                <div key={p._id} style={{
+                  background:'var(--bg2)',border:'1px solid var(--border)',
+                  borderRadius:14,padding:'12px 14px',
+                  display:'flex',alignItems:'center',gap:12,
+                }}>
+                  <div style={{
+                    width:40,height:40,borderRadius:12,flexShrink:0,
+                    background:'rgba(139,92,246,.12)',
+                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,
+                  }}>💰</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:13}}>{p.item || p.name}</div>
+                    <div style={{fontSize:11,color:'var(--text3)',marginTop:1}}>{p.unit}</div>
+                  </div>
+                  <div style={{
+                    fontWeight:800,fontFamily:'monospace',
+                    color:'#8b5cf6',fontSize:14,
+                    background:'rgba(139,92,246,.1)',
+                    padding:'4px 10px',borderRadius:8,
+                  }}>{(p.price||0).toLocaleString()}</div>
+                  <button onClick={()=>{setPform({...p});setModal('edit')}} style={{
+                    width:32,height:32,borderRadius:9,cursor:'pointer',
+                    background:'rgba(59,130,246,.1)',color:'#3B82F6',
+                    border:'1px solid rgba(59,130,246,.2)',
+                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,
+                  }}>✏️</button>
+                </div>
+              ))}
+              <button className="btn btn-primary" style={{marginTop:4}}
+                onClick={()=>{setPform({item:'',price:'',unit:'kv.m'});setModal('create')}}>
+                + Narx qo'shish
+              </button>
+            </div>
+          )}
+
+          {tab==='company' && (
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              {[
+                {label:'🏢 Kompaniya nomi', value:co, set:setCo, ph:'Tartib CRM'},
+                {label:'📱 Telefon', value:ph, set:setPh, ph:'+998 90 123 45 67'},
+                {label:'📍 Manzil', value:ad, set:setAd, ph:'Toshkent sh.'},
+              ].map((f,i)=>(
+                <div key={i} style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:14,overflow:'hidden'}}>
+                  <div style={{padding:'10px 14px',borderBottom:'1px solid var(--border)',fontSize:11,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.5px'}}>
+                    {f.label}
+                  </div>
+                  <input value={f.value} onChange={e=>f.set(e.target.value)}
+                    placeholder={f.ph} style={{
+                      width:'100%',padding:'12px 14px',background:'none',
+                      border:'none',outline:'none',color:'var(--text)',
+                      fontSize:15,fontFamily:'inherit',
+                    }}/>
+                </div>
+              ))}
+              <button className="btn btn-primary" style={{marginTop:4}}
+                onClick={()=>toast('Saqlandi ✅','ok')}>
+                💾 Saqlash
+              </button>
+            </div>
+          )}
+
+          {tab==='roles' && (
+            <div style={{
+              background:'var(--bg2)',border:'1px solid var(--border)',
+              borderRadius:14,overflow:'hidden',
+            }}>
+              {[
+                {role:'Super Admin',perms:['Hammasi'],c:'#f85149'},
+                {role:'Admin',perms:['Buyurtma','Moliya','Xodim'],c:'#3B82F6'},
+                {role:'Ishchi',perms:["O'z topshirig'i"],c:'#22c55e'},
+                {role:'Shafyor',perms:['Transport'],c:'#f59e0b'},
+              ].map((r,i,arr)=>(
+                <div key={r.role} style={{
+                  padding:'12px 14px',
+                  borderBottom:i<arr.length-1?'1px solid var(--border)':'none',
+                  display:'flex',alignItems:'center',gap:12,
+                }}>
+                  <div style={{
+                    width:36,height:36,borderRadius:10,flexShrink:0,
+                    background:`${r.c}18`,color:r.c,
+                    display:'flex',alignItems:'center',justifyContent:'center',
+                    fontWeight:800,fontSize:16,
+                  }}>👤</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:13}}>{r.role}</div>
+                    <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{r.perms.join(' · ')}</div>
+                  </div>
+                  <span style={{
+                    fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:99,
+                    background:`${r.c}15`,color:r.c,
+                  }}>Aktiv</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Price modal */}
+        <Modal open={!!modal} onClose={()=>setModal(null)}
+          title={modal==='create'?"💰 Narx qo'shish":"✏️ Narx tahrirlash"} size="sm"
+          footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>Bekor</button>
+            <button className="btn btn-primary" onClick={savePrice}>Saqlash</button></>}>
+          <div className="fg"><label className="flabel">Mahsulot nomi *</label>
+            <input className="finput" value={pform.item||''} onChange={e=>setPform(p=>({...p,item:e.target.value}))}/></div>
+          <div className="fgrid2">
+            <div className="fg"><label className="flabel">Narx *</label>
+              <input className="finput" type="number" value={pform.price||''} onChange={e=>setPform(p=>({...p,price:+e.target.value}))}/></div>
+            <div className="fg"><label className="flabel">Birlik</label>
+              <select className="fselect" value={pform.unit||'kv.m'} onChange={e=>setPform(p=>({...p,unit:e.target.value}))}>
+                <option>kv.m</option><option>dona</option><option>kg</option>
+              </select></div>
+          </div>
+        </Modal>
+      </div>
+    </ErrorBoundary>
+  )
 
   return (
     <ErrorBoundary>
