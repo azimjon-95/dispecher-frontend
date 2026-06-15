@@ -159,19 +159,14 @@ function TaskPanel({ title, icon, color, type, apiFns, drivers, allOrders, onDri
   async function load() {
     setLoading(true)
     try {
-      const tasks  = norm(await apiFns.getAll())
-      // Auto-merge from orders
-      // pickup = yangi/qabul_qilindi (olib kelish kerak)
-      // delivery = yetkazishda (olib borish kerak)
+      // Faqat allOrders dan filter qilamiz — Task DB ikki marta chiqishga sabab bo'ladi
       const pickupStatuses   = ['yangi', 'qabul_qilindi', 'qabul']
       const deliveryStatuses = ['yetkazishda']
       const statusKeys = type === 'pickup' ? pickupStatuses : deliveryStatuses
-      const autoTasks = allOrders
+      const rows = allOrders
         .filter(o => statusKeys.includes(o.status))
         .map(o => orderToTask(o, type))
-      const existing = new Set(tasks.map(t => String(t.orderId||t.order)))
-      const merged   = [...tasks, ...autoTasks.filter(t => !existing.has(String(t.orderId)))]
-      setRows(merged)
+      setRows(rows)
     } catch { setRows([]) }
     setLoading(false)
   }
@@ -624,8 +619,9 @@ function MobileTaskPanel({ type, color, apiFns, drivers, allOrders, onDriverChan
       const autoTasks = allOrders
         .filter(o => statusKeys.includes(o.status))
         .map(o => orderToTask(o, type))
-      const existing = new Set(tasks.map(t => String(t.orderId||t.order)))
-      setRows([...tasks, ...autoTasks.filter(t => !existing.has(String(t.orderId)))])
+      const toId = v => v?.$oid || (typeof v === 'object' ? JSON.stringify(v) : String(v||''))
+      const existing = new Set(tasks.map(t => toId(t.orderId || t.order)))
+      setRows([...tasks, ...autoTasks.filter(t => !existing.has(toId(t.orderId)))])
     } catch { setRows([]) }
     setLoading(false)
   }
