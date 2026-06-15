@@ -489,8 +489,8 @@ export default function Orders() {
       setEmployees(emps.filter(e=>e.role==='Ishchi'&&e.status==='active'))
       // Store ni ham yangilaymiz
       if (store) {
-        store.setOrders(ords)
-        store.setDrivers(drvs)
+        store?.setOrders?.(ords)
+        store?.setDrivers?.(drvs)
       }
     } catch(e) { toast(e.message,'err') }
     setLoading(false)

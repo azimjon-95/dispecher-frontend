@@ -2,7 +2,12 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { api, norm } from '../services/api.js'
 import { bus } from '../services/realtime.js'
 
-const StoreCtx = createContext(null)
+const defaultStore = {
+  orders:[], drivers:[], employees:[], finance:[],
+  setOrders:()=>{}, setDrivers:()=>{}, setEmployees:()=>{}, setFinance:()=>{},
+  reload:{ orders:()=>{}, drivers:()=>{}, employees:()=>{}, finance:()=>{}, all:()=>{} }
+}
+const StoreCtx = createContext(defaultStore)
 
 export function AppStoreProvider({ children }) {
   const [orders,    setOrders]    = useState([])
