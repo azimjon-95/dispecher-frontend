@@ -10,6 +10,7 @@ import { Modal, Confirm, Sbadge, toast, Loader, SkeletonKPI } from '../../compon
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import './Transport.css'
 import { useRealtime, bus } from '../../services/realtime.js'
+import { useStore } from '../../store/AppStore.jsx'
 const isMob = () => window.innerWidth <= 768
 
 const STATUSES     = ['yangi','jarayonda','yetkazildi','bekor']
