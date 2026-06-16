@@ -31,7 +31,7 @@ function TgIcon() {
 function orderToTask(order, type) {
   return {
     _id:       'task_'+order._id, orderId:order._id,
-    order:     order.number,    customer:order.customer,
+    order:     order.number||order.orderNumber||('#'+String(order._id||'').slice(-4)), customer:order.customer,
     phone:     order.phone,     address:order.address,
     lat:       order.lat,       lon:order.lon,
     driver:    order.driver||'', status:'yangi', type, auto:true,
@@ -108,9 +108,9 @@ function MobileTaskCard({ row, type, drivers, onAssign, onSendTg, sending }) {
             ? <span>{row.address}</span>
             : <span style={{color:'var(--text3)',fontStyle:'italic'}}>Manzil kiritilmagan</span>
           }
-          {/* Geo tugma - faqat manzil bo'lmasa */}
-          {!row.address && row.phone && (
-            <a href={tgLink(row.phone, `📍 Joylashuvingizni yuboring — shafyor keladi.\n📋 ${row.order||''}`)}
+          {/* Geo tugma - har doim ko'rinadi */}
+          {row.phone && (
+            <a href={tgLink(row.phone, `📍 Joylashuvingizni yuboring — shafyor keladi.\n📋 Buyurtma: 📋 ${row.order||''}`)}
               target="_blank" rel="noopener noreferrer"
               style={{
                 marginLeft:'auto',display:'flex',alignItems:'center',gap:3,flexShrink:0,
