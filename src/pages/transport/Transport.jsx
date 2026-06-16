@@ -77,7 +77,11 @@ function MobileTaskCard({ row, type, drivers, onAssign, onSendTg, sending }) {
           </div>
           {/* TG button */}
           {row.phone && (
-            <a href={tgLink(row.phone,'Salom!')} target="_blank" rel="noopener noreferrer"
+            <a href={tgLink(row.phone,
+              type==='delivery'
+                ? `📦 Buyurtmangiz ${row.order||''} tayyor, yetkazilmoqda!\n👤 ${row.customer||''}\n📍 ${row.address||''}\nSavollar uchun: +998901234567`
+                : `🚗 Shafyorimiz tez orada yetib boradi!\n📋 ${row.order||''} buyurtma\n👤 ${row.customer||''}`
+            )} target="_blank" rel="noopener noreferrer"
               style={{
                 display:'flex',alignItems:'center',gap:4,
                 padding:'5px 10px',borderRadius:99,
@@ -92,17 +96,32 @@ function MobileTaskCard({ row, type, drivers, onAssign, onSendTg, sending }) {
         </div>
 
         {/* Address */}
-        {row.address && (
-          <div style={{
-            display:'flex',alignItems:'flex-start',gap:6,
-            padding:'7px 10px',borderRadius:10,
-            background:'var(--bg3)',marginBottom:8,
-            fontSize:12,color:'var(--text2)',lineHeight:1.4,
-          }}>
-            <MdLocationOn size={14} style={{color,flexShrink:0,marginTop:1}}/>
-            <span>{row.address}</span>
-          </div>
-        )}
+        <div style={{
+          display:'flex',alignItems:'flex-start',gap:6,
+          padding:'7px 10px',borderRadius:10,
+          background:'var(--bg3)',marginBottom:8,
+          fontSize:12,color:'var(--text2)',lineHeight:1.4,
+          minHeight:32,
+        }}>
+          <MdLocationOn size={14} style={{color,flexShrink:0,marginTop:1}}/>
+          {row.address
+            ? <span>{row.address}</span>
+            : <span style={{color:'var(--text3)',fontStyle:'italic'}}>Manzil kiritilmagan</span>
+          }
+          {/* Geo tugma - faqat manzil bo'lmasa */}
+          {!row.address && row.phone && (
+            <a href={tgLink(row.phone, `📍 Joylashuvingizni yuboring — shafyor keladi.\n📋 ${row.order||''}`)}
+              target="_blank" rel="noopener noreferrer"
+              style={{
+                marginLeft:'auto',display:'flex',alignItems:'center',gap:3,flexShrink:0,
+                padding:'2px 7px',borderRadius:99,
+                background:'rgba(34,158,217,.12)',color:'#229ED9',
+                fontSize:10,fontWeight:700,textDecoration:'none',
+              }}>
+              📍 Geo so'ra
+            </a>
+          )}
+        </div>
 
         {/* Driver + Actions */}
         <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
@@ -186,8 +205,18 @@ function TaskPanel({ title, icon, color, type, apiFns, drivers, allOrders, onDri
       onDriverChange?.(dr.name, 'band')
       // Send TG to driver
       if (dr.phone) {
-        const url = tgLink(dr.phone, `🚗 Yangi topshiriq!\n📋 ${assign.order}\n👤 ${assign.customer}\n📍 ${assign.address}\n\nDasturga kiring: /start`)
-        window.open(url, '_blank')
+        const orderNum = assign.order || assign.orderNumber || ''
+        const driverMsg = [
+          `🚗 Yangi topshiriq!`,
+          `📋 Buyurtma: ${orderNum}`,
+          `👤 Mijoz: ${assign.customer||''}`,
+          `📞 Telefon: ${assign.phone||''}`,
+          `📍 Manzil: ${assign.address||''}`,
+          assign.totalPrice ? `💰 Summa: ${assign.totalPrice.toLocaleString()} so'm` : '',
+          ``,
+          `Dasturga kiring: /start`,
+        ].filter(Boolean).join('\n')
+        window.open(tgLink(dr.phone, driverMsg), '_blank')
       }
       toast(`${dr.name} biriktirildi, TG xabari tayyorlandi ✅`, 'ok')
     } catch(e) { toast(e.message,'err') }
@@ -203,7 +232,7 @@ function TaskPanel({ title, icon, color, type, apiFns, drivers, allOrders, onDri
     setSending(row._id)
     try {
       const msg = type==='delivery'
-        ? `📦 Buyurtmangiz ${row.order} tayyor!\n👤 ${row.customer}\n📍 ${row.address}\nBizga murojaat: +998901234567`
+        ? `📦 Buyurtmangiz ${row.order||""} tayyor!\n👤 ${row.customer}\n📍 ${row.address}\nBizga murojaat: +998901234567`
         : `🚗 Shafyor yo'lda, tez orada yetib boradi.\n📋 ${row.order}\nBizga murojaat: +998901234567`
       window.open(tgLink(row.phone, msg), '_blank')
       setRows(p=>p.map(r=>r._id===row._id?{...r,tgSent:true}:r))
@@ -255,7 +284,7 @@ function TaskPanel({ title, icon, color, type, apiFns, drivers, allOrders, onDri
                   <td>
                     <div style={{fontWeight:600,fontSize:12.5}}>{row.customer}</div>
                     {row.phone && (
-                      <a href={tgLink(row.phone,'Salom!')} target="_blank" rel="noopener noreferrer" className="tp-tg-btn">
+                      <a href={tgLink(row.phone, type==='delivery' ? `📦 Buyurtmangiz ${row.order||''} tayyor!\n👤 ${row.customer||''}\n📍 ${row.address||''}` : `🚗 Shafyor yo'lda!\n📋 ${row.order||''}\n👤 ${row.customer||''}`)} target="_blank" rel="noopener noreferrer" className="tp-tg-btn">
                         <TgIcon/> {row.phone}
                       </a>
                     )}
@@ -651,7 +680,7 @@ function MobileTaskPanel({ type, color, apiFns, drivers, allOrders, onDriverChan
   async function sendTg(row) {
     setSending(row._id)
     const msg = type==='delivery'
-      ? `📦 Buyurtmangiz ${row.order} tayyor!\n👤 ${row.customer}\n📍 ${row.address}`
+      ? `📦 Buyurtmangiz ${row.order||""} tayyor!\n👤 ${row.customer}\n📍 ${row.address}`
       : `🚗 Shafyor yo'lda!\n📋 ${row.order}`
     window.open(tgLink(row.phone, msg), '_blank')
     setRows(p=>p.map(r=>r._id===row._id?{...r,tgSent:true}:r))
