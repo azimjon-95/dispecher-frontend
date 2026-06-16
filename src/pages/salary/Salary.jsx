@@ -222,25 +222,25 @@ export default function Salary() {
       <Modal open={modal} onClose={()=>setModal(false)}
         title="+ Avans / Jarima / Bonus" size="sm"
         footer={<><button className="btn btn-ghost" onClick={()=>setModal(false)}>Bekor</button>
-          <button className="btn btn-primary" onClick={addPayment}>Saqlash</button></>}>
+          <button className="btn btn-primary" onClick={pay}>Saqlash</button></>}>
         <div className="fg"><label className="flabel">Xodim *</label>
-          <select className="fselect" value={payForm.workerId} onChange={e=>setPayForm(p=>({...p,workerId:e.target.value}))}>
+          <select className="fselect" value={form.workerId} onChange={e=>setForm(p=>({...p,workerId:e.target.value}))}>
             <option value="">Tanlang...</option>
             {summary.map(e=><option key={e._id} value={e._id}>{e.name}</option>)}
           </select></div>
         <div className="fgrid2">
           <div className="fg"><label className="flabel">Tur *</label>
-            <select className="fselect" value={payForm.type} onChange={e=>setPayForm(p=>({...p,type:e.target.value}))}>
+            <select className="fselect" value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}>
               <option value="avans">💳 Avans</option>
               <option value="jarima">⚠️ Jarima</option>
               <option value="bonus">🎁 Bonus</option>
             </select></div>
           <div className="fg"><label className="flabel">Summa *</label>
-            <input className="finput" type="number" value={payForm.amount}
-              onChange={e=>setPayForm(p=>({...p,amount:e.target.value}))}/></div>
+            <input className="finput" type="number" value={form.amount}
+              onChange={e=>setForm(p=>({...p,amount:e.target.value}))}/></div>
         </div>
         <div className="fg"><label className="flabel">Izoh</label>
-          <input className="finput" value={payForm.note} onChange={e=>setPayForm(p=>({...p,note:e.target.value}))}/></div>
+          <input className="finput" value={form.note} onChange={e=>setForm(p=>({...p,note:e.target.value}))}/></div>
       </Modal>
     </ErrorBoundary>
   )
