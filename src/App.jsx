@@ -18,7 +18,6 @@ import { useNetworkStatus, NetworkToast } from './hooks/useNetworkStatus.jsx'
 import MobileTabBar from './components/layout/MobileTabBar.jsx'
 import { syncOfflineQueue, getQueueSize, isOnline } from './services/api.js'
 import { api, norm } from './services/api.js'
-import { AppStoreProvider } from './store/AppStore.jsx'
 
 function getSavedPage() {
   try { return localStorage.getItem('activePage') || 'dashboard' } catch { return 'dashboard' }
@@ -235,7 +234,7 @@ export default function App() {
   }
 
   return (
-    <AppStoreProvider>
+    <>
       <Sidebar
         active={page}
         onNav={navigate}
@@ -267,6 +266,6 @@ export default function App() {
       />
       <NetworkToast/>
       <ToastContainer />
-    </AppStoreProvider>
+    </>
   )
 }

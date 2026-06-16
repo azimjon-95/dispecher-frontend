@@ -10,7 +10,6 @@ import { Modal, Confirm, Sbadge, toast, Loader, SkeletonKPI } from '../../compon
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import './Transport.css'
 import { useRealtime, bus } from '../../services/realtime.js'
-import { useStore } from '../../store/AppStore.jsx'
 const isMob = () => window.innerWidth <= 768
 
 const STATUSES     = ['yangi','jarayonda','yetkazildi','bekor']
@@ -744,8 +743,7 @@ function MobileTaskPanel({ type, color, apiFns, drivers, allOrders, onDriverChan
 }
 
 export default function Transport() {
-  const store = useStore()
-  const [drivers,         setDrivers]         = useState(store?.drivers || [])
+  const [drivers,         setDrivers]         = useState([])
   const [orders,          setOrders]           = useState([])
   const [driverLocations, setDriverLocations]  = useState({})
   const [mobileTab,       setMobileTab]        = useState('delivery')

@@ -11,7 +11,6 @@ import OrderDetail from '../orderdetail/OrderDetail.jsx'
 import { SmsPopover } from '../../components/ui/SmsPopover.jsx'
 import './Orders.css'
 import { useRealtime } from '../../services/realtime.js'
-import { useStore } from '../../store/AppStore.jsx'
 
 const isMob = () => window.innerWidth <= 768
 
@@ -449,27 +448,9 @@ export default function Orders() {
   const [page,    setPage]    = useState(1)
   const PAGE_SIZE = 15
 
-  // Store dan orders olish — sahifa o'zgarganda qayta yuklanmaydi
-  useEffect(() => {
-    if (store?.orders?.length) {
-      setOrders(store.orders)
-      setDrivers(store.drivers || [])
-      setEmployees(store.employees || [])
-      setLoading(false)
-    } else {
-      loadAll()
-    }
-  }, [])
+  useEffect(() => { loadAll() }, [])
 
-  // Store yangilanganda sync
-  useEffect(() => {
-    if (store?.orders) setOrders(store.orders)
-  }, [store?.orders])
-
-  // Real-time: store yangilanganda sync
-  useRealtime(['refresh:orders'], () => {
-    if (store?.orders) setOrders([...store.orders])
-  })
+  useRealtime(['refresh:orders', 'refresh:all'], () => { loadAll() })
 
   /* Save form draft on change */
   useEffect(() => {
@@ -487,11 +468,7 @@ export default function Orders() {
       setOrders(ords)
       setDrivers(drvs)
       setEmployees(emps.filter(e=>e.role==='Ishchi'&&e.status==='active'))
-      // Store ni ham yangilaymiz
-      if (store) {
-        store?.setOrders?.(ords)
-        store?.setDrivers?.(drvs)
-      }
+
     } catch(e) { toast(e.message,'err') }
     setLoading(false)
   }
