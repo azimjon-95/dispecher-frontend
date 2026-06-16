@@ -441,6 +441,8 @@ export default function Orders() {
   const [selWorker,       setSelWorker]       = useState(null)
   const [delId,           setDelId]           = useState(null)
   const [isSubmitting,    setIsSubmitting]    = useState(false)
+  const [custFound,       setCustFound]       = useState(null)   // topilgan mijoz
+  const [geoLoading,      setGeoLoading]      = useState(false)
 
   /* Table filter */
   const [search,  setSearch]  = useState('')
@@ -474,6 +476,50 @@ export default function Orders() {
   }
 
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
+
+  // Telefon kiritilganda mijozni DB dan topish
+  async function onPhoneChange(e) {
+    const phone = e.target.value
+    setForm(p => ({ ...p, phone }))
+    setCustFound(null)
+    const digits = phone.replace(/\D/g,'')
+    if (digits.length < 9) return
+    try {
+      const cust = await api.getCustomerByPhone(digits)
+      if (cust) {
+        setCustFound(cust)
+        setForm(p => ({
+          ...p,
+          customer: p.customer || cust.name,
+          address:  p.address  || cust.address || '',
+          // Geo ham bor bo'lsa saqlaylik
+          lat: cust.lat || null,
+          lon: cust.lon || null,
+        }))
+        toast('Mijoz topildi: ' + cust.name + (cust.orders ? ' (' + cust.orders + ' ta buyurtma)' : ''), 'ok')
+      }
+    } catch {}
+  }
+
+  // Geo location olish (agar oldindan saqlanmagan bo'lsa)
+  async function getGeoLocation() {
+    if (!navigator.geolocation) { toast('GPS qo\'llab-quvvatlanmaydi','err'); return }
+    // Agar mijoz topilgan va location saqlangan bo'lsa
+    if (custFound?.locationSaved && custFound?.lat) {
+      setForm(p=>({...p, lat:custFound.lat, lon:custFound.lon, address:custFound.address||p.address}))
+      toast('Oldingi manzil yuklandi ✅','ok'); return
+    }
+    setGeoLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setForm(p=>({...p, lat:pos.coords.latitude, lon:pos.coords.longitude}))
+        toast('GPS olindi ✅','ok')
+        setGeoLoading(false)
+      },
+      err => { toast('GPS xato: '+err.message,'err'); setGeoLoading(false) },
+      { timeout:10000, enableHighAccuracy:true }
+    )
+  }
 
   const grouped = useMemo(()=>{
     const g={}; COLUMNS.forEach(c=>{g[c.key]=[]})
@@ -767,10 +813,36 @@ export default function Orders() {
             <div className="fg"><label className="flabel">Mijoz ismi *</label>
               <input className="finput" value={form.customer} onChange={set('customer')} autoFocus/></div>
             <div className="fg"><label className="flabel">Telefon *</label>
-              <input className="finput" placeholder="+998 90 000 00 00" value={form.phone} onChange={set('phone')}/></div>
+              <div style={{position:'relative'}}>
+                <input className="finput" placeholder="+998 90 000 00 00"
+                  value={form.phone} onChange={onPhoneChange}
+                  style={{paddingRight: custFound ? 80 : 12}}/>
+                {custFound && (
+                  <span style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',
+                    fontSize:10,fontWeight:700,color:'var(--green)',
+                    background:'var(--greenbg)',padding:'2px 6px',borderRadius:4}}>
+                    ✅ {custFound.orders||0} ta buyurtma
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="fg"><label className="flabel">Manzil</label>
-            <input className="finput" value={form.address} onChange={set('address')}/></div>
+          <div className="fg">
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
+              <label className="flabel" style={{margin:0}}>Manzil</label>
+              <button type="button" onClick={getGeoLocation} disabled={geoLoading} style={{
+                fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:6,cursor:'pointer',
+                background:form.lat?'var(--greenbg)':'var(--bg3)',
+                color:form.lat?'var(--green)':'var(--text2)',
+                border:'1px solid '+(form.lat?'var(--green)':'var(--border)'),
+                display:'flex',alignItems:'center',gap:4,
+              }}>
+                {geoLoading?'⏳':(form.lat?'📍 GPS saqlangan':'📍 GPS olish')}
+              </button>
+            </div>
+            <input className="finput" value={form.address} onChange={set('address')}
+              placeholder={form.lat?'GPS koordinatalari saqlandi':'Manzilni kiriting...'}/>
+          </div>
           <div className="fg"><label className="flabel">📋 Tavsif — nimalar bor</label>
             <textarea className="ftextarea" rows={3}
               placeholder="3 ta gilam, 2 ta ko'rpa, yostiqlar bor..."
