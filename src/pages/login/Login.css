@@ -121,8 +121,20 @@
 }
 
 @media(max-width:640px) {
-  .login-card  { grid-template-columns:1fr; }
-  .login-left  { padding:28px 20px; }
-  .login-features { display:none; }
-  .login-right { padding:28px 20px; }
+  .login-wrap {
+    min-height:100vh;
+    min-height:-webkit-fill-available;
+    align-items: flex-start;
+    padding: 16px 16px 40px;
+    overflow-y: auto;
+  }
+  .login-card  { 
+    grid-template-columns:1fr;
+    border-radius: 16px;
+    margin: auto;
+  }
+  .login-left  { display: none; }
+  .login-right { padding: 32px 24px 28px; }
+  .login-form-header h2 { font-size: 22px; }
+  .login-input-wrap input { font-size: 16px; } /* iOS zoom fix */
 }

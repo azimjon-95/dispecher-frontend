@@ -744,7 +744,8 @@ function MobileTaskPanel({ type, color, apiFns, drivers, allOrders, onDriverChan
 }
 
 export default function Transport() {
-  const [drivers,         setDrivers]         = useState([])
+  const store = useStore()
+  const [drivers,         setDrivers]         = useState(store?.drivers || [])
   const [orders,          setOrders]           = useState([])
   const [driverLocations, setDriverLocations]  = useState({})
   const [mobileTab,       setMobileTab]        = useState('delivery')
