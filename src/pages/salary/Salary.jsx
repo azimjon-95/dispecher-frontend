@@ -17,6 +17,145 @@ const PAY_TYPES = [
 
 function norm(r){ return Array.isArray(r)?r:Array.isArray(r?.data)?r.data:[] }
 
+const isMobS = () => window.innerWidth <= 768
+
+function MobSalary({ summary, history, loading, month, setMonth, tab, setTab, totalExpected, totalPaid, totalBalance, MONTHS, onAvans, fmt }) {
+  return (
+    <div style={{paddingBottom:90}}>
+      {/* Hero */}
+      <div style={{background:'linear-gradient(160deg,#0d1a0d 0%,#0d1117 100%)',padding:'14px 16px 18px',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',top:-40,right:-40,width:150,height:150,borderRadius:'50%',background:'rgba(34,197,94,.1)',filter:'blur(30px)',pointerEvents:'none'}}/>
+        <div style={{fontSize:11,color:'rgba(255,255,255,.4)',fontWeight:600,textTransform:'uppercase',letterSpacing:'1px',marginBottom:6}}>
+          💰 Maosh Hisoblash
+        </div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+          <div>
+            <div style={{fontSize:28,fontWeight:900,color:'#22c55e',fontFamily:'monospace',letterSpacing:'-1px'}}>{fmt.currency(totalExpected)}</div>
+            <div style={{fontSize:11,color:'rgba(255,255,255,.4)',marginTop:2}}>Jami kutilgan maosh</div>
+          </div>
+          <select value={month} onChange={e=>setMonth(e.target.value)} style={{
+            background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.12)',
+            borderRadius:10,color:'white',padding:'7px 10px',fontSize:12,fontWeight:600,
+          }}>
+            {MONTHS.map(m=><option key={m} value={m} style={{background:'#1a1a2e'}}>{m}</option>)}
+          </select>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {[
+            {lbl:'Berilgan maosh', val:fmt.currency(totalPaid),    c:'#22c55e'},
+            {lbl:"Yig'ilgan balans",val:fmt.currency(totalBalance), c:'#f59e0b'},
+          ].map(it=>(
+            <div key={it.lbl} style={{background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.08)',borderRadius:12,padding:'10px 12px'}}>
+              <div style={{fontWeight:800,fontFamily:'monospace',fontSize:14,color:it.c}}>{it.val}</div>
+              <div style={{fontSize:10,color:'rgba(255,255,255,.35)',marginTop:2}}>{it.lbl}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{display:'flex',gap:0,margin:'12px 16px 10px',background:'var(--bg2)',borderRadius:12,border:'1px solid var(--border)',overflow:'hidden'}}>
+        {[{k:'summary',l:'📊 Oylik xulosa'},{k:'history',l:"📋 To'lov tarixi"}].map((t,i)=>(
+          <button key={t.k} onClick={()=>setTab(t.k)} style={{
+            flex:1,padding:'10px 6px',border:'none',borderRight:i===0?'1px solid var(--border)':'none',
+            background:tab===t.k?'rgba(34,197,94,.15)':'transparent',
+            color:tab===t.k?'#22c55e':'var(--text3)',fontSize:12,fontWeight:700,cursor:'pointer',
+            WebkitTapHighlightColor:'transparent',
+          }}>{t.l}</button>
+        ))}
+      </div>
+
+      {/* FAB */}
+      <button onClick={onAvans} style={{
+        position:'fixed',bottom:74,right:20,padding:'10px 18px',borderRadius:99,
+        background:'linear-gradient(135deg,#22c55e,#15803d)',color:'white',
+        border:'none',cursor:'pointer',fontSize:13,fontWeight:700,
+        boxShadow:'0 4px 16px rgba(34,197,94,.4)',zIndex:200,
+        display:'flex',alignItems:'center',gap:6,WebkitTapHighlightColor:'transparent',
+      }}>+ Avans/Jarima</button>
+
+      {/* Content */}
+      <div style={{padding:'0 16px'}}>
+        {loading ? (
+          [...Array(3)].map((_,i)=>(
+            <div key={i} style={{height:80,borderRadius:14,background:'var(--bg2)',marginBottom:8,
+              animation:'mobSkel 1.4s ease-in-out infinite',animationDelay:i*80+'ms'}}/>
+          ))
+        ) : tab==='summary' ? (
+          summary.length===0 ? (
+            <div style={{textAlign:'center',padding:'40px 0',color:'var(--text3)'}}>
+              <div style={{fontSize:36,marginBottom:8}}>💰</div>
+              <div>Ma'lumot yo'q</div>
+            </div>
+          ) : summary.map(emp=>(
+            <div key={emp._id} style={{
+              background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:16,
+              padding:'12px 14px',marginBottom:8,position:'relative',overflow:'hidden',
+            }}>
+              <div style={{position:'absolute',left:0,top:0,bottom:0,width:3,background:'#22c55e',borderRadius:'16px 0 0 16px'}}/>
+              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+                <div style={{width:38,height:38,borderRadius:12,background:'rgba(34,197,94,.12)',
+                  border:'1.5px solid rgba(34,197,94,.3)',display:'flex',alignItems:'center',
+                  justifyContent:'center',fontWeight:800,color:'#22c55e',fontSize:15,flexShrink:0}}>
+                  {emp.name?.[0]}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700,fontSize:14}}>{emp.name}</div>
+                  <div style={{fontSize:11,color:'var(--text3)'}}>{emp.role} · {emp.salaryType||'Oylik'}</div>
+                </div>
+                <div style={{textAlign:'right'}}>
+                  <div style={{fontSize:14,fontWeight:800,color:'#22c55e',fontFamily:'monospace'}}>{fmt.currency(emp.expected)}</div>
+                  <div style={{fontSize:10,color:'var(--text3)'}}>kutilgan</div>
+                </div>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6}}>
+                {[
+                  {lbl:'Berilgan', val:fmt.currency(emp.paid),    c:'#22c55e'},
+                  {lbl:'Balans',   val:fmt.currency(emp.balance), c:'#f59e0b'},
+                  {lbl:'Avans',    val:fmt.currency(emp.advance), c:'#3B82F6'},
+                ].map(it=>(
+                  <div key={it.lbl} style={{background:'var(--bg3)',borderRadius:9,padding:'7px 8px',textAlign:'center'}}>
+                    <div style={{fontWeight:700,fontFamily:'monospace',fontSize:11,color:it.c}}>{it.val}</div>
+                    <div style={{fontSize:9,color:'var(--text3)',marginTop:2}}>{it.lbl}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        ) : (
+          history.length===0 ? (
+            <div style={{textAlign:'center',padding:'40px 0',color:'var(--text3)'}}>
+              <div style={{fontSize:36,marginBottom:8}}>📋</div>
+              <div>To'lov tarixi yo'q</div>
+            </div>
+          ) : history.map((h,i)=>(
+            <div key={i} style={{
+              background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:14,
+              padding:'11px 14px',marginBottom:8,
+              display:'flex',alignItems:'center',gap:12,
+            }}>
+              <div style={{width:36,height:36,borderRadius:10,flexShrink:0,
+                background:h.type==='avans'?'rgba(59,130,246,.12)':h.type==='jarima'?'rgba(248,81,73,.12)':'rgba(34,197,94,.12)',
+                display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>
+                {h.type==='avans'?'💳':h.type==='jarima'?'⚠️':'🎁'}
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:700,fontSize:13}}>{h.workerName}</div>
+                <div style={{fontSize:11,color:'var(--text3)'}}>{h.type} · {h.date}</div>
+              </div>
+              <div style={{fontWeight:800,fontFamily:'monospace',fontSize:14,
+                color:h.type==='jarima'?'#f85149':h.type==='avans'?'#3B82F6':'#22c55e'}}>
+                {h.type==='jarima'?'-':'+'}  {fmt.currency(h.amount)}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+      <style>{`@keyframes mobSkel{0%,100%{opacity:.4}50%{opacity:.8}}`}</style>
+    </div>
+  )
+}
+
 export default function Salary() {
   const [month,    setMonth]    = useState(MONTHS[0])
   const [summary,  setSummary]  = useState([])
@@ -64,6 +203,41 @@ export default function Salary() {
     { k:'note',         l:'Izoh',   r:v=><span style={{fontSize:11,color:'var(--text2)'}}>{v||'—'}</span> },
     { k:'paidBy',       l:'Kim berdi', r:v=><span style={{fontSize:11}}>{v}</span> },
   ]
+
+  if (mobile) return (
+    <ErrorBoundary>
+      <MobSalary
+        summary={summary} history={history} loading={loading}
+        month={month} setMonth={setMonth} tab={tab} setTab={setTab}
+        totalExpected={totalExpected} totalPaid={totalPaid} totalBalance={totalBalance}
+        MONTHS={MONTHS} fmt={fmt}
+        onAvans={()=>setModal(true)}
+      />
+      <Modal open={modal} onClose={()=>setModal(false)}
+        title="+ Avans / Jarima / Bonus" size="sm"
+        footer={<><button className="btn btn-ghost" onClick={()=>setModal(false)}>Bekor</button>
+          <button className="btn btn-primary" onClick={addPayment}>Saqlash</button></>}>
+        <div className="fg"><label className="flabel">Xodim *</label>
+          <select className="fselect" value={payForm.workerId} onChange={e=>setPayForm(p=>({...p,workerId:e.target.value}))}>
+            <option value="">Tanlang...</option>
+            {summary.map(e=><option key={e._id} value={e._id}>{e.name}</option>)}
+          </select></div>
+        <div className="fgrid2">
+          <div className="fg"><label className="flabel">Tur *</label>
+            <select className="fselect" value={payForm.type} onChange={e=>setPayForm(p=>({...p,type:e.target.value}))}>
+              <option value="avans">💳 Avans</option>
+              <option value="jarima">⚠️ Jarima</option>
+              <option value="bonus">🎁 Bonus</option>
+            </select></div>
+          <div className="fg"><label className="flabel">Summa *</label>
+            <input className="finput" type="number" value={payForm.amount}
+              onChange={e=>setPayForm(p=>({...p,amount:e.target.value}))}/></div>
+        </div>
+        <div className="fg"><label className="flabel">Izoh</label>
+          <input className="finput" value={payForm.note} onChange={e=>setPayForm(p=>({...p,note:e.target.value}))}/></div>
+      </Modal>
+    </ErrorBoundary>
+  )
 
   return (
     <ErrorBoundary>
