@@ -157,6 +157,12 @@ function MobSalary({ summary, history, loading, month, setMonth, tab, setTab, to
 }
 
 export default function Salary() {
+  const [mobile,   setMobile]   = useState(isMobS())
+  useEffect(() => {
+    const fn = () => setMobile(isMobS())
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
   const [month,    setMonth]    = useState(MONTHS[0])
   const [summary,  setSummary]  = useState([])
   const [payments, setPayments] = useState([])
