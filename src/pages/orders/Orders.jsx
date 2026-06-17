@@ -35,9 +35,9 @@ const NEXT_STATUS = {
   bezakda:'yetkazishda', yetkazishda:'tugallandi', tugallandi:null,
 }
 const NEXT_LABEL = {
-  yangi:'→ Qabul',    qabul_qilindi:'→ Yuvishga',
-  yuvishda:'→ Quritishga', qurishda:'→ Bezakka',
-  bezakda:'→ Yetkazishga', yetkazishda:'✅ Tugallandi', tugallandi:null,
+  yangi:'→ '+(t?.qabul||'Qabul'), qabul_qilindi:'→ '+(t?.yuvishda||'Yuvish')+'ga',
+  yuvishda:'→ '+(t?.qurishda||'Quritish')+'ga', qurishda:'→ '+(t?.bezakda||'Bezak')+'ka',
+  bezakda:'→ '+(t?.yetkazishda||'Yetkazish')+'ga', yetkazishda:'✅ '+(t?.tugallandi||'Tugallandi'), tugallandi:null,
 }
 
 /* Helpers */
@@ -765,7 +765,7 @@ export default function Orders() {
               <input className="finput fsearch" placeholder="🔍 Mijoz, telefon, raqam..."
                 value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}}/>
               <select className="fselect" value={statusF} onChange={e=>{setStatusF(e.target.value);setPage(1)}}>
-                <option value="">Barcha holat</option>
+                <option value="">{t.all||"Barcha"} holat</option>
                 {ALL_STATUSES(t).map(s=><option key={s.key} value={s.key}>{s.label}</option>)}
               </select>
             </div>

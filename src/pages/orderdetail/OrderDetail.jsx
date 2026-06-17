@@ -42,6 +42,7 @@ function norm(r) {
 
 /* ── Stage badge ── */
 function StagePill({ stage }) {
+  const { t } = useLang()
   const s = STAGES.find(x=>x.key===stage) || { label:stage, icon:'?', color:'#64748b' }
   return (
     <span style={{
@@ -539,7 +540,7 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
           padding:'12px 16px', borderBottom:'1px solid var(--border)',
         }}>
           <div style={{ fontWeight:700, fontSize:13 }}>
-            📦 Mahsulotlar — {items.length} ta
+            📦 {t.items||'Mahsulotlar'} — {items.length} ta
             {totalPrice > 0 && (
               <span style={{ marginLeft:8, fontFamily:'monospace', color:'var(--green)', fontSize:14 }}>
                 {fmt.currency(totalPrice)}
@@ -556,7 +557,7 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
         {/* List */}
         {loading ? (
           <div style={{ padding:32, display:'flex', justifyContent:'center' }}>
-            <Loader size="md" text="Mahsulotlar yuklanmoqda..."/>
+            <Loader size="md" text="{t.items||'Mahsulotlar'} yuklanmoqda..."/>
           </div>
         ) : items.length===0 ? (
           <div style={{ padding:40, textAlign:'center', color:'var(--text3)' }}>
@@ -584,7 +585,7 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
         title={`👷 Ishchi biriktirish — ${assignModal?.name||''}`} size="sm"
         footer={<>
           <button className="btn btn-ghost" onClick={()=>{setAssignModal(null);setSelWorker(null)}}>{t.cancel}</button>
-          <button className="btn btn-primary" onClick={confirmAssign} disabled={!selWorker}>✅ Biriktirish</button>
+          <button className="btn btn-primary" onClick={confirmAssign} disabled={!selWorker}>✅ {t.confirm||'Biriktirish'}</button>
         </>}>
         <div style={{ fontSize:12, color:'var(--text2)', marginBottom:10 }}>
           Bosqich: <StagePill stage={assignModal?.stage||'qabul'}/>
@@ -613,7 +614,7 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
         title="🚗 Shafyor biriktirish" size="sm"
         footer={<>
           <button className="btn btn-ghost" onClick={()=>{setDriverModal(false);setSelDriver(null)}}>{t.cancel}</button>
-          <button className="btn btn-primary" onClick={confirmDriver} disabled={!selDriver}>✅ Biriktirish</button>
+          <button className="btn btn-primary" onClick={confirmDriver} disabled={!selDriver}>✅ {t.confirm||'Biriktirish'}</button>
         </>}>
         {order.driver && (
           <div style={{padding:'7px 10px',background:'var(--orangebg)',borderRadius:'var(--r)',marginBottom:10,fontSize:12,color:'var(--orange)',fontWeight:600}}>
