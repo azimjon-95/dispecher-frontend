@@ -58,7 +58,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
           backdropFilter:'blur(20px)',
         }}>
           <div style={{fontSize:11,color:'rgba(255,255,255,.4)',fontWeight:600,textTransform:'uppercase',letterSpacing:'1px',marginBottom:6}}>
-            Bugungi kirim
+            t.todayIncome||'Bugungi kirim'
           </div>
           {loading
             ? <div style={{height:36,width:160,borderRadius:8,background:'rgba(255,255,255,.08)',animation:'mobSkel 1.4s ease-in-out infinite'}}/>
@@ -68,8 +68,8 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
           }
           <div style={{display:'flex',gap:16,marginTop:10}}>
             {[
-              {lbl:'Balans', val:fmt.currency(balans), c:balans>=0?'#22c55e':'#f85149'},
-              {lbl:'Chiqim', val:fmt.currency(chiqim), c:'#f85149'},
+              {lbl:t.balance||'Balans', val:fmt.currency(balans), c:balans>=0?'#22c55e':'#f85149'},
+              {lbl:t.expense||'Chiqim', val:fmt.currency(chiqim), c:'#f85149'},
             ].map(it=>(
               <div key={it.lbl}>
                 <div style={{fontSize:11,color:'rgba(255,255,255,.35)',marginBottom:1}}>{it.lbl}</div>
@@ -89,10 +89,10 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
         msOverflowStyle:'none',
       }}>
         {[
-          {emoji:'📦',lbl:'Faol buyurtma',val:loading?'…':stats?.activeOrders||0,c:'#3B82F6',nav:'orders'},
-          {emoji:'👷',lbl:'Ishchilar',val:loading?'…':`${attendance.present}/${attendance.total}`,c:'#f59e0b',nav:'salary'},
-          {emoji:'🚗',lbl:'Transport',val:loading?'…':stats?.activeDeliveries||0,c:'#22c55e',nav:'transport'},
-          {emoji:'💳',lbl:'Qarzlar',val:loading?'…':debtOrders.length,c:'#f85149',nav:'finance'},
+          {emoji:'📦',lbl:t.activeOrders||'Faol buyurtmalar',val:loading?'…':stats?.activeOrders||0,c:'#3B82F6',nav:'orders'},
+          {emoji:'👷',lbl:t.employees||'Ishchilar',val:loading?'…':`${attendance.present}/${attendance.total}`,c:'#f59e0b',nav:'salary'},
+          {emoji:'🚗',lbl:t.transport||'Transport',val:loading?'…':stats?.activeDeliveries||0,c:'#22c55e',nav:'transport'},
+          {emoji:'💳',lbl:t.debtors||'Qarzlar',val:loading?'…':debtOrders.length,c:'#f85149',nav:'finance'},
         ].map((k,i)=>(
           <button key={i} onClick={()=>onNav?.(k.nav)} style={{
             flexShrink:0,
@@ -123,10 +123,10 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
           display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,
         }}>
           {[
-            {emoji:'📦',lbl:'Buyurtma', c:'#3B82F6', action:onOrder},
-            {emoji:'💰',lbl:'Kirim',    c:'#22c55e', action:()=>onFin('kirim')},
-            {emoji:'💸',lbl:'Chiqim',   c:'#f85149', action:()=>onFin('chiqim')},
-            {emoji:'🚛',lbl:'Transport',c:'#f59e0b', action:()=>onNav?.('transport')},
+            {emoji:'📦',lbl:t.orders||'Buyurtma', c:'#3B82F6', action:onOrder},
+            {emoji:'💰',lbl:t.income||'Kirim',    c:'#22c55e', action:()=>onFin('kirim')},
+            {emoji:'💸',lbl:t.expense||'Chiqim',   c:'#f85149', action:()=>onFin('chiqim')},
+            {emoji:'🚛',lbl:t.transport||'Transport',c:'#f59e0b', action:()=>onNav?.('transport')},
           ].map(q=>(
             <button key={q.lbl} onClick={q.action} style={{
               display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
@@ -155,10 +155,10 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
         {/* Ikkinchi qator */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:7,marginTop:7}}>
           {[
-            {emoji:'🏠',lbl:'Uyga xizmat', c:'#8b5cf6', action:()=>onNav?.('homeservice')},
-            {emoji:'🔧',lbl:'Sex ishi',    c:'#f97316', action:()=>onNav?.('workers')},
-            {emoji:'👥',lbl:'Xodimlar',   c:'#06B6D4', action:()=>onNav?.('employees')},
-            {emoji:'📊',lbl:'Moliya',      c:'#ec4899', action:()=>onNav?.('finance')},
+            {emoji:'🏠',lbl:t.homeservice||'Uyga xizmat', c:'#8b5cf6', action:()=>onNav?.('homeservice')},
+            {emoji:'🔧',lbl:t.workers||'Sex ishi',    c:'#f97316', action:()=>onNav?.('workers')},
+            {emoji:'👥',lbl:t.employees||'Xodimlar',   c:'#06B6D4', action:()=>onNav?.('employees')},
+            {emoji:'📊',lbl:t.finance||'Moliya',      c:'#ec4899', action:()=>onNav?.('finance')},
           ].map(q=>(
             <button key={q.lbl} onClick={q.action} style={{
               display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
@@ -215,7 +215,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
           {/* List */}
           {attendance.list?.length===0
             ? <div style={{padding:'16px',fontSize:12,color:'var(--text3)',textAlign:'center'}}>
-                Ma'lumot yo'q — bot orqali ishchilar belgilanadi
+                {t.noAttendance||"Ma'lumot yo'q — bot orqali ishchilar belgilanadi"}
               </div>
             : attendance.list?.slice(0,5).map((emp,i)=>(
               <div key={emp._id} style={{
@@ -265,7 +265,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
               <button onClick={()=>onNav?.('finance')} style={{
                 fontSize:12,color:'#3B82F6',background:'none',border:'none',
                 cursor:'pointer',fontWeight:600,display:'flex',alignItems:'center',gap:2,
-              }}>Barchasi <MdChevronRight size={14}/></button>
+              }}>{t.showAll||'Barchasi'} <MdChevronRight size={14}/></button>
             </div>
             {debtOrders.map((o,i)=>(
               <div key={o._id} style={{
@@ -308,14 +308,14 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
           }}>
             <div style={{fontSize:14,fontWeight:700}}>💰 Moliyaviy holat</div>
             <button onClick={()=>onNav?.('finance')} style={{fontSize:12,color:'#3B82F6',background:'none',border:'none',cursor:'pointer',fontWeight:600,display:'flex',alignItems:'center',gap:2}}>
-              Barchasi <MdChevronRight size={14}/>
+              {t.showAll||'Barchasi'} <MdChevronRight size={14}/>
             </button>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:0}}>
             {[
-              {lbl:'Kirim',  val:kirim,  c:'#22c55e', icon:'📈', border:true},
-              {lbl:'Chiqim', val:chiqim, c:'#f85149', icon:'📉', border:true},
-              {lbl:'Balans', val:balans, c:balans>=0?'#22c55e':'#f85149', icon:'⚖️', border:false},
+              {lbl:t.income||'Kirim',  val:kirim,  c:'#22c55e', icon:'📈', border:true},
+              {lbl:t.expense||'Chiqim', val:chiqim, c:'#f85149', icon:'📉', border:true},
+              {lbl:t.balance||'Balans', val:balans, c:balans>=0?'#22c55e':'#f85149', icon:'⚖️', border:false},
             ].map((it,i)=>(
               <div key={it.lbl} style={{
                 padding:'14px 10px',textAlign:'center',
@@ -341,11 +341,11 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
             🖥️ Tizim holati
           </div>
           {[
-            {lbl:'Asosiy server',        ok:stats!==null,     okT:'Ishlayapti',  errT:'Ulanmadi'},
-            {lbl:"Ma'lumotlar bazasi",   ok:stats!==null,     okT:'Ulangan',     errT:'MongoDB off'},
-            {lbl:'Telegram Bot',         ok:false,            okT:'Active',      errT:'Token kiritilmagan'},
-            {lbl:'Redis cache',          ok:true,             okT:'Ishlayapti',  errT:'Oddiy rejim'},
-            {lbl:'Internet',             ok:navigator.onLine, okT:'Ulanilgan',   errT:'Offline rejim'},
+            {lbl:'Asosiy server',        ok:stats!==null,     okT:t.serverOk||'Ishlayapti', errT:t.serverFail||'Ulanmadi'},
+            {lbl:"Ma'lumotlar bazasi",   ok:stats!==null,     okT:t.dbOk||'Ulangan', errT:'MongoDB off'},
+            {lbl:'Telegram Bot',         ok:false,            okT:'Active', errT:t.botFail||'Token kiritilmagan'},
+            {lbl:'Redis cache',          ok:true,             okT:t.serverOk||'Ishlayapti', errT:t.redisFail||'Oddiy rejim'},
+            {lbl:'Internet',             ok:navigator.onLine, okT:t.connected||'Ulanilgan', errT:t.offlineMode||'Offline rejim'},
           ].map((s,i,arr)=>(
             <div key={s.lbl} style={{
               display:'flex',alignItems:'center',justifyContent:'space-between',
@@ -369,7 +369,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
               color:'var(--text2)',fontSize:12,fontWeight:600,cursor:'pointer',
               display:'flex',alignItems:'center',justifyContent:'center',gap:6,
             }}>
-              <MdRefresh size={14} style={{animation:retrying?'mobSpin 1s linear infinite':'none'}}/> Qayta tekshirish
+              <MdRefresh size={14} style={{animation:retrying?'mobSpin 1s linear infinite':'none'}}/> {t.recheck||'Qayta tekshirish'}
             </button>
           </div>
         </div>
@@ -394,19 +394,19 @@ function DeskDashboard({ stats, finance, attendance, debtOrders, loading, onNav,
   const todayK = finance.filter(f=>f.type==='kirim'&&f.date===today).reduce((s,f)=>s+(f.amount||0),0)
 
   const KPI = stats ? [
-    {icon:'📦',lbl:'Faol buyurtmalar',  val:stats.activeOrders||0,      bg:'var(--accentbg)', c:'var(--accent)',  nav:'orders'},
-    {icon:'📈',lbl:'Bugungi kirim',      val:fmt.currency(todayK),       bg:'var(--greenbg)',  c:'var(--green)',   nav:'finance'},
-    {icon:'⚖️',lbl:'Jami balans',        val:fmt.currency(balans),       bg:balans>=0?'var(--greenbg)':'var(--redbg)', c:balans>=0?'var(--green)':'var(--red)', nav:'finance'},
-    {icon:'👷',lbl:'Bugun ish boshladilar',val:`${attendance.present}/${attendance.total}`,bg:'var(--yellowbg)',c:'var(--yellow)',nav:'salary'},
+    {icon:'📦',lbl:t.activeOrders||'Faol buyurtmalar',  val:stats.activeOrders||0,      bg:'var(--accentbg)', c:'var(--accent)',  nav:'orders'},
+    {icon:'📈',lbl:t.todayIncome||'Bugungi kirim',      val:fmt.currency(todayK),       bg:'var(--greenbg)',  c:'var(--green)',   nav:'finance'},
+    {icon:'⚖️',lbl:t.totalBalance||'Jami balans',        val:fmt.currency(balans),       bg:balans>=0?'var(--greenbg)':'var(--redbg)', c:balans>=0?'var(--green)':'var(--red)', nav:'finance'},
+    {icon:'👷',lbl:t.todayWorkers||'Bugun ish boshladilar',val:`${attendance.present}/${attendance.total}`,bg:'var(--yellowbg)',c:'var(--yellow)',nav:'salary'},
   ] : []
 
   const QUICK = [
-    {icon:'📦',lbl:'Yangi buyurtma',  c:'var(--accent)',  action:onOrder},
-    {icon:'🚛',lbl:'Transport',        c:'var(--green)',   action:()=>onNav?.('transport')},
-    {icon:'💰',lbl:"Kirim qo'shish",  c:'var(--yellow)',  action:()=>onFin('kirim')},
-    {icon:'💸',lbl:"Chiqim qo'shish", c:'var(--red)',     action:()=>onFin('chiqim')},
-    {icon:'🏠',lbl:'Uyga xizmat',      c:'var(--purple)', action:()=>onNav?.('homeservice')},
-    {icon:'🔧',lbl:'Sex topshiriqlari',c:'var(--orange)', action:()=>onNav?.('workers')},
+    {icon:'📦',lbl:t.newOrder||'Yangi buyurtma',  c:'var(--accent)',  action:onOrder},
+    {icon:'🚛',lbl:t.transport||'Transport',        c:'var(--green)',   action:()=>onNav?.('transport')},
+    {icon:'💰',lbl:t.addIncome||"Kirim qo'shish",  c:'var(--yellow)',  action:()=>onFin('kirim')},
+    {icon:'💸',lbl:t.addExpense||"Chiqim qo'shish", c:'var(--red)',     action:()=>onFin('chiqim')},
+    {icon:'🏠',lbl:t.homeservice||'Uyga xizmat',      c:'var(--purple)', action:()=>onNav?.('homeservice')},
+    {icon:'🔧',lbl:t.workers||'Sex topshiriqlari',c:'var(--orange)', action:()=>onNav?.('workers')},
   ]
 
   return (
@@ -425,15 +425,15 @@ function DeskDashboard({ stats, finance, attendance, debtOrders, loading, onNav,
         <div style={{display:'flex',flexDirection:'column',gap:14}}>
           <div className="card">
             <div className="card-hd">
-              <div><div className="card-title">👷 Bugungi davomat</div><div className="card-sub">{today}</div></div>
+              <div><div className="card-title">{('👷 '+(t.todayAttendance||'Bugungi davomat'))}</div><div className="card-sub">{today}</div></div>
               <div style={{display:'flex',gap:10,fontSize:12}}>
-                <span style={{color:'var(--green)',fontWeight:700}}>✅ {attendance.present} keldi</span>
-                <span style={{color:'var(--red)',fontWeight:700}}>❌ {attendance.absent} kelmadi</span>
+                <span style={{color:'var(--green)',fontWeight:700}}>✅ {attendance.present} {t.came||'keldi'}</span>
+                <span style={{color:'var(--red)',fontWeight:700}}>❌ {attendance.absent} {t.didntCome||'kelmadi'}</span>
               </div>
             </div>
             <div style={{display:'flex',flexDirection:'column',gap:4,maxHeight:160,overflowY:'auto'}}>
               {attendance.list?.length===0
-                ? <div style={{color:'var(--text3)',fontSize:12,padding:8}}>Ma'lumot yo'q — bot orqali ishchilar keladi</div>
+                ? <div style={{color:'var(--text3)',fontSize:12,padding:8}}>{t.noAttendance||"Ma'lumot yo'q — bot orqali ishchilar keladi"}</div>
                 : attendance.list?.map(emp=>(
                   <div key={emp._id} style={{display:'flex',alignItems:'center',gap:8,padding:'5px 8px',borderRadius:'var(--r)',background:'var(--bg3)'}}>
                     <div style={{width:7,height:7,borderRadius:'50%',background:emp.attendance?'var(--green)':'var(--red)',flexShrink:0}}/>
@@ -446,8 +446,8 @@ function DeskDashboard({ stats, finance, attendance, debtOrders, loading, onNav,
             </div>
           </div>
           <div className="card">
-            <div className="card-hd"><div className="card-title">💳 Mijozlar qarzlari</div><button className="btn btn-ghost btn-sm" onClick={()=>onNav?.('finance')}>Barchasi →</button></div>
-            {debtOrders.length===0 ? <div style={{color:'var(--text3)',fontSize:12,padding:12}}>✅ Qarzli mijoz yo'q</div>
+            <div className="card-hd"><div className="card-title">{('💳 '+(t.debtors||'Mijozlar qarzlari'))}</div><button className="btn btn-ghost btn-sm" onClick={()=>onNav?.('finance')}>{t.showAll||'Barchasi'} →</button></div>
+            {debtOrders.length===0 ? <div style={{color:'var(--text3)',fontSize:12,padding:12}}>{t.noDebt||"✅ Qarzli mijoz yo'q"}</div>
               : debtOrders.map(o=>(
                 <div key={o._id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:'1px solid var(--border)'}}>
                   <div style={{flex:1}}><div style={{fontWeight:700,fontSize:12}}>{o.customer}</div><div style={{fontSize:11,color:'var(--text2)'}}>{o.number} · {o.phone}</div></div>
@@ -456,9 +456,9 @@ function DeskDashboard({ stats, finance, attendance, debtOrders, loading, onNav,
               ))}
           </div>
           <div className="card">
-            <div className="card-hd"><div className="card-title">💰 Moliyaviy holat</div><button className="btn btn-ghost btn-sm" onClick={()=>onNav?.('finance')}>Barchasi →</button></div>
+            <div className="card-hd"><div className="card-title">{('💰 '+(t.financialStatus||'Moliyaviy holat'))}</div><button className="btn btn-ghost btn-sm" onClick={()=>onNav?.('finance')}>{t.showAll||'Barchasi'} →</button></div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
-              {[{lbl:'Jami kirim',val:kirim,c:'var(--green)',icon:'📈'},{lbl:'Jami chiqim',val:chiqim,c:'var(--red)',icon:'📉'},{lbl:'Balans',val:balans,c:balans>=0?'var(--green)':'var(--red)',icon:'⚖️'}].map(it=>(
+              {[{lbl:'Jami kirim',val:kirim,c:'var(--green)',icon:'📈'},{lbl:'Jami chiqim',val:chiqim,c:'var(--red)',icon:'📉'},{lbl:t.balance||'Balans',val:balans,c:balans>=0?'var(--green)':'var(--red)',icon:'⚖️'}].map(it=>(
                 <div key={it.lbl} style={{padding:'10px 12px',background:'var(--bg3)',borderRadius:'var(--r)',textAlign:'center'}}>
                   <div style={{fontSize:16,marginBottom:3}}>{it.icon}</div>
                   <div style={{fontWeight:800,fontFamily:'monospace',fontSize:13,color:it.c}}>{fmt.currency(it.val)}</div>
@@ -470,7 +470,7 @@ function DeskDashboard({ stats, finance, attendance, debtOrders, loading, onNav,
         </div>
         <div style={{display:'flex',flexDirection:'column',gap:14}}>
           <div className="card">
-            <div className="card-hd"><div className="card-title">⚡ Tezkor harakatlar</div></div>
+            <div className="card-hd"><div className="card-title">{('⚡ '+(t.quickActions||'Tezkor harakatlar'))}</div></div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
               {QUICK.map(q=>(
                 <button key={q.lbl} onClick={q.action} style={{display:'flex',alignItems:'center',gap:8,padding:'11px 10px',borderRadius:'var(--r)',border:'1px solid var(--border)',background:'var(--bg3)',cursor:'pointer',transition:'all var(--t)',fontSize:12,fontWeight:600,color:'var(--text2)'}}
@@ -482,14 +482,14 @@ function DeskDashboard({ stats, finance, attendance, debtOrders, loading, onNav,
             </div>
           </div>
           <div className="card">
-            <div className="card-hd"><div className="card-title">🖥️ Tizim holati</div></div>
+            <div className="card-hd"><div className="card-title">{('🖥️ '+(t.systemStatus||'Tizim holati'))}</div></div>
             <div style={{display:'flex',flexDirection:'column',gap:6}}>
               {[
-                {lbl:'Asosiy server',ok:stats!==null,okT:'Ishlayapti',errT:'Ulanmadi'},
-                {lbl:"Ma'lumotlar bazasi",ok:stats!==null,okT:'Ulangan',errT:'MongoDB off'},
-                {lbl:'Telegram Bot',ok:false,okT:'Active',errT:'Settings → TOKEN kiriting'},
-                {lbl:'Redis cache',ok:true,okT:'Ishlayapti',errT:'Oddiy rejim'},
-                {lbl:'Internet',ok:navigator.onLine,okT:'Ulanilgan',errT:'Offline rejim'},
+                {lbl:'Asosiy server',ok:stats!==null,okT:t.serverOk||'Ishlayapti',errT:t.serverFail||'Ulanmadi'},
+                {lbl:"Ma'lumotlar bazasi",ok:stats!==null,okT:t.dbOk||'Ulangan',errT:'MongoDB off'},
+                {lbl:'Telegram Bot',ok:false,okT:'Active',errT:t.botFail||'Token kiritilmagan'},
+                {lbl:'Redis cache',ok:true,okT:t.serverOk||'Ishlayapti',errT:t.redisFail||'Oddiy rejim'},
+                {lbl:'Internet',ok:navigator.onLine,okT:t.connected||'Ulanilgan',errT:t.offlineMode||'Offline rejim'},
               ].map(s=>(
                 <div key={s.lbl} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 12px',background:'var(--bg3)',borderRadius:'var(--r)'}}>
                   <span style={{fontSize:12,fontWeight:500,flex:1}}>{s.lbl}</span>
@@ -499,7 +499,7 @@ function DeskDashboard({ stats, finance, attendance, debtOrders, loading, onNav,
                 </div>
               ))}
               <button className="btn btn-ghost btn-sm" onClick={retry} disabled={retrying} style={{marginTop:4}}>
-                <MdRefresh size={13}/> Qayta tekshirish
+                <MdRefresh size={13}/> {t.recheck||'Qayta tekshirish'}
               </button>
             </div>
           </div>
