@@ -17,7 +17,7 @@ const isMob = () => window.innerWidth <= 768
 
 /* ── Constants ── */
 const COLUMNS = [
-  { key:'yangi',         label:'Yangi',        icon:'📞', color:'var(--accent)',  desc:"Qo'ng'iroq qildi, navbat kutmoqda" },
+  { key:'yangi',         label:t.yangi||'Yangi',        icon:'📞', color:'var(--accent)',  desc:"Qo'ng'iroq qildi, navbat kutmoqda" },
   { key:'qabul_qilindi', label:'Qabul qilindi', icon:'📦', color:'var(--yellow)', desc:'Shafyor olib keldi, qabul qilindi' },
   { key:'yuvishda',      label:'Yuvishda',       icon:'🫧', color:'#58a6ff',       desc:'Yuvish jarayonida' },
   { key:'qurishda',      label:'Quritishda',     icon:'💨', color:'var(--orange)', desc:'Quritish jarayonida' },
@@ -26,7 +26,7 @@ const COLUMNS = [
 ]
 const ALL_STATUSES = [
   ...COLUMNS.map(c=>({key:c.key,label:c.label})),
-  { key:'bekor', label:'Bekor' },
+  { key:'bekor', label:t.cancel||'Bekor' },
 ]
 const NEXT_STATUS = {
   yangi:'qabul_qilindi', qabul_qilindi:'yuvishda',
@@ -696,7 +696,7 @@ export default function Orders() {
       {/* Assign driver modal */}
       <Modal open={!!assignModal} onClose={()=>{setAssignModal(null);setSelDriver(null)}}
         title="🚗 Shafyor biriktirish" size="sm"
-        footer={<><button className="btn btn-ghost" onClick={()=>{setAssignModal(null);setSelDriver(null)}}>Bekor</button>
+        footer={<><button className="btn btn-ghost" onClick={()=>{setAssignModal(null);setSelDriver(null)}}>{t.cancel}</button>
           <button className="btn btn-primary" onClick={confirmAssignDriver} disabled={!selDriver}>✅ Biriktirish</button></>}>
         <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:280,overflowY:'auto'}}>
           {drivers.map(d=>(
@@ -803,10 +803,10 @@ export default function Orders() {
           title={formModal==='create'?'➕ Yangi buyurtma':'✏️ Buyurtma tahrirlash'} size="lg"
           footer={<>
             <button className="btn btn-ghost" onClick={clearForm} title="Formani tozalash">Tozalash</button>
-            <button className="btn btn-ghost" onClick={()=>setFormModal(null)}>Yopish</button>
+            <button className="btn btn-ghost" onClick={()=>setFormModal(null)}>{t.close}</button>
             <button className="btn btn-primary" onClick={saveForm} disabled={isSubmitting}
               style={{opacity:isSubmitting?0.6:1,cursor:isSubmitting?'not-allowed':'pointer'}}>
-              {isSubmitting ? '⏳ Saqlanmoqda...' : formModal==='create'?'Yaratish':'Saqlash'}
+              {isSubmitting ? '⏳ Saqlanmoqda...' : formModal==='create'?'Yaratish':t.save||'Saqlash'}
             </button>
           </>}
         >
@@ -870,7 +870,7 @@ export default function Orders() {
         <Modal open={!!assignModal} onClose={()=>{setAssignModal(null);setSelDriver(null)}}
           title={`🚗 Shafyor biriktirish — ${assignModal?.number||''}`} size="sm"
           footer={<>
-            <button className="btn btn-ghost" onClick={()=>{setAssignModal(null);setSelDriver(null)}}>Bekor</button>
+            <button className="btn btn-ghost" onClick={()=>{setAssignModal(null);setSelDriver(null)}}>{t.cancel}</button>
             <button className="btn btn-primary" onClick={confirmAssignDriver} disabled={!selDriver}>✅ Biriktirish</button>
           </>}
         >
@@ -900,7 +900,7 @@ export default function Orders() {
         <Modal open={!!assignWorkerMod} onClose={()=>{setAssignWorkerMod(null);setSelWorker(null)}}
           title={`👷 Ishchi biriktirish — ${assignWorkerMod?.number||''}`} size="sm"
           footer={<>
-            <button className="btn btn-ghost" onClick={()=>{setAssignWorkerMod(null);setSelWorker(null)}}>Bekor</button>
+            <button className="btn btn-ghost" onClick={()=>{setAssignWorkerMod(null);setSelWorker(null)}}>{t.cancel}</button>
             <button className="btn btn-primary" onClick={confirmAssignWorker} disabled={!selWorker}>✅ Biriktirish</button>
           </>}
         >

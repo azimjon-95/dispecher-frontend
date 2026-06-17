@@ -555,8 +555,8 @@ export default function Settings() {
         {/* Price modal */}
         <Modal open={!!modal} onClose={()=>setModal(null)}
           title={modal==='create'?"💰 Narx qo'shish":"✏️ Narx tahrirlash"} size="sm"
-          footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>Bekor</button>
-            <button className="btn btn-primary" onClick={savePrice}>Saqlash</button></>}>
+          footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>{t.cancel}</button>
+            <button className="btn btn-primary" onClick={savePrice}>{t.save}</button></>}>
           <div className="fg"><label className="flabel">Mahsulot nomi *</label>
             <input className="finput" value={pform.item||''} onChange={e=>setPform(p=>({...p,item:e.target.value}))}/></div>
           <div className="fgrid2">
@@ -672,7 +672,7 @@ export default function Settings() {
         </div>
 
         <Modal open={modal==='create'||modal==='edit'} onClose={()=>setModal(null)} title={modal==='create'?'Yangi narx':'Tahrirlash'} size="sm"
-          footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>Bekor</button><button className="btn btn-primary" onClick={savePrice}>Saqlash</button></>}>
+          footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>{t.cancel}</button><button className="btn btn-primary" onClick={savePrice}>{t.save}</button></>}>
           <div className="fg"><label className="flabel">Xizmat nomi *</label><input className="finput" value={pform.item||''} onChange={e=>setPform(p=>({...p,item:e.target.value}))}/></div>
           <div className="fgrid2">
             <div className="fg"><label className="flabel">Narx *</label><input className="finput" type="number" value={pform.price||''} onChange={e=>setPform(p=>({...p,price:+e.target.value}))}/></div>

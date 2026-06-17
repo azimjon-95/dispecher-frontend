@@ -196,7 +196,7 @@ function MobHomeService({ services, loading, workers, onAdd, onEdit, onDone, onD
         display:'flex',gap:6,overflowX:'auto',
         padding:'10px 16px 6px',scrollbarWidth:'none',
       }}>
-        {[{key:'',label:'Barchasi',emoji:'📋'},...STATUSES.map(s=>({key:s,label:s,emoji:s==='rejalashtirilgan'?'📅':s==='jarayonda'?'🔄':s==='bajarildi'?'✅':'❌'}))].map(t=>{
+        {[{key:'',label:t.all||'Barchasi',emoji:'📋'},...STATUSES.map(s=>({key:s,label:s,emoji:s==='rejalashtirilgan'?'📅':s==='jarayonda'?'🔄':s==='bajarildi'?'✅':'❌'}))].map(t=>{
           const isAct = statusF === t.key
           const c = t.key ? STATUS_COLORS[t.key]||'var(--text3)' : 'var(--text2)'
           return (
@@ -396,7 +396,7 @@ export default function HomeService() {
       {/* Shared Modals */}
       <Modal open={formModal==='create'||formModal==='edit'} onClose={()=>setFormModal(null)}
         title={formModal==='create'?'🏠 Yangi uy xizmati':'✏️ Tahrirlash'} size="lg"
-        footer={<><button className="btn btn-ghost" onClick={()=>setFormModal(null)}>Bekor</button><button className="btn btn-primary" onClick={save}>Saqlash</button></>}>
+        footer={<><button className="btn btn-ghost" onClick={()=>setFormModal(null)}>{t.cancel}</button><button className="btn btn-primary" onClick={save}>{t.save}</button></>}>
         <div className="fg"><label className="flabel">Mijoz ismi *</label><input className="finput" value={form.customer} onChange={set('customer')} autoFocus/></div>
         <div className="fg"><label className="flabel">Telefon *</label><input className="finput" placeholder="+998 90 000 00 00" value={form.phone} onChange={set('phone')}/></div>
         <div className="fg"><label className="flabel">Manzil *</label><input className="finput" value={form.address} onChange={set('address')}/></div>
@@ -412,7 +412,7 @@ export default function HomeService() {
       </Modal>
       <Modal open={!!doneModal} onClose={()=>{setDoneModal(null);setSelWorkers([])}}
         title="✅ Xizmatni yakunlash" size="sm"
-        footer={<><button className="btn btn-ghost" onClick={()=>setDoneModal(null)}>Bekor</button><button className="btn btn-success" onClick={complete}>Yakunlash</button></>}>
+        footer={<><button className="btn btn-ghost" onClick={()=>setDoneModal(null)}>{t.cancel}</button><button className="btn btn-success" onClick={complete}>Yakunlash</button></>}>
         <div className="fg"><label className="flabel">Jami summa</label><input className="finput" type="number" value={doneForm.totalAmount} onChange={e=>setDoneForm(p=>({...p,totalAmount:e.target.value}))}/></div>
         <div className="fg"><label className="flabel">To'langan</label><input className="finput" type="number" value={doneForm.paidAmount} onChange={e=>setDoneForm(p=>({...p,paidAmount:e.target.value}))}/></div>
         <div className="fg"><label className="flabel">Izoh</label><textarea className="ftextarea" rows={2} value={doneForm.description} onChange={e=>setDoneForm(p=>({...p,description:e.target.value}))}/></div>
@@ -466,7 +466,7 @@ export default function HomeService() {
         {/* Create/Edit Modal */}
         <Modal open={formModal==='create'||formModal==='edit'} onClose={()=>setFormModal(null)}
           title={formModal==='create'?'🏠 Yangi uy xizmati':'✏️ Tahrirlash'} size="lg"
-          footer={<><button className="btn btn-ghost" onClick={()=>setFormModal(null)}>Bekor</button><button className="btn btn-primary" onClick={save}>Saqlash</button></>}>
+          footer={<><button className="btn btn-ghost" onClick={()=>setFormModal(null)}>{t.cancel}</button><button className="btn btn-primary" onClick={save}>{t.save}</button></>}>
           <div className="fgrid2">
             <div className="fg"><label className="flabel">Mijoz ismi *</label><input className="finput" value={form.customer} onChange={set('customer')} autoFocus/></div>
             <div className="fg"><label className="flabel">Telefon *</label><input className="finput" placeholder="+998 90 000 00 00" value={form.phone} onChange={set('phone')}/></div>
@@ -496,7 +496,7 @@ export default function HomeService() {
         {/* Complete Modal */}
         <Modal open={!!doneModal} onClose={()=>{setDoneModal(null);setSelWorkers([])}}
           title={`✅ Xizmatni yakunlash — ${doneModal?.number||''}`} size="lg"
-          footer={<><button className="btn btn-ghost" onClick={()=>{setDoneModal(null);setSelWorkers([])}}>Bekor</button><button className="btn btn-success" onClick={complete}>✅ Yakunlash</button></>}>
+          footer={<><button className="btn btn-ghost" onClick={()=>{setDoneModal(null);setSelWorkers([])}}>{t.cancel}</button><button className="btn btn-success" onClick={complete}>✅ Yakunlash</button></>}>
           <div style={{padding:'8px 12px',background:'var(--bg3)',borderRadius:'var(--r)',marginBottom:12}}>
             <div style={{fontWeight:700}}>{doneModal?.customer}</div>
             <div style={{fontSize:11,color:'var(--text2)'}}>{doneModal?.address} · {doneModal?.scheduledDate} {doneModal?.scheduledTime}</div>

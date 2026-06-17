@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useLang } from '../../i18n/index.jsx'
 import {
   MdArrowBack, MdAdd, MdEdit, MdDelete, MdPersonAdd,
   MdDirectionsCar, MdCheck, MdPhone, MdLocationOn,
@@ -188,6 +189,7 @@ function ItemCard({ item, workers, onAdvance, onAssign, onEdit, onDelete }) {
    MAIN COMPONENT
 ══════════════════════════════════════════ */
 export default function OrderDetail({ order: initialOrder, onBack }) {
+  const { t } = useLang()
   const [order,   setOrder]   = useState(initialOrder)
   const [items,   setItems]   = useState([])
   const [workers, setWorkers] = useState([])
@@ -579,7 +581,7 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
       <Modal open={!!assignModal} onClose={()=>{setAssignModal(null);setSelWorker(null)}}
         title={`👷 Ishchi biriktirish — ${assignModal?.name||''}`} size="sm"
         footer={<>
-          <button className="btn btn-ghost" onClick={()=>{setAssignModal(null);setSelWorker(null)}}>Bekor</button>
+          <button className="btn btn-ghost" onClick={()=>{setAssignModal(null);setSelWorker(null)}}>{t.cancel}</button>
           <button className="btn btn-primary" onClick={confirmAssign} disabled={!selWorker}>✅ Biriktirish</button>
         </>}>
         <div style={{ fontSize:12, color:'var(--text2)', marginBottom:10 }}>
@@ -608,7 +610,7 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
       <Modal open={driverModal} onClose={()=>{setDriverModal(false);setSelDriver(null)}}
         title="🚗 Shafyor biriktirish" size="sm"
         footer={<>
-          <button className="btn btn-ghost" onClick={()=>{setDriverModal(false);setSelDriver(null)}}>Bekor</button>
+          <button className="btn btn-ghost" onClick={()=>{setDriverModal(false);setSelDriver(null)}}>{t.cancel}</button>
           <button className="btn btn-primary" onClick={confirmDriver} disabled={!selDriver}>✅ Biriktirish</button>
         </>}>
         {order.driver && (
@@ -634,7 +636,7 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
       <Modal open={!!advModal} onClose={()=>setAdvModal(null)}
         title={`✅ Bosqichni tugatish`} size="sm"
         footer={<>
-          <button className="btn btn-ghost" onClick={()=>setAdvModal(null)}>Bekor</button>
+          <button className="btn btn-ghost" onClick={()=>setAdvModal(null)}>{t.cancel}</button>
           <button className="btn btn-success" onClick={()=>doAdvance(advModal)}>✅ Tugallandi</button>
         </>}>
         {advModal && (
@@ -663,8 +665,8 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
       <Modal open={!!editModal} onClose={()=>setEditModal(null)}
         title="✏️ Mahsulot tahrirlash" size="sm"
         footer={<>
-          <button className="btn btn-ghost" onClick={()=>setEditModal(null)}>Bekor</button>
-          <button className="btn btn-primary" onClick={saveEdit}>Saqlash</button>
+          <button className="btn btn-ghost" onClick={()=>setEditModal(null)}>{t.cancel}</button>
+          <button className="btn btn-primary" onClick={saveEdit}>{t.save}</button>
         </>}>
         <div className="fgrid2">
           {editForm.unit==='sqm' ? <>

@@ -270,7 +270,7 @@ function TaskPanel({ title, icon, color, type, apiFns, drivers, allOrders, onDri
                 <th>Mijoz / TG</th>
                 <th>Manzil</th>
                 <th>Shafyor</th>
-                <th>Xabar</th>
+                <th>{t.sendMsg||'Xabar'}</th>
                 <th>Holat</th>
                 <th></th>
               </tr>
@@ -341,7 +341,7 @@ function TaskPanel({ title, icon, color, type, apiFns, drivers, allOrders, onDri
       {/* Assign modal */}
       <Modal open={!!assign} onClose={()=>{setAssign(null);setSelDrv(null)}}
         title={assign?.driver?`🔄 Shafyor almashtirish`:`🚗 Shafyor biriktirish`} size="sm"
-        footer={<><button className="btn btn-ghost" onClick={()=>{setAssign(null);setSelDrv(null)}}>Bekor</button>
+        footer={<><button className="btn btn-ghost" onClick={()=>{setAssign(null);setSelDrv(null)}}>{t.cancel}</button>
           <button className="btn btn-primary" onClick={confirmAssign} disabled={!selDrv}>✅ Biriktirish</button></>}>
         {assign?.driver&&<div style={{padding:'7px 10px',background:'var(--orangebg)',borderRadius:'var(--r)',marginBottom:10,fontSize:12,color:'var(--orange)',fontWeight:600}}>⚠️ Hozirgi: {assign.driver}</div>}
         <div style={{fontSize:12,color:'var(--text2)',marginBottom:8}}>{assign?.customer} — {assign?.address}</div>
@@ -593,7 +593,7 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
       {/* Assign modal */}
       <Modal open={!!assignOrder} onClose={()=>{setAssignOrder(null);setSelDrv(null)}}
         title={`🗺️ Shafyor biriktirish — ${assignOrder?.number}`} size="sm"
-        footer={<><button className="btn btn-ghost" onClick={()=>{setAssignOrder(null);setSelDrv(null)}}>Bekor</button>
+        footer={<><button className="btn btn-ghost" onClick={()=>{setAssignOrder(null);setSelDrv(null)}}>{t.cancel}</button>
           <button className="btn btn-primary" onClick={confirmMapAssign} disabled={!selDrv}>✅ Biriktirish + TG</button></>}>
         <div style={{padding:'8px 10px',background:'var(--bg3)',borderRadius:'var(--r)',fontSize:12,marginBottom:10}}>
           <div style={{fontWeight:700}}>{assignOrder?.customer}</div>
@@ -739,7 +739,7 @@ function MobileTaskPanel({ type, color, apiFns, drivers, allOrders, onDriverChan
       <Modal open={!!assign} onClose={()=>{setAssign(null);setSelDrv(null)}}
         title={`🚗 Shafyor — ${assign?.order||''}`} size="sm"
         footer={<>
-          <button className="btn btn-ghost" onClick={()=>{setAssign(null);setSelDrv(null)}}>Bekor</button>
+          <button className="btn btn-ghost" onClick={()=>{setAssign(null);setSelDrv(null)}}>{t.cancel}</button>
           <button className="btn btn-primary" onClick={confirmAssign} disabled={!selDrv}>✅ Biriktirish + TG</button>
         </>}>
         {assign && (
@@ -830,8 +830,8 @@ export default function Transport() {
               display:'flex',gap:10,
             }}>
               {[
-                {emoji:'🚚',lbl:'Olib ketish',val:orders.filter(o=>o.status==='yetkazishda'&&o.driver).length,c:'#3fb950'},
-                {emoji:'📮',lbl:'Olib kelish', val:orders.filter(o=>o.status==='qabul_qilindi'&&o.driver).length,c:'#f0883e'},
+                {emoji:'🚚',lbl:t.delivery||'Olib ketish',val:orders.filter(o=>o.status==='yetkazishda'&&o.driver).length,c:'#3fb950'},
+                {emoji:'📮',lbl:t.pickup||'Olib kelish', val:orders.filter(o=>o.status==='qabul_qilindi'&&o.driver).length,c:'#f0883e'},
                 {emoji:'🚗',lbl:'Online',      val:Object.values(driverLocations).filter(d=>d.online).length,c:'#58a6ff'},
               ].map(s=>(
                 <div key={s.lbl} style={{

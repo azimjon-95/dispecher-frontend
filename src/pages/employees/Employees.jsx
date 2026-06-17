@@ -222,8 +222,8 @@ export default function Employees() {
           title={modal==='create'?'Yangi xodim':'Xodim tahrirlash'}
           size="lg"
           footer={<>
-            <button className="btn btn-ghost" onClick={()=>setModal(null)}>Bekor</button>
-            <button className="btn btn-primary" onClick={save}>Saqlash</button>
+            <button className="btn btn-ghost" onClick={()=>setModal(null)}>{t.cancel}</button>
+            <button className="btn btn-primary" onClick={save}>{t.save}</button>
           </>}
         >
           <div className="fgrid2">

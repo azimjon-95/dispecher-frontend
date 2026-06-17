@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLang } from '../../i18n/index.jsx'
 import { MdAdd, MdEdit, MdDelete, MdFileDownload, MdVisibility, MdLink, MdRefresh, MdCheckCircle, MdHourglassEmpty } from 'react-icons/md'
 import { api } from '../../services/api.js'
 import { useCRUD } from '../../hooks/useCRUD.js'
@@ -10,6 +11,7 @@ const STATUSES = ['yangi', 'jarayonda', 'yetkazildi', 'bekor']
 const EMPTY    = { order: '', customer: '', address: '', driver: '', status: 'yangi', time: '', date: new Date().toISOString().slice(0, 10) }
 
 export default function Pickup() {
+  const { t } = useLang()
   const crud = useCRUD(
     { getAll: api.getPickup, create: api.createPickup, update: api.updatePickup, remove: api.deletePickup },
     ['order', 'customer', 'address']

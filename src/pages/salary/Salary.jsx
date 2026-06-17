@@ -223,8 +223,8 @@ export default function Salary() {
       />
       <Modal open={modal} onClose={()=>setModal(false)}
         title="+ Avans / Jarima / Bonus" size="sm"
-        footer={<><button className="btn btn-ghost" onClick={()=>setModal(false)}>Bekor</button>
-          <button className="btn btn-primary" onClick={pay}>Saqlash</button></>}>
+        footer={<><button className="btn btn-ghost" onClick={()=>setModal(false)}>{t.cancel}</button>
+          <button className="btn btn-primary" onClick={pay}>{t.save}</button></>}>
         <div className="fg"><label className="flabel">Xodim *</label>
           <select className="fselect" value={form.workerId} onChange={e=>setForm(p=>({...p,workerId:e.target.value}))}>
             <option value="">Tanlang...</option>
@@ -380,7 +380,7 @@ export default function Salary() {
 
         {/* Pay modal */}
         <Modal open={modal} onClose={()=>setModal(false)} title="💰 To'lov" size="sm"
-          footer={<><button className="btn btn-ghost" onClick={()=>setModal(false)}>Bekor</button><button className="btn btn-primary" onClick={pay} disabled={saving}>{saving?'⏳':'✅ Tasdiqlash'}</button></>}>
+          footer={<><button className="btn btn-ghost" onClick={()=>setModal(false)}>{t.cancel}</button><button className="btn btn-primary" onClick={pay} disabled={saving}>{saving?'⏳':'✅ Tasdiqlash'}</button></>}>
           {/* Type buttons */}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:12}}>
             {PAY_TYPES(t).map(t=>(

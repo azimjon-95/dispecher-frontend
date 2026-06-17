@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLang } from '../../i18n/index.jsx'
 import { MdAdd, MdEdit, MdDelete, MdFileDownload, MdDirectionsCar, MdPhone, MdLink, MdContentCopy } from 'react-icons/md'
 import { api } from '../../services/api.js'
 import { useCRUD } from '../../hooks/useCRUD.js'
@@ -9,6 +10,7 @@ import './Drivers.css'
 const EMPTY = { name:'', phone:'', car:'', plate:'', status:'faol' }
 
 export default function Drivers() {
+  const { t } = useLang()
   const crud = useCRUD(
     { getAll:api.getDrivers, create:api.createDriver, update:api.updateDriver, remove:api.deleteDriver },
     ['name','phone','plate']
@@ -91,7 +93,7 @@ export default function Drivers() {
         {/* Stats */}
         <div className="kpi-grid" style={{marginBottom:16}}>
           {[
-            {lbl:'Faol',      val:faol,  c:'var(--green)',  bg:'var(--greenbg)'},
+            {lbl:t.active||'Faol',      val:faol,  c:'var(--green)',  bg:'var(--greenbg)'},
             {lbl:'Band',      val:band,  c:'var(--orange)', bg:'var(--orangebg)'},
             {lbl:'Dam',       val:dam,   c:'var(--text2)',  bg:'var(--bg4)'},
             {lbl:'TG ulangan',val:tgOk, c:'#229ED9',       bg:'rgba(34,158,217,.12)'},
@@ -128,8 +130,8 @@ export default function Drivers() {
         <Modal open={modal==='create'||modal==='edit'} onClose={()=>setModal(null)}
           title={modal==='create'?'Yangi shafyor':'Shafyor tahrirlash'}
           footer={<>
-            <button className="btn btn-ghost" onClick={()=>setModal(null)}>Bekor</button>
-            <button className="btn btn-primary" onClick={save}>Saqlash</button>
+            <button className="btn btn-ghost" onClick={()=>setModal(null)}>{t.cancel}</button>
+            <button className="btn btn-primary" onClick={save}>{t.save}</button>
           </>}
         >
           <div className="fgrid2">
@@ -155,7 +157,7 @@ export default function Drivers() {
 
         {/* TG Link Modal */}
         <Modal open={!!linkModal} onClose={()=>setLinkModal(null)} title="🤖 Telegram Bot Havolasi" size="sm"
-          footer={<button className="btn btn-ghost" onClick={()=>setLinkModal(null)}>Yopish</button>}
+          footer={<button className="btn btn-ghost" onClick={()=>setLinkModal(null)}>{t.close}</button>}
         >
           {linkModal && (
             <div style={{display:'flex',flexDirection:'column',gap:12}}>

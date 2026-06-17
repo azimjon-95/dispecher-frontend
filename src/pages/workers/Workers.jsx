@@ -178,7 +178,7 @@ export default function Workers() {
         {/* Modal */}
         <Modal open={modal==='create'||modal==='edit'} onClose={()=>setModal(null)}
           title={modal==='create'?'+ Yangi topshiriq':'✏️ Tahrirlash'}
-          footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>Bekor</button><button className="btn btn-primary" onClick={save}>Saqlash</button></>}>
+          footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>{t.cancel}</button><button className="btn btn-primary" onClick={save}>{t.save}</button></>}>
           <div className="fgrid2">
             <div className="fg"><label className="flabel">Buyurtma raqami *</label><input className="finput" placeholder="#1042" value={form.order} onChange={set('order')}/></div>
             <div className="fg"><label className="flabel">Buyum *</label><input className="finput" placeholder="Ko'ylak ×3" value={form.item} onChange={set('item')}/></div>
@@ -228,7 +228,7 @@ export default function Workers() {
         </div>
         <Modal open={modal==='create'||modal==='edit'} onClose={()=>setModal(null)}
           title={modal==='create'?'Yangi topshiriq':'Topshiriq tahrirlash'}
-          footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>Bekor</button><button className="btn btn-primary" onClick={save}>Saqlash</button></>}>
+          footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>{t.cancel}</button><button className="btn btn-primary" onClick={save}>{t.save}</button></>}>
           <div className="fgrid2">
             <div className="fg"><label className="flabel">Buyurtma raqami *</label><input className="finput" placeholder="#1042" value={form.order} onChange={set('order')}/></div>
             <div className="fg"><label className="flabel">Buyum *</label><input className="finput" placeholder="Ko'ylak ×3" value={form.item} onChange={set('item')}/></div>

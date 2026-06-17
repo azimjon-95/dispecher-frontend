@@ -159,7 +159,7 @@ function MobileFinance({ crud, filtered, monthFin, kirim, chiqim, foyda, allBal,
           </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
             {[
-              {lbl:'Chiqim', val:fmt.currency(chiqim), c:'#f85149'},
+              {lbl:t.expense||'Chiqim', val:fmt.currency(chiqim), c:'#f85149'},
               {lbl:'Balans', val:fmt.currency(allBal),  c:allBal>=0?'#22c55e':'#f85149'},
             ].map(it=>(
               <div key={it.lbl}>
@@ -390,7 +390,7 @@ export default function Finance() {
   /* TABLE COLS */
   const COLS = [
     { k:'date',        l:'Sana',      r:v=><span className="mono" style={{fontSize:11}}>{v}</span> },
-    { k:'type',        l:'Turi',       r:v=><span className="badge" style={{background:v==='kirim'?'var(--greenbg)':'var(--redbg)',color:v==='kirim'?'var(--green)':'var(--red)',fontSize:11}}>{v==='kirim'?<MdTrendingUp size={11}/>:<MdTrendingDown size={11}/>} {v==='kirim'?'Kirim':'Chiqim'}</span> },
+    { k:'type',        l:'Turi',       r:v=><span className="badge" style={{background:v==='kirim'?'var(--greenbg)':'var(--redbg)',color:v==='kirim'?'var(--green)':'var(--red)',fontSize:11}}>{v==='kirim'?<MdTrendingUp size={11}/>:<MdTrendingDown size={11}/>} {v==='kirim'?t.income||'Kirim':t.expense||'Chiqim'}</span> },
     { k:'description', l:'Tavsif',    r:v=><span style={{fontSize:12}}>{v}</span> },
     { k:'category',    l:'Kategoriya', r:v=><span className="badge b-gray" style={{fontSize:10}}>{v}</span> },
     { k:'amount',      l:'Miqdor',    r:(v,r)=><span className="mono" style={{fontWeight:700,color:r.type==='kirim'?'var(--green)':'var(--red)'}}>{r.type==='kirim'?'+':'-'}{fmt.currency(v)}</span> },
@@ -419,8 +419,8 @@ export default function Finance() {
       {/* Modals */}
       <Modal open={modal==='create'||modal==='edit'} onClose={()=>setModal(null)}
         title={modal==='create'?(form.type==='kirim'?'💰 Kirim':'💸 Chiqim'):'✏️ Tahrirlash'} size="sm"
-        footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>Bekor</button>
-          <button className={`btn ${form.type==='kirim'?'btn-success':'btn-danger'}`} onClick={save}>Saqlash</button></>}>
+        footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>{t.cancel}</button>
+          <button className={`btn ${form.type==='kirim'?'btn-success':'btn-danger'}`} onClick={save}>{t.save}</button></>}>
         <div style={{display:'flex',gap:6,marginBottom:10}}>
           {['kirim','chiqim'].map(t=>(
             <button key={t} className={`btn btn-sm ${form.type===t?(t==='kirim'?'btn-success':'btn-danger'):'btn-ghost'}`}
@@ -635,8 +635,8 @@ export default function Finance() {
         {/* KPIs */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:14}}>
           {[
-            {lbl:'Kirim',  val:fmt.currency(kirim),  c:'var(--green)', icon:<MdTrendingUp size={18}/>},
-            {lbl:'Chiqim', val:fmt.currency(chiqim), c:'var(--red)',   icon:<MdTrendingDown size={18}/>},
+            {lbl:t.income||'Kirim',  val:fmt.currency(kirim),  c:'var(--green)', icon:<MdTrendingUp size={18}/>},
+            {lbl:t.expense||'Chiqim', val:fmt.currency(chiqim), c:'var(--red)',   icon:<MdTrendingDown size={18}/>},
             {lbl:'Foyda',  val:fmt.currency(foyda),  c:foyda>=0?'var(--green)':'var(--red)', icon:<MdBalance size={18}/>},
             {lbl:'Balans', val:fmt.currency(allBal), c:'var(--accent)',icon:<MdPieChart size={18}/>},
           ].map(k=>(
@@ -673,7 +673,7 @@ export default function Finance() {
         {/* Create/Edit modal */}
         <Modal open={modal==='create'||modal==='edit'} onClose={()=>setModal(null)}
           title={form.type==='kirim'?'💰 Kirim':'💸 Chiqim'}
-          footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>Bekor</button><button className={`btn ${form.type==='kirim'?'btn-success':'btn-danger'}`} onClick={save}>Saqlash</button></>}>
+          footer={<><button className="btn btn-ghost" onClick={()=>setModal(null)}>{t.cancel}</button><button className={`btn ${form.type==='kirim'?'btn-success':'btn-danger'}`} onClick={save}>{t.save}</button></>}>
           <div style={{display:'flex',gap:6,marginBottom:10}}>
             {['kirim','chiqim'].map(t=>(
               <button key={t} className={`btn btn-sm ${form.type===t?(t==='kirim'?'btn-success':'btn-danger'):'btn-ghost'}`}

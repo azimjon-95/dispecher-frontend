@@ -57,7 +57,7 @@ export default function Archive() {
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
             {[
               {lbl:'Yakunlandi',   val:done.length,           c:'#22c55e', emoji:'✅'},
-              {lbl:'Bekor',        val:bekor.length,          c:'#f85149', emoji:'❌'},
+              {lbl:t.cancel||'Bekor',        val:bekor.length,          c:'#f85149', emoji:'❌'},
               {lbl:'Jami daromad', val:fmt.currency(totalR),  c:'#f59e0b', emoji:'💰', small:true},
             ].map(s=>(
               <div key={s.lbl} style={{background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.08)',borderRadius:12,padding:'10px'}}>
@@ -71,7 +71,7 @@ export default function Archive() {
 
         {/* Status pills */}
         <div style={{display:'flex',gap:6,padding:'10px 16px 6px',overflowX:'auto',scrollbarWidth:'none'}}>
-          {[{k:'',l:'Barchasi'},{k:'tugallandi',l:'✅ Tugallandi'},{k:'bekor',l:'❌ Bekor'}].map(t=>(
+          {[{k:'',l:t.all||'Barchasi'},{k:'tugallandi',l:'✅ Tugallandi'},{k:'bekor',l:'❌ Bekor'}].map(t=>(
             <button key={t.k} onClick={()=>setStatusF(t.k)} style={{
               flexShrink:0,padding:'6px 14px',borderRadius:99,cursor:'pointer',
               background:statusF===t.k?'rgba(34,197,94,.15)':'var(--bg2)',
@@ -154,7 +154,7 @@ export default function Archive() {
           <select className="fselect" value={crud.filters.status||''} onChange={e=>crud.setFilter('status',e.target.value)}>
             <option value="">Barcha holat</option>
             <option value="tugallandi">Tugallandi</option>
-            <option value="bekor">Bekor</option>
+            <option value="bekor">{t.cancel}</option>
           </select>
           <input type="date" className="finput" style={{width:145}} onChange={e=>crud.setFilter('date',e.target.value)}/>
         </div>
