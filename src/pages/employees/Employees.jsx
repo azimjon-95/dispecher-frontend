@@ -9,6 +9,7 @@ import { useCRUD } from '../../hooks/useCRUD.js'
 import { Modal, Confirm, Sbadge, Table, Paging, PH, ExportBtn, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import './Employees.css'
+import { useLang } from '../../i18n/index.jsx'
 
 /* TG SVG */
 function TgLogo() {
@@ -84,6 +85,7 @@ function calcExpected(emp) {
 }
 
 export default function Employees() {
+  const { t } = useLang()
   const [tab, setTab] = useState('employees') // 'employees' | 'drivers'
 
   const crud = useCRUD(

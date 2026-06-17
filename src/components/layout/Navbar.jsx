@@ -201,41 +201,77 @@ function NotifBell({ notifications, onNav }) {
 function LangSwitcher() {
   const { lang, setLang } = useLang()
   const [open, setOpen] = useState(false)
+
+  const SHORT = { uz:"Uz", uz_kr:"Кр", ru:"Ru" }
+  const COLORS = { uz:"#3B82F6", uz_kr:"#8b5cf6", ru:"#f85149" }
+  const color  = COLORS[lang] || '#3B82F6'
+
   return (
     <div style={{position:'relative'}}>
-      <button onClick={()=>setOpen(v=>!v)}
-        className="nb-btn"
-        style={{fontSize:12,fontWeight:700,gap:4,padding:'5px 8px',
-          display:'flex',alignItems:'center',minWidth:36}}>
-        {LANGS[lang]?.flag} <span className="nb-uname">{lang.toUpperCase()}</span>
+      {/* Trigger button */}
+      <button onClick={()=>setOpen(v=>!v)} style={{
+        display:'flex', alignItems:'center', gap:5,
+        padding:'5px 10px', borderRadius:10,
+        background:`${color}15`, border:`1px solid ${color}40`,
+        cursor:'pointer', transition:'all .15s',
+        WebkitTapHighlightColor:'transparent',
+      }}>
+        <span style={{fontSize:15}}>{LANGS[lang]?.flag}</span>
+        <span style={{fontSize:11,fontWeight:800,color,fontFamily:'monospace'}}>
+          {SHORT[lang]}
+        </span>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
+          style={{opacity:.5,transform:open?'rotate(180deg)':'none',transition:'transform .2s'}}>
+          <path d="M2 3.5L5 6.5L8 3.5" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
       </button>
+
       {open && (
         <>
           <div onClick={()=>setOpen(false)} style={{position:'fixed',inset:0,zIndex:998}}/>
           <div style={{
-            position:'absolute',top:'calc(100% + 6px)',right:0,
-            background:'var(--bg2)',border:'1px solid var(--border)',
-            borderRadius:12,zIndex:999,overflow:'hidden',minWidth:140,
-            boxShadow:'0 8px 24px rgba(0,0,0,.3)',
-            animation:'notifSlide .2s ease both',
+            position:'absolute', top:'calc(100% + 8px)', right:0,
+            background:'var(--bg2)', border:'1px solid var(--border)',
+            borderRadius:14, zIndex:999, overflow:'hidden', minWidth:160,
+            boxShadow:'0 12px 36px rgba(0,0,0,.35)',
+            animation:'notifSlide .2s cubic-bezier(.16,1,.3,1) both',
           }}>
-            {Object.entries(LANGS).map(([key,val])=>(
-              <button key={key} onClick={()=>{setLang(key);setOpen(false)}} style={{
-                width:'100%',display:'flex',alignItems:'center',gap:10,
-                padding:'10px 14px',background:'none',border:'none',
-                cursor:'pointer',fontSize:13,fontWeight:lang===key?700:400,
-                color:lang===key?'var(--accent)':'var(--text)',
-                borderLeft:lang===key?'3px solid var(--accent)':'3px solid transparent',
-                transition:'background .15s',
-              }}
-                onMouseEnter={e=>e.currentTarget.style.background='var(--bg3)'}
-                onMouseLeave={e=>e.currentTarget.style.background='none'}
-              >
-                <span style={{fontSize:18}}>{val.flag}</span>
-                {val.label}
-                {lang===key && <span style={{marginLeft:'auto',color:'var(--accent)'}}>✓</span>}
-              </button>
-            ))}
+            {/* Header */}
+            <div style={{padding:'10px 14px 8px',fontSize:10,fontWeight:700,
+              color:'var(--text3)',textTransform:'uppercase',letterSpacing:'1px',
+              borderBottom:'1px solid var(--border)'}}>
+              Til / Язык
+            </div>
+            {Object.entries(LANGS).map(([key,val])=>{
+              const isAct = lang===key
+              const c = COLORS[key]||'#3B82F6'
+              return (
+                <button key={key} onClick={()=>{setLang(key);setOpen(false)}} style={{
+                  width:'100%', display:'flex', alignItems:'center', gap:10,
+                  padding:'11px 14px', background:'none', border:'none',
+                  cursor:'pointer', fontSize:13,
+                  color: isAct ? c : 'var(--text)',
+                  borderLeft:`3px solid ${isAct ? c : 'transparent'}`,
+                  transition:'background .15s',
+                }}
+                  onMouseEnter={e=>e.currentTarget.style.background='var(--bg3)'}
+                  onMouseLeave={e=>e.currentTarget.style.background='none'}
+                >
+                  <span style={{fontSize:20}}>{val.flag}</span>
+                  <div style={{flex:1,textAlign:'left'}}>
+                    <div style={{fontWeight:isAct?700:500}}>{val.label}</div>
+                    <div style={{fontSize:10,color:'var(--text3)',marginTop:1}}>{val.short}</div>
+                  </div>
+                  {isAct && (
+                    <div style={{width:18,height:18,borderRadius:'50%',
+                      background:c,display:'flex',alignItems:'center',
+                      justifyContent:'center',fontSize:10,color:'white',fontWeight:800}}>
+                      ✓
+                    </div>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </>
       )}

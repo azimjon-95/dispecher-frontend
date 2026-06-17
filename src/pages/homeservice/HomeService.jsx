@@ -6,6 +6,7 @@ import {
 import { api, fmt } from '../../services/api.js'
 import { Modal, Confirm, Sbadge, Table, Paging, PH, ExportBtn, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
+import { useLang } from '../../i18n/index.jsx'
 const isMob = () => window.innerWidth <= 768
 
 const STATUSES = ['rejalashtirilgan','jarayonda','bajarildi','bekor']
@@ -273,6 +274,7 @@ function MobHomeService({ services, loading, workers, onAdd, onEdit, onDone, onD
 }
 
 export default function HomeService() {
+  const { t } = useLang()
   const [services,   setServices]   = useState([])
   const [workers,    setWorkers]    = useState([])
   const [loading,    setLoading]    = useState(true)

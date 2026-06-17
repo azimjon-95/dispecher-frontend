@@ -10,6 +10,7 @@ import { useCRUD } from '../../hooks/useCRUD.js'
 import { Modal, Confirm, Sbadge, Table, Paging, PH, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import './Finance.css'
+import { useLang } from '../../i18n/index.jsx'
 
 const isMob = () => window.innerWidth <= 768
 
@@ -315,6 +316,7 @@ function MobileFinance({ crud, filtered, monthFin, kirim, chiqim, foyda, allBal,
 }
 
 export default function Finance() {
+  const { t } = useLang()
   const crud    = useCRUD({ getAll:api.getFinance, create:api.createFinance, update:api.updateFinance, remove:api.deleteFinance }, ['description','category'])
   const [modal,    setModal]    = useState(null)
   const [form,     setForm]     = useState(EMPTY)

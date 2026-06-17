@@ -4,10 +4,12 @@ import { useCRUD } from '../../hooks/useCRUD.js'
 import { api, fmt } from '../../services/api.js'
 import { Sbadge, Table, Paging, PH, ExportBtn, ErrorBoundary } from '../../components/ui/UI.jsx'
 import './Archive.css'
+import { useLang } from '../../i18n/index.jsx'
 
 const isMob = () => window.innerWidth <= 768
 
 export default function Archive() {
+  const { t } = useLang()
   const crud   = useCRUD(
     { getAll:api.getArchive, create:()=>Promise.resolve({}), update:()=>Promise.resolve({}), remove:()=>Promise.resolve({}) },
     ['number','customer']

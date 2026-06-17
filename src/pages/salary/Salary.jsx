@@ -9,10 +9,10 @@ const MONTHS = Array.from({length:6},(_,i)=>{
   return d.toISOString().slice(0,7)
 })
 const PAY_TYPES = [
-  { key:'avans',  label:'Avans',  icon:'💵', color:'var(--yellow)', desc:'Oyligidan oldindan beriladi' },
+  { key:'avans',  label:t.advance||'Avans',  icon:'💵', color:'var(--yellow)', desc:'Oyligidan oldindan beriladi' },
   { key:'oylik',  label:'Oylik',  icon:'💰', color:'var(--green)',  desc:"To'liq oylik to'lovi" },
-  { key:'jarima', label:'Jarima', icon:'⚠️', color:'var(--red)',    desc:'Intizom buzilishi yoki xato' },
-  { key:'bonus',  label:'Bonus',  icon:'🌟', color:'var(--purple)', desc:'Qo\'shimcha mukofot' },
+  { key:'jarima', label:t.fine||'Jarima', icon:'⚠️', color:'var(--red)',    desc:'Intizom buzilishi yoki xato' },
+  { key:'bonus',  label:t.bonus||'Bonus',  icon:'🌟', color:'var(--purple)', desc:'Qo\'shimcha mukofot' },
 ]
 
 function norm(r){ return Array.isArray(r)?r:Array.isArray(r?.data)?r.data:[] }
@@ -42,7 +42,7 @@ function MobSalary({ summary, history, loading, month, setMonth, tab, setTab, to
         </div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
           {[
-            {lbl:'Berilgan maosh', val:fmt.currency(totalPaid),    c:'#22c55e'},
+            {lbl:t.paidSalary||'Berilgan maosh', val:fmt.currency(totalPaid),    c:'#22c55e'},
             {lbl:"Yig'ilgan balans",val:fmt.currency(totalBalance), c:'#f59e0b'},
           ].map(it=>(
             <div key={it.lbl} style={{background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.08)',borderRadius:12,padding:'10px 12px'}}>
@@ -112,7 +112,7 @@ function MobSalary({ summary, history, loading, month, setMonth, tab, setTab, to
                 {[
                   {lbl:'Berilgan', val:fmt.currency(emp.paid),    c:'#22c55e'},
                   {lbl:'Balans',   val:fmt.currency(emp.balance), c:'#f59e0b'},
-                  {lbl:'Avans',    val:fmt.currency(emp.advance), c:'#3B82F6'},
+                  {lbl:t.advance||'Avans',    val:fmt.currency(emp.advance), c:'#3B82F6'},
                 ].map(it=>(
                   <div key={it.lbl} style={{background:'var(--bg3)',borderRadius:9,padding:'7px 8px',textAlign:'center'}}>
                     <div style={{fontWeight:700,fontFamily:'monospace',fontSize:11,color:it.c}}>{it.val}</div>
@@ -157,6 +157,7 @@ function MobSalary({ summary, history, loading, month, setMonth, tab, setTab, to
 }
 
 export default function Salary() {
+  const { t } = useLang()
   const [mobile,   setMobile]   = useState(isMobS())
   useEffect(() => {
     const fn = () => setMobile(isMobS())

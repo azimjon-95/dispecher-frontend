@@ -9,6 +9,7 @@ import { api, fmt } from '../../services/api.js'
 import { Modal, Confirm, Sbadge, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import './Transport.css'
+import { useLang } from '../../i18n/index.jsx'
 import { useRealtime, bus } from '../../services/realtime.js'
 const isMob = () => window.innerWidth <= 768
 
@@ -772,6 +773,7 @@ function MobileTaskPanel({ type, color, apiFns, drivers, allOrders, onDriverChan
 }
 
 export default function Transport() {
+  const { t } = useLang()
   const [drivers,         setDrivers]         = useState([])
   const [orders,          setOrders]           = useState([])
   const [driverLocations, setDriverLocations]  = useState({})

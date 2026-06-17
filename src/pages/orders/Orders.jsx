@@ -10,6 +10,7 @@ import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import OrderDetail from '../orderdetail/OrderDetail.jsx'
 import { SmsPopover } from '../../components/ui/SmsPopover.jsx'
 import './Orders.css'
+import { useLang } from '../../i18n/index.jsx'
 import { useRealtime } from '../../services/realtime.js'
 
 const isMob = () => window.innerWidth <= 768
@@ -416,6 +417,7 @@ function MobileOrders({ orders, loading, onDetail, onAdvance, onAssign, onAssign
    MAIN ORDERS PAGE
 ══════════════════════════════════════════ */
 export default function Orders() {
+  const { t } = useLang()
   const [orders,      setOrders]      = useState([])
   const [drivers,     setDrivers]     = useState([])
   const [employees,   setEmployees]   = useState([])

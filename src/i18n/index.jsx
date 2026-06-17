@@ -4,9 +4,9 @@ import uz_kr from './uz_kr.js'
 import ru    from './ru.js'
 
 export const LANGS = {
-  uz:    { label:"O'zbek",    flag:"🇺🇿", t: uz    },
-  uz_kr: { label:"Ўзбекча",   flag:"🇺🇿", t: uz_kr },
-  ru:    { label:"Русский",   flag:"🇷🇺", t: ru    },
+  uz:    { label:"O'zbek",  short:"Lotin",   flag:"🇺🇿", t: uz    },
+  uz_kr: { label:"Ўзбекча", short:"Кирилл",  flag:"🇺🇿", t: uz_kr },
+  ru:    { label:"Русский", short:"Русский", flag:"🇷🇺", t: ru    },
 }
 
 const LangCtx = createContext({ lang:'uz', t: uz, setLang:()=>{} })

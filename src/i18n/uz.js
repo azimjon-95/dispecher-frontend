@@ -20,3 +20,23 @@ export default {
   todayIncome:"Bugungi kirim", activeOrders:"Faol buyurtmalar",
   advance:"Avans", bonus:"Bonus", fine:"Jarima",
 }
+
+// Extra keys
+export const extra = {
+  newOrder:"Yangi buyurtma", addIncome:"Kirim qo'shish", addExpense:"Chiqim qo'shish",
+  assignDriver:"Shafyor biriktirish", done:"Tugallandi", kanban:"Kanban",
+  table:"Jadval", today:"Bugun", thisMonth:"Bu oy",
+  attendance:"Davomat", debt:"Qarz", came:"Keldi", didntCome:"Kelmadi",
+  systemStatus:"Tizim holati", server:"Asosiy server", db:"Ma'lumotlar bazasi",
+  redis:"Tezkor xotira", internet:"Internet aloqa", botToken:"Token kiritilmagan",
+  working:"Ishlayapti", connected:"Ulangan", recheck:"Qayta tekshirish",
+  noInfo:"Ma'lumot yo'q", empty:"Bo'sh", back:"Orqaga",
+  filterAll:"Barcha", active:"Faol", inactive:"Nofaol",
+  orderHistory:"Buyurtmalar tarixi", totalSpent:"Jami xarid",
+  discount:"Chegirma", locationSaved:"Manzil saqlangan", getLocation:"GPS olish",
+  saved:"Saqlandi", deleted:"O'chirildi", created:"Yaratildi", updated:"Yangilandi",
+  driver:"Shafyor", worker:"Ishchi", salary:"Maosh", advance:"Avans",
+  fine:"Jarima", bonus:"Bonus", monthly:"Oylik", byPiece:"Dona boshiga",
+  pickup:"Olib kelish", delivery:"Olib ketish", online:"Online",
+  liveMap:"Live Xarita", settings:"Sozlamalar",
+}

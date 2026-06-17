@@ -4,6 +4,7 @@ import { MdPhone, MdLocationOn, MdShoppingBag, MdAttachMoney,
 import { api, fmt } from '../../services/api.js'
 import { Sbadge, ErrorBoundary, toast } from '../../components/ui/UI.jsx'
 import './Customers.css'
+import { useLang } from '../../i18n/index.jsx'
 
 const isMob = () => window.innerWidth <= 768
 
@@ -223,6 +224,7 @@ function CustCard({ cust, onClick }) {
 
 /* ── MAIN ── */
 export default function Customers() {
+  const { t } = useLang()
   const [customers, setCustomers] = useState([])
   const [loading,   setLoading]   = useState(true)
   const [search,    setSearch]    = useState('')

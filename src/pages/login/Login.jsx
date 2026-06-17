@@ -3,8 +3,10 @@ import { MdPhone, MdLock, MdVisibility, MdVisibilityOff, MdLogin } from 'react-i
 import { api } from '../../services/api.js'
 import { LogoFull } from '../../assets/logo.jsx'
 import './Login.css'
+import { useLang } from '../../i18n/index.jsx'
 
 export default function Login({ onLogin }) {
+  const { t } = useLang()
   const [phone,   setPhone]   = useState('')
   const [pass,    setPass]    = useState('')
   const [showPwd, setShowPwd] = useState(false)
@@ -99,7 +101,7 @@ export default function Login({ onLogin }) {
             <button type="submit" className="login-btn" disabled={loading}>
               {loading
                 ? <><span className="login-spinner"/>Kirilmoqda...</>
-                : <><MdLogin size={18}/>Kirish</>
+                : <><MdLogin size={18}/>{t.login||'Kirish'}</>
               }
             </button>
           </form>

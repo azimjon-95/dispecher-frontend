@@ -4,6 +4,7 @@ import { api } from '../../services/api.js'
 import { useCRUD } from '../../hooks/useCRUD.js'
 import { Modal, Confirm, Sbadge, Table, Paging, PH, toast, ErrorBoundary } from '../../components/ui/UI.jsx'
 import './Workers.css'
+import { useLang } from '../../i18n/index.jsx'
 
 const WORKER_LIST = ['Zulfiya Holova','Feruza Nazarova','Komil Tursunov','Dilshod Karimov']
 const STATUSES    = ['yangi','jarayonda','tayyor']
@@ -13,6 +14,7 @@ const isMob       = () => window.innerWidth <= 768
 const STATUS_COLOR = { yangi:'#3B82F6', jarayonda:'#f59e0b', tayyor:'#22c55e' }
 
 export default function Workers() {
+  const { t } = useLang()
   const crud = useCRUD(
     { getAll:api.getWorkers, create:api.createWorker, update:api.updateWorker, remove:api.deleteWorker },
     ['order','item','worker']

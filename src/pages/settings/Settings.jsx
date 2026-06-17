@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { MdAdd, MdEdit, MdDelete, MdSave, MdContentCopy, MdSend, MdRefresh, MdVisibility, MdVisibilityOff, MdCheckCircle, MdError } from 'react-icons/md'
 import { Modal, toast } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
+import { useLang } from '../../i18n/index.jsx'
 const isMob = () => window.innerWidth <= 768
 import './Settings.css'
 
@@ -330,6 +331,7 @@ const TABS = [
 ]
 
 export default function Settings() {
+  const { t } = useLang()
   const [tab,    setTab]    = useState('telegram')
   const [mobile, setMobile] = useState(isMob())
   useEffect(() => {
