@@ -56,6 +56,7 @@ function StagePill({ stage }) {
 
 /* ── Stage progress bar ── */
 function StageBar({ items }) {
+  const { t } = useLang()
   const stageCounts = useMemo(() => {
     const m = {}
     STAGES.forEach(s => { m[s.key] = 0 })
@@ -103,6 +104,7 @@ function StageBar({ items }) {
 
 /* ── Item card ── */
 function ItemCard({ item, workers, onAdvance, onAssign, onEdit, onDelete }) {
+  const { t } = useLang()
   const stage   = STAGES.find(s => s.key === item.stage) || STAGES[0]
   const assign  = item.assignments?.find(a => a.stage === item.stage && !a.doneAt)
   const typeInfo= ITEM_TYPES.find(t => t.key === item.itemType)

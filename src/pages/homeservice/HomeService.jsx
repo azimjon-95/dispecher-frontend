@@ -142,6 +142,7 @@ function MobServiceCard({ sv, onEdit, onDone, onDelete }) {
 }
 
 function MobHomeService({ services, loading, workers, onAdd, onEdit, onDone, onDelete, search, setSearch, statusF, setStatusF }) {
+  const { t } = useLang()
   const total   = services.length
   const planned = services.filter(s=>s.status==='rejalashtirilgan').length
   const done    = services.filter(s=>s.status==='bajarildi').length

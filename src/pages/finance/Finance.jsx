@@ -107,6 +107,7 @@ ${rows.map(r=>`<tr><td>${r.date||''}</td><td class="${r.type}">${r.type==='kirim
 function MobileFinance({ crud, filtered, monthFin, kirim, chiqim, foyda, allBal,
   month, setMonth, typeF, setTypeF, srch, setSrch, catF, setCatF,
   setForm, setModal, setDelId, EMPTY }) {
+  const { t } = useLang()
 
   const [activeType, setActiveType] = useState('') // '' | 'kirim' | 'chiqim'
 

@@ -166,6 +166,7 @@ function MobileTaskCard({ row, type, drivers, onAssign, onSendTg, sending }) {
    TASK PANEL
 ════════════════════════════════ */
 function TaskPanel({ title, icon, color, type, apiFns, drivers, allOrders, onDriverChange }) {
+  const { t } = useLang()
   const [rows,    setRows]    = useState([])
   const [loading, setLoading] = useState(true)
   const [search,  setSearch]  = useState('')
@@ -369,6 +370,7 @@ function TaskPanel({ title, icon, color, type, apiFns, drivers, allOrders, onDri
    LIVE MAP — Leaflet.js (OpenStreetMap)
 ════════════════════════════════ */
 function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
+  const { t } = useLang()
   const [connected,   setConnected]   = useState(false)
   const [fullscreen,  setFullscreen]  = useState(false)
   const [focused,     setFocused]     = useState(null)
@@ -628,6 +630,7 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
    MOBILE TASK PANEL
 ══════════════════════════════════════════ */
 function MobileTaskPanel({ type, color, apiFns, drivers, allOrders, onDriverChange }) {
+  const { t } = useLang()
   const [rows,    setRows]    = useState([])
   const [loading, setLoading] = useState(true)
   const [search,  setSearch]  = useState('')
