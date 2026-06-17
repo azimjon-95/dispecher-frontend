@@ -16,17 +16,18 @@ import { useRealtime } from '../../services/realtime.js'
 const isMob = () => window.innerWidth <= 768
 
 /* ── Constants ── */
-const COLUMNS = [
+const COLUMNS = (t={}) => [
   { key:'yangi',         label:t.yangi||'Yangi',        icon:'📞', color:'var(--accent)',  desc:"Qo'ng'iroq qildi, navbat kutmoqda" },
-  { key:'qabul_qilindi', label:'Qabul qilindi', icon:'📦', color:'var(--yellow)', desc:'Shafyor olib keldi, qabul qilindi' },
-  { key:'yuvishda',      label:'Yuvishda',       icon:'🫧', color:'#58a6ff',       desc:'Yuvish jarayonida' },
-  { key:'qurishda',      label:'Quritishda',     icon:'💨', color:'var(--orange)', desc:'Quritish jarayonida' },
-  { key:'bezakda',       label:'Bezakda',        icon:'✨', color:'var(--purple)', desc:'Bezak jarayonida' },
-  { key:'yetkazishda',   label:'Yetkazishda',    icon:'🚚', color:'#f0883e',       desc:'Shafyor yetkazmoqda' },
+  { key:'qabul_qilindi', label:t.qabul||'Qabul qilindi',icon:'📦', color:'var(--yellow)', desc:'Shafyor olib keldi, qabul qilindi' },
+  { key:'yuvishda',      label:t.yuvishda||'Yuvishda',  icon:'🫧', color:'#58a6ff',       desc:'Yuvish jarayonida' },
+  { key:'qurishda',      label:t.qurishda||'Quritishda',icon:'💨', color:'var(--orange)', desc:'Quritish jarayonida' },
+  { key:'bezakda',       label:t.bezakda||'Bezakda',    icon:'✨', color:'var(--purple)', desc:'Bezak jarayonida' },
+  { key:'yetkazishda',   label:t.yetkazishda||'Yetkazishda',icon:'🚚',color:'#f0883e',   desc:'Shafyor yetkazmoqda' },
 ]
-const ALL_STATUSES = [
-  ...COLUMNS.map(c=>({key:c.key,label:c.label})),
-  { key:'bekor', label:t.cancel||'Bekor' },
+const ALL_STATUSES = (t={}) => [
+  ...COLUMNS(t).map(c=>({key:c.key,label:c.label})),
+  { key:'tugallandi', label:t.tugallandi||'Tugallandi' },
+  { key:'bekor',      label:t.bekor||'Bekor' },
 ]
 const NEXT_STATUS = {
   yangi:'qabul_qilindi', qabul_qilindi:'yuvishda',
@@ -66,7 +67,7 @@ const EMPTY = { customer:'', phone:'', address:'', description:'', status:'yangi
    KANBAN CARD
 ══════════════════════════════════════════ */
 function KanbanCard({ order, col, drivers, employees, onDetail, onAdvance, onAssign, onAssignWorker, onEdit, onDelete }) {
-  const colCfg  = COLUMNS.find(c=>c.key===col)
+  const colCfg  = COLUMNS(t).find(c=>c.key===col)
   const accent  = colCfg?.color || 'var(--accent)'
   const canAdv  = !!NEXT_STATUS[order.status]
   const hasMap  = (order.lat&&order.lon) || order.address
@@ -186,7 +187,7 @@ function KanbanColumn({ col, orders, drivers, employees, onColClick, onDetail, o
    MOBILE ORDERS — Tab filter + vertical list
 ══════════════════════════════════════════ */
 function MobileCard({ order, onDetail, onAdvance, onAssign }) {
-  const col   = COLUMNS.find(x=>x.key===order.status)
+  const col   = COLUMNS(t).find(x=>x.key===order.status)
   const color = col?.color || 'var(--accent)'
   const canAdv = !!NEXT_STATUS[order.status]
 
@@ -284,7 +285,7 @@ function MobileOrders({ orders, loading, onDetail, onAdvance, onAssign, onAssign
 
   const grouped = useMemo(() => {
     const m = {}
-    COLUMNS.forEach(c => { m[c.key] = 0 })
+    COLUMNS(t).forEach(c => { m[c.key] = 0 })
     orders.forEach(o => { if (m[o.status] !== undefined) m[o.status]++ })
     return m
   }, [orders])
@@ -301,7 +302,7 @@ function MobileOrders({ orders, loading, onDetail, onAdvance, onAssign, onAssign
         background:'var(--bg)',
         borderBottom:'1px solid var(--border)',
       }}>
-        {COLUMNS.map(col => {
+        {COLUMNS(t).map(col => {
           const cnt    = grouped[col.key] || 0
           const isAct  = activeTab === col.key
           return (
@@ -355,7 +356,7 @@ function MobileOrders({ orders, loading, onDetail, onAdvance, onAssign, onAssign
 
       {/* ── Stage header ── */}
       {(() => {
-        const col = COLUMNS.find(c=>c.key===activeTab)
+        const col = COLUMNS(t).find(c=>c.key===activeTab)
         return (
           <div style={{padding:'4px 16px 8px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <div style={{display:'flex',alignItems:'center',gap:6}}>
@@ -523,7 +524,7 @@ export default function Orders() {
   }
 
   const grouped = useMemo(()=>{
-    const g={}; COLUMNS.forEach(c=>{g[c.key]=[]})
+    const g={}; COLUMNS(t).forEach(c=>{g[c.key]=[]})
     orders.forEach(o=>{if(g[o.status])g[o.status].push(o)})
     return g
   },[orders])
@@ -575,7 +576,7 @@ export default function Orders() {
     try {
       await api.updateOrder(order._id,{status:next})
       setOrders(p=>p.map(r=>r._id===order._id?{...r,status:next}:r))
-      toast(`${order.number} → ${COLUMNS.find(c=>c.key===next)?.label} ✅`,'ok')
+      toast(`${order.number} → ${COLUMNS(t).find(c=>c.key===next)?.label} ✅`,'ok')
     } catch(e){toast(e.message,'err')}
   }
 
@@ -647,7 +648,7 @@ export default function Orders() {
     { k:'description', l:'Tavsif', r:v=><span style={{fontSize:11,color:'var(--text2)',maxWidth:160,display:'block',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{v||'—'}</span> },
     { k:'itemCount',   l:'Mahsulot', r:v=><span className="mono" style={{color:'var(--accent)'}}>{v||0} ta</span> },
     { k:'total',       l:'Jami',     r:v=><span className="mono" style={{fontWeight:700,color:'var(--green)'}}>{fmt.currency(v)}</span> },
-    { k:'status', l:'Holat', r:v=>{const c=COLUMNS.find(x=>x.key===v); return <span className="badge" style={{background:c?.color+'22',color:c?.color,border:`1px solid ${c?.color+'44'}`}}>{c?.label||v}</span>} },
+    { k:'status', l:'Holat', r:v=>{const c=COLUMNS(t).find(x=>x.key===v); return <span className="badge" style={{background:c?.color+'22',color:c?.color,border:`1px solid ${c?.color+'44'}`}}>{c?.label||v}</span>} },
     { k:'driver', l:'Shafyor', r:v=>v?<span style={{fontSize:11}}><MdDirectionsCar size={11}/> {v}</span>:<span style={{color:'var(--text3)',fontSize:11}}>—</span> },
     { k:'_a', l:'', r:(_,row)=>(
       <div className="row-actions" onClick={e=>e.stopPropagation()}>
@@ -743,7 +744,7 @@ export default function Orders() {
           loading
             ? <Loader size="md" text="Yuklanmoqda..."/>
             : <div className="kanban-board">
-                {COLUMNS.map(col=>(
+                {COLUMNS(t).map(col=>(
                   <KanbanColumn key={col.key} col={col} orders={grouped[col.key]||[]}
                     drivers={drivers} employees={employees}
                     onColClick={c=>{setColView(c.key);setView('col');setSearch('');setPage(1)}}
@@ -765,7 +766,7 @@ export default function Orders() {
                 value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}}/>
               <select className="fselect" value={statusF} onChange={e=>{setStatusF(e.target.value);setPage(1)}}>
                 <option value="">Barcha holat</option>
-                {ALL_STATUSES.map(s=><option key={s.key} value={s.key}>{s.label}</option>)}
+                {ALL_STATUSES(t).map(s=><option key={s.key} value={s.key}>{s.label}</option>)}
               </select>
             </div>
             <div className="card" style={{padding:0}}>
@@ -777,7 +778,7 @@ export default function Orders() {
 
         {/* TABLE — column drill-down */}
         {view==='col' && colView && (()=>{
-          const c = COLUMNS.find(x=>x.key===colView)
+          const c = COLUMNS(t).find(x=>x.key===colView)
           return (
             <div>
               <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
@@ -851,7 +852,7 @@ export default function Orders() {
           <div className="fgrid2">
             <div className="fg"><label className="flabel">Holat</label>
               <select className="fselect" value={form.status} onChange={set('status')}>
-                {ALL_STATUSES.map(s=><option key={s.key} value={s.key}>{s.label}</option>)}
+                {ALL_STATUSES(t).map(s=><option key={s.key} value={s.key}>{s.label}</option>)}
               </select></div>
             <div className="fg"><label className="flabel">Shafyor</label>
               <select className="fselect" value={form.driver||''} onChange={set('driver')}>
@@ -908,7 +909,7 @@ export default function Orders() {
             <div style={{fontWeight:700}}>{assignWorkerMod?.customer}</div>
             <div style={{color:'var(--text2)',marginTop:2}}>
               Bosqich: <strong style={{color:'var(--yellow)'}}>
-                {COLUMNS.find(c=>c.key===assignWorkerMod?.status)?.label || assignWorkerMod?.status}
+                {COLUMNS(t).find(c=>c.key===assignWorkerMod?.status)?.label || assignWorkerMod?.status}
               </strong>
             </div>
           </div>
