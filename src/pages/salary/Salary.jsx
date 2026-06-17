@@ -8,11 +8,11 @@ const MONTHS = Array.from({length:6},(_,i)=>{
   const d = new Date(); d.setMonth(d.getMonth()-i)
   return d.toISOString().slice(0,7)
 })
-const PAY_TYPES = [
-  { key:'avans',  label:t.advance||'Avans',  icon:'💵', color:'var(--yellow)', desc:'Oyligidan oldindan beriladi' },
-  { key:'oylik',  label:'Oylik',  icon:'💰', color:'var(--green)',  desc:"To'liq oylik to'lovi" },
-  { key:'jarima', label:t.fine||'Jarima', icon:'⚠️', color:'var(--red)',    desc:'Intizom buzilishi yoki xato' },
-  { key:'bonus',  label:t.bonus||'Bonus',  icon:'🌟', color:'var(--purple)', desc:'Qo\'shimcha mukofot' },
+const PAY_TYPES = (t={}) => [
+  { key:'avans',  label:t.advance||'Avans',  icon:'💵', color:'var(--yellow)' },
+  { key:'oylik',  label:'Oylik',              icon:'💰', color:'var(--green)'  },
+  { key:'jarima', label:t.fine||'Jarima',     icon:'⚠️', color:'var(--red)'   },
+  { key:'bonus',  label:t.bonus||'Bonus',     icon:'🌟', color:'var(--purple)' },
 ]
 
 function norm(r){ return Array.isArray(r)?r:Array.isArray(r?.data)?r.data:[] }
@@ -20,6 +20,7 @@ function norm(r){ return Array.isArray(r)?r:Array.isArray(r?.data)?r.data:[] }
 const isMobS = () => window.innerWidth <= 768
 
 function MobSalary({ summary, history, loading, month, setMonth, tab, setTab, totalExpected, totalPaid, totalBalance, MONTHS, onAvans, fmt }) {
+  const { t } = useLang()
   return (
     <div style={{paddingBottom:90}}>
       {/* Hero */}
@@ -193,7 +194,7 @@ export default function Salary() {
     setSaving(true)
     try {
       await api.createSalaryPayment({ ...form, amount:+form.amount })
-      toast(`${PAY_TYPES.find(t=>t.key===form.type)?.label} berildi ✅`,'ok')
+      toast(`${PAY_TYPES(t).find(t=>t.key===form.type)?.label} berildi ✅`,'ok')
       setModal(false); setForm({employeeId:'',type:'avans',amount:'',note:''}); load()
     } catch(e){ toast(e.message,'err') } finally { setSaving(false) }
   }
@@ -205,7 +206,7 @@ export default function Salary() {
   const HIST_COLS = [
     { k:'date',         l:'Sana',    r:v=><span className="mono" style={{fontSize:11}}>{v}</span> },
     { k:'employeeName', l:'Ishchi' },
-    { k:'type', l:'Tur', r:v=>{ const t=PAY_TYPES.find(x=>x.key===v); return <span className="badge" style={{background:t?.color+'22',color:t?.color}}>{t?.icon} {t?.label||v}</span> } },
+    { k:'type', l:'Tur', r:v=>{ const t=PAY_TYPES(t).find(x=>x.key===v); return <span className="badge" style={{background:t?.color+'22',color:t?.color}}>{t?.icon} {t?.label||v}</span> } },
     { k:'amount',       l:'Miqdor', r:v=><span className="mono" style={{fontWeight:700,color:'var(--green)'}}>{fmt.currency(v)}</span> },
     { k:'note',         l:'Izoh',   r:v=><span style={{fontSize:11,color:'var(--text2)'}}>{v||'—'}</span> },
     { k:'paidBy',       l:'Kim berdi', r:v=><span style={{fontSize:11}}>{v}</span> },
@@ -382,7 +383,7 @@ export default function Salary() {
           footer={<><button className="btn btn-ghost" onClick={()=>setModal(false)}>Bekor</button><button className="btn btn-primary" onClick={pay} disabled={saving}>{saving?'⏳':'✅ Tasdiqlash'}</button></>}>
           {/* Type buttons */}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:12}}>
-            {PAY_TYPES.map(t=>(
+            {PAY_TYPES(t).map(t=>(
               <button key={t.key} className="btn btn-ghost btn-sm"
                 style={{borderColor:form.type===t.key?t.color:'var(--border)',background:form.type===t.key?t.color+'22':'transparent',color:form.type===t.key?t.color:'var(--text2)',display:'flex',alignItems:'center',gap:6,justifyContent:'flex-start'}}
                 onClick={()=>setForm(p=>({...p,type:t.key}))}>
@@ -391,7 +392,7 @@ export default function Salary() {
             ))}
           </div>
           <div style={{fontSize:11,color:'var(--text2)',marginBottom:10}}>
-            {PAY_TYPES.find(t=>t.key===form.type)?.desc}
+            {PAY_TYPES(t).find(t=>t.key===form.type)?.desc}
           </div>
           <div className="fg"><label className="flabel">Ishchi *</label>
             <select className="fselect" value={form.employeeId} onChange={e=>setForm(p=>({...p,employeeId:e.target.value}))}>
