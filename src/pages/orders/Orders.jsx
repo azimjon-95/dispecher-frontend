@@ -34,11 +34,15 @@ const NEXT_STATUS = {
   yuvishda:'qurishda',   qurishda:'bezakda',
   bezakda:'yetkazishda', yetkazishda:'tugallandi', tugallandi:null,
 }
-const NEXT_LABEL = {
-  yangi:'→ '+(t?.qabul||'Qabul'), qabul_qilindi:'→ '+(t?.yuvishda||'Yuvish')+'ga',
-  yuvishda:'→ '+(t?.qurishda||'Quritish')+'ga', qurishda:'→ '+(t?.bezakda||'Bezak')+'ka',
-  bezakda:'→ '+(t?.yetkazishda||'Yetkazish')+'ga', yetkazishda:'✅ '+(t?.tugallandi||'Tugallandi'), tugallandi:null,
-}
+const NEXT_LABEL = (t={}) => ({
+  yangi:       '→ '+(t.qabul||'Qabul'),
+  qabul_qilindi:'→ '+(t.yuvishda||'Yuvish')+'ga',
+  yuvishda:    '→ '+(t.qurishda||'Quritish')+'ga',
+  qurishda:    '→ '+(t.bezakda||'Bezak')+'ka',
+  bezakda:     '→ '+(t.yetkazishda||'Yetkazish')+'ga',
+  yetkazishda: '✅ '+(t.tugallandi||'Tugallandi'),
+  tugallandi:  null,
+})
 
 /* Helpers */
 function mapLink(lat,lon,addr){
@@ -67,6 +71,7 @@ const EMPTY = { customer:'', phone:'', address:'', description:'', status:'yangi
    KANBAN CARD
 ══════════════════════════════════════════ */
 function KanbanCard({ order, col, drivers, employees, onDetail, onAdvance, onAssign, onAssignWorker, onEdit, onDelete }) {
+  const { t } = useLang()
   const colCfg  = COLUMNS(t).find(c=>c.key===col)
   const accent  = colCfg?.color || 'var(--accent)'
   const canAdv  = !!NEXT_STATUS[order.status]
@@ -126,7 +131,7 @@ function KanbanCard({ order, col, drivers, employees, onDetail, onAdvance, onAss
         {/* Keyingi bosqich */}
         {canAdv && (
           <button className="kb-action-btn kba-advance" onClick={e=>{e.stopPropagation();onAdvance(order)}}>
-            <MdArrowForward size={10}/> {NEXT_LABEL[order.status]}
+            <MdArrowForward size={10}/> {NEXT_LABEL(t)[order.status]}
           </button>
         )}
 
@@ -251,7 +256,7 @@ function MobileCard({ order, onDetail, onAdvance, onAssign }) {
               border:`1px solid ${color}40`,cursor:'pointer',
               display:'flex',alignItems:'center',gap:4,
             }}>
-              <MdArrowForward size={12}/>{NEXT_LABEL[order.status]}
+              <MdArrowForward size={12}/>{NEXT_LABEL(t)[order.status]}
             </button>
           )}
           {/* Batafsil */}
@@ -269,6 +274,7 @@ function MobileCard({ order, onDetail, onAdvance, onAssign }) {
 }
 
 function MobileOrders({ orders, loading, onDetail, onAdvance, onAssign, onAssignWorker, openCreate }) {
+  const { t } = useLang()
   const [activeTab, setActiveTab] = useState('yangi')
   const [search,    setSearch]    = useState('')
 
@@ -669,7 +675,7 @@ export default function Orders() {
         {/* Keyingi bosqich */}
         {NEXT_STATUS[row.status] && (
           <button className="btn btn-ghost btn-sm" style={{fontSize:10,color:'var(--green)'}}
-            onClick={()=>advanceOrder(row)} title={NEXT_LABEL[row.status]}>
+            onClick={()=>advanceOrder(row)} title={NEXT_LABEL(t)[row.status]}>
             <MdArrowForward size={12}/>
           </button>
         )}

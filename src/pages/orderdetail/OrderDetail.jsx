@@ -346,6 +346,7 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
 
   /* ── Edit save ── */
   async function saveEdit() {
+  const { t } = useLang()
     try {
       const res  = await api.updateOrderItem(editModal, editForm)
       const saved = res?.data || res
