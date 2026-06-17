@@ -280,6 +280,21 @@ export const api = {
   updateHomeService:    (id,b) => mutate('put',  '/home-service/' + id, b),
   deleteHomeService:    id     => mutate('delete','/home-service/' + id, null),
   completeHomeService:  (id,b) => mutate('post', '/home-service/' + id + '/complete', b),
+
+  /* Settings */
+  getTgSettings:       () => withRetry(() => http.get('/telegram-settings')).catch(()=>({})),
+  saveTgSettings:      b  => mutate('put', '/telegram-settings', b),
+  testTgSettings:      b  => mutate('post','/telegram-settings/test', b),
+
+  /* Smart Customer */
+  getCustomerByPhone:  phone => http.get('/customers/by-phone/'+encodeURIComponent(phone)).catch(()=>null),
+  upsertCustomer:      b     => mutate('post','/customers/upsert', b),
+  saveCustomerLocation:(id,b)=> mutate('post','/customers/'+id+'/location', b),
+  syncCustomerStats:   b     => mutate('post','/customers/sync-stats', b).catch(()=>{}),
+
+  /* PIN */
+  generatePinEmp: id => mutate('post', '/employees/'+id+'/generate-pin', {}),
+  generatePinDrv: id => mutate('post', '/drivers/'+id+'/generate-pin', {}),
 }
 
 export const fmt = {
