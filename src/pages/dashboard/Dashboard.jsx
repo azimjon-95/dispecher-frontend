@@ -388,6 +388,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
    DESKTOP DASHBOARD (o'zgarmadi)
 ══════════════════════════════════════════ */
 function DeskDashboard({ stats, finance, attendance, debtOrders, loading, onNav, onOrder, onFin, retry, retrying }) {
+  const { t } = useLang()
   const kirim  = finance.filter(f=>f.type==='kirim').reduce((s,f)=>s+(f.amount||0),0)
   const chiqim = finance.filter(f=>f.type==='chiqim').reduce((s,f)=>s+(f.amount||0),0)
   const balans = kirim - chiqim
