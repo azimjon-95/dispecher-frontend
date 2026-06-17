@@ -9,6 +9,7 @@ import './Sidebar.css'
 import { useLang } from '../../i18n/index.jsx'
 
 export default function Sidebar({ active, onNav, collapsed, onToggle, mobOpen, onCloseMob, badges = {} }) {
+  const { t } = useLang()
   const NAV = [
     {
       section: 'Asosiy',
