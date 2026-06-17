@@ -22,7 +22,6 @@ const COLUMNS = [
   { key:'qurishda',      label:'Quritishda',     icon:'💨', color:'var(--orange)', desc:'Quritish jarayonida' },
   { key:'bezakda',       label:'Bezakda',        icon:'✨', color:'var(--purple)', desc:'Bezak jarayonida' },
   { key:'yetkazishda',   label:'Yetkazishda',    icon:'🚚', color:'#f0883e',       desc:'Shafyor yetkazmoqda' },
-  { key:'tugallandi',    label:'Tugallandi',     icon:'✅', color:'var(--green)',  desc:'Yakunlandi' },
 ]
 const ALL_STATUSES = [
   ...COLUMNS.map(c=>({key:c.key,label:c.label})),
@@ -31,12 +30,12 @@ const ALL_STATUSES = [
 const NEXT_STATUS = {
   yangi:'qabul_qilindi', qabul_qilindi:'yuvishda',
   yuvishda:'qurishda',   qurishda:'bezakda',
-  bezakda:'yetkazishda', yetkazishda:'tugallandi',
+  bezakda:'yetkazishda', yetkazishda:'tugallandi', tugallandi:null,
 }
 const NEXT_LABEL = {
   yangi:'→ Qabul',    qabul_qilindi:'→ Yuvishga',
   yuvishda:'→ Quritishga', qurishda:'→ Bezakka',
-  bezakda:'→ Yetkazishga', yetkazishda:'✅ Tugallandi',
+  bezakda:'→ Yetkazishga', yetkazishda:'✅ Tugallandi', tugallandi:null,
 }
 
 /* Helpers */
