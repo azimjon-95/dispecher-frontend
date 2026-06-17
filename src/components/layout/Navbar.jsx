@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLang, LANGS } from '../../i18n/index.jsx'
 import { bus } from '../../services/realtime.js'
 import {
   MdDashboard, MdShoppingBag, MdLocalShipping, MdConstruction,
@@ -196,6 +197,52 @@ function NotifBell({ notifications, onNav }) {
 }
 
 
+
+function LangSwitcher() {
+  const { lang, setLang } = useLang()
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{position:'relative'}}>
+      <button onClick={()=>setOpen(v=>!v)}
+        className="nb-btn"
+        style={{fontSize:12,fontWeight:700,gap:4,padding:'5px 8px',
+          display:'flex',alignItems:'center',minWidth:36}}>
+        {LANGS[lang]?.flag} <span className="nb-uname">{lang.toUpperCase()}</span>
+      </button>
+      {open && (
+        <>
+          <div onClick={()=>setOpen(false)} style={{position:'fixed',inset:0,zIndex:998}}/>
+          <div style={{
+            position:'absolute',top:'calc(100% + 6px)',right:0,
+            background:'var(--bg2)',border:'1px solid var(--border)',
+            borderRadius:12,zIndex:999,overflow:'hidden',minWidth:140,
+            boxShadow:'0 8px 24px rgba(0,0,0,.3)',
+            animation:'notifSlide .2s ease both',
+          }}>
+            {Object.entries(LANGS).map(([key,val])=>(
+              <button key={key} onClick={()=>{setLang(key);setOpen(false)}} style={{
+                width:'100%',display:'flex',alignItems:'center',gap:10,
+                padding:'10px 14px',background:'none',border:'none',
+                cursor:'pointer',fontSize:13,fontWeight:lang===key?700:400,
+                color:lang===key?'var(--accent)':'var(--text)',
+                borderLeft:lang===key?'3px solid var(--accent)':'3px solid transparent',
+                transition:'background .15s',
+              }}
+                onMouseEnter={e=>e.currentTarget.style.background='var(--bg3)'}
+                onMouseLeave={e=>e.currentTarget.style.background='none'}
+              >
+                <span style={{fontSize:18}}>{val.flag}</span>
+                {val.label}
+                {lang===key && <span style={{marginLeft:'auto',color:'var(--accent)'}}>✓</span>}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 function LiveBadge() {
   const [ok, setOk] = useState(true)
   useEffect(() => {
@@ -262,6 +309,7 @@ export default function Navbar({ active, collapsed, theme, onTheme, onBurger, us
       {/* ── Notification Bell ── */}
       <NotifBell notifications={notifications} onNav={onNav}/>
 
+      <LangSwitcher/>
       <div className="nb-btn" onClick={onTheme} title="Mavzu">
         {theme === 'dark' ? <MdLightMode size={18}/> : <MdDarkMode size={18}/>}
       </div>

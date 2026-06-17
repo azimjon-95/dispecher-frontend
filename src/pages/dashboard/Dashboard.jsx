@@ -3,6 +3,7 @@ import { MdRefresh, MdAdd, MdChevronRight, MdTrendingUp, MdTrendingDown } from '
 import { api, fmt } from '../../services/api.js'
 import { Modal, toast } from '../../components/ui/UI.jsx'
 import './Dashboard.css'
+import { useLang } from '../../i18n/index.jsx'
 import { useRealtime } from '../../services/realtime.js'
 
 const today    = new Date().toISOString().slice(0,10)
@@ -13,6 +14,7 @@ const isMob    = () => window.innerWidth <= 768
 ══════════════════════════════════════════ */
 
 function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, onOrder, onFin, retry, retrying }) {
+  const { t } = useLang()
   const kirim  = finance.filter(f=>f.type==='kirim').reduce((s,f)=>s+(f.amount||0),0)
   const chiqim = finance.filter(f=>f.type==='chiqim').reduce((s,f)=>s+(f.amount||0),0)
   const balans = kirim - chiqim

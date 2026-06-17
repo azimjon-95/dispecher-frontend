@@ -6,38 +6,39 @@ import {
 } from 'react-icons/md'
 import { Logo } from '../../assets/logo.jsx'
 import './Sidebar.css'
+import { useLang } from '../../i18n/index.jsx'
 
 export default function Sidebar({ active, onNav, collapsed, onToggle, mobOpen, onCloseMob, badges = {} }) {
   const NAV = [
     {
       section: 'Asosiy',
       items: [
-        { id:'dashboard',   Icon:MdDashboard,     label:'Dashboard',         badge:null },
-        { id:'orders',      Icon:MdShoppingBag,   label:'Buyurtmalar',        badge:badges.orders    || null },
-        { id:'transport',   Icon:MdLocalShipping, label:'Transport',          badge:badges.transport || null },
-        { id:'workers',     Icon:MdBuild,         label:'Sex Topshiriqlari',  badge:null },
+        { id:'dashboard',   Icon:MdDashboard,     label:t.dashboard||'Dashboard',         badge:null },
+        { id:'orders',      Icon:MdShoppingBag,   label:t.orders||'Buyurtmalar',        badge:badges.orders    || null },
+        { id:'transport',   Icon:MdLocalShipping, label:t.transport||'Transport',          badge:badges.transport || null },
+        { id:'workers',     Icon:MdBuild,         label:t.workers||'Sex Topshiriqlari',  badge:null },
       ]
     },
     {
       section: 'Hodimlar',
       items: [
-        { id:'employees',   Icon:MdPeople,        label:'Hodimlar',   badge:null },
-        { id:'customers',   Icon:MdPerson,        label:'Mijozlar',   badge:null },
+        { id:'employees',   Icon:MdPeople,        label:t.employees||'Hodimlar',   badge:null },
+        { id:'customers',   Icon:MdPerson,        label:t.customers||'Mijozlar',   badge:null },
       ]
     },
     {
       section: 'Moliya',
       items: [
-        { id:'finance',     Icon:MdAttachMoney,    label:'Moliya',          badge:null },
-        { id:'salary',      Icon:MdAccountBalance, label:'Maosh Hisoblash', badge:null },
-        { id:'homeservice', Icon:MdHome,           label:'Uyga Xizmat',     badge:null },
+        { id:'finance',     Icon:MdAttachMoney,    label:t.finance||'Moliya',          badge:null },
+        { id:'salary',      Icon:MdAccountBalance, label:t.salary||'Maosh Hisoblash', badge:null },
+        { id:'homeservice', Icon:MdHome,           label:t.homeservice||'Uyga Xizmat',     badge:null },
       ]
     },
     {
       section: 'Boshqa',
       items: [
-        { id:'archive',     Icon:MdArchive,  label:'Tarix / Arxiv', badge:null },
-        { id:'settings',    Icon:MdSettings, label:'Sozlamalar',    badge:null },
+        { id:'archive',     Icon:MdArchive,  label:t.archive||'Tarix / Arxiv', badge:null },
+        { id:'settings',    Icon:MdSettings, label:t.settings||'Sozlamalar',    badge:null },
       ]
     }
   ]
