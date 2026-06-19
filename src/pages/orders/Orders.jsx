@@ -157,6 +157,7 @@ function KanbanCard({ order, col, drivers, employees, onDetail, onAdvance, onAss
    KANBAN COLUMN
 ══════════════════════════════════════════ */
 function KanbanColumn({ col, orders, drivers, employees, onColClick, onDetail, onAdvance, onAssign, onAssignWorker, onEdit, onDelete }) {
+  const { t } = useLang()
   const total = orders.reduce((s,o)=>s+(o.total||0),0)
   return (
     <div className="kb-col" data-status={col.key}>
@@ -192,6 +193,7 @@ function KanbanColumn({ col, orders, drivers, employees, onColClick, onDetail, o
    MOBILE ORDERS — Tab filter + vertical list
 ══════════════════════════════════════════ */
 function MobileCard({ order, onDetail, onAdvance, onAssign }) {
+  const { t } = useLang()
   const col   = COLUMNS(t).find(x=>x.key===order.status)
   const color = col?.color || 'var(--accent)'
   const canAdv = !!NEXT_STATUS[order.status]
