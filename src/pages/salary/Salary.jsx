@@ -190,7 +190,6 @@ export default function Salary() {
   }
 
   async function pay(){
-  const { t } = useLang()
     if (!form.employeeId||!form.amount){ toast("Ishchi va miqdor!",'err'); return }
     setSaving(true)
     try {

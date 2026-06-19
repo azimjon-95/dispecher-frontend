@@ -14,7 +14,6 @@ export default function Login({ onLogin }) {
   const [loading, setLoading] = useState(false)
 
   async function submit(e) {
-  const { t } = useLang()
     e.preventDefault()
     if (!phone || !pass) { setErr("Telefon va parolni kiriting!"); return }
     setLoading(true); setErr('')

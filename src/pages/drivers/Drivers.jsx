@@ -29,7 +29,6 @@ export default function Drivers() {
   }
 
   function showBotLink(row) {
-  const { t } = useLang()
     const phone = row.phone.replace('+','')
     const link  = `https://t.me/DispecherBot?start=driver_${phone}`
     setLinkModal({ name:row.name, link, registered:!!row.tgChatId })

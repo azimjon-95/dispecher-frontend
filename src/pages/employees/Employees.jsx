@@ -104,7 +104,6 @@ export default function Employees() {
   }
 
   async function save() {
-  const { t } = useLang()
     if (!form.name || !form.phone) { toast('Ism va telefon majburiy!','err'); return }
     if (modal==='create') await crud.create(form)
     else await crud.update(form._id, form)

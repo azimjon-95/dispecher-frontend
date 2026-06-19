@@ -36,7 +36,6 @@ export default function Workers() {
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
 
   async function save() {
-  const { t } = useLang()
     if (!form.order||!form.item||!form.worker){toast("Barcha maydonlarni to'ldiring!",'err');return}
     if (modal==='create') await crud.create(form)
     else await crud.update(form._id, form)

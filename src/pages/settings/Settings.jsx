@@ -347,7 +347,6 @@ export default function Settings() {
   const [ad,     setAd]     = useState('Toshkent sh.')
 
   function savePrice() {
-  const { t } = useLang()
     if (!pform.item || !pform.price) { toast("Maydonlarni to'ldiring!", 'err'); return }
     if (modal==='create') { setPrices(p => [...p, { _id:'p'+Date.now(), ...pform }]); toast("Narx qo'shildi ✅",'ok') }
     else { setPrices(p => p.map(x => x._id===pform._id ? {...x,...pform} : x)); toast('Yangilandi','ok') }
