@@ -231,6 +231,7 @@ function TaskPanel({ title, icon, color, type, apiFns, drivers, allOrders, onDri
   }
 
   async function sendTg(row) {
+  const { t } = useLang()
     setSending(row._id)
     try {
       const msg = type==='delivery'
@@ -513,6 +514,7 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
   }, [])
 
   async function confirmMapAssign() {
+  const { t } = useLang()
     if (!selDrv || !assignOrder) return
     const dr = drivers.find(d=>d._id===selDrv)
     try {
@@ -682,6 +684,7 @@ function MobileTaskPanel({ type, color, apiFns, drivers, allOrders, onDriverChan
   }
 
   async function sendTg(row) {
+  const { t } = useLang()
     setSending(row._id)
     const msg = type==='delivery'
       ? `📦 Buyurtmangiz ${row.order||""} tayyor!\n👤 ${row.customer}\n📍 ${row.address}`
@@ -794,6 +797,7 @@ export default function Transport() {
   }
 
   function onDriverChange(name, status) {
+  const { t } = useLang()
     setDrivers(p => p.map(d => d.name===name ? {...d,status} : d))
   }
 

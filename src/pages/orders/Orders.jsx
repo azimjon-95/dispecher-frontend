@@ -614,6 +614,7 @@ export default function Orders() {
 
   /* Delete */
   async function doDelete() {
+  const { t } = useLang()
     try {
       await api.deleteOrder(delId)
       setOrders(p=>p.filter(r=>r._id!==delId))

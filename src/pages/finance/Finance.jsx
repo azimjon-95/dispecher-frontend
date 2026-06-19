@@ -382,6 +382,7 @@ export default function Finance() {
   ,[orders])
 
   async function save() {
+  const { t } = useLang()
     if (!form.description||!form.amount){toast('Tavsif va miqdor!','err');return}
     if (modal==='create') await crud.create(form)
     else await crud.update(form._id, form)

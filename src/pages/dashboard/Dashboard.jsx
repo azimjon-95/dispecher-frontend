@@ -198,7 +198,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
             borderBottom:'1px solid var(--border)',
           }}>
             <div>
-              <div style={{fontSize:14,fontWeight:700}}>👷 Bugungi davomat</div>
+              <div style={{fontSize:14,fontWeight:700}}>👷 {t.todayAttendance||'Bugungi davomat'}</div>
               <div style={{fontSize:11,color:'var(--text3)',marginTop:1}}>{today}</div>
             </div>
             <div style={{display:'flex',gap:12}}>
@@ -306,7 +306,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
             display:'flex',alignItems:'center',justifyContent:'space-between',
             padding:'14px 16px',borderBottom:'1px solid var(--border)',
           }}>
-            <div style={{fontSize:14,fontWeight:700}}>💰 Moliyaviy holat</div>
+            <div style={{fontSize:14,fontWeight:700}}>💰 {t.financialStatus||'Moliyaviy holat'}</div>
             <button onClick={()=>onNav?.('finance')} style={{fontSize:12,color:'#3B82F6',background:'none',border:'none',cursor:'pointer',fontWeight:600,display:'flex',alignItems:'center',gap:2}}>
               {t.showAll||'Barchasi'} <MdChevronRight size={14}/>
             </button>
@@ -338,7 +338,7 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
           borderRadius:20,overflow:'hidden',
         }}>
           <div style={{padding:'14px 16px',borderBottom:'1px solid var(--border)',fontSize:14,fontWeight:700}}>
-            🖥️ Tizim holati
+            {('🖥️ '+(t.systemStatus||'Tizim holati'))}
           </div>
           {[
             {lbl:'Asosiy server',        ok:stats!==null,     okT:t.serverOk||'Ishlayapti', errT:t.serverFail||'Ulanmadi'},

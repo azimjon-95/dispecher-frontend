@@ -327,6 +327,7 @@ export default function HomeService() {
   }
 
   async function complete() {
+  const { t } = useLang()
     if (!doneForm.totalAmount){toast("Jami summani kiriting!",'err');return}
     try {
       const workerList = selWorkers.map(id=>{
