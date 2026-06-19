@@ -90,4 +90,11 @@ export default {
   newOrderBtn:"Янги буюртма",
   archiveBtn:"Тугалланди",
   filterAll:"Барча",
+  // System status
+  sysServer:"Асосий сервер",
+  sysDb:"Маълумотлар базаси",
+  sysTgBot:"Телеграм Бот",
+  sysRedis:"Redis кэш",
+  sysInternet:"Интернет",
+  sysRecheck:"Қайта текшириш",
 }

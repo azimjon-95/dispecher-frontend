@@ -90,4 +90,11 @@ export default {
   newOrderBtn:"Новый заказ",
   archiveBtn:"Завершённые",
   filterAll:"Все",
+  // System status
+  sysServer:"Основной сервер",
+  sysDb:"База данных",
+  sysTgBot:"Telegram Бот",
+  sysRedis:"Redis кэш",
+  sysInternet:"Интернет",
+  sysRecheck:"Проверить снова",
 }

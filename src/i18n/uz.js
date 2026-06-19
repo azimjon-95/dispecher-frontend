@@ -104,4 +104,11 @@ export default {
   newOrderBtn:"Yangi buyurtma",
   archiveBtn:"Tugallandi",
   filterAll:"Barcha",
+  // System status
+  sysServer:"Asosiy server",
+  sysDb:"Ma'lumotlar bazasi",
+  sysTgBot:"Telegram Bot",
+  sysRedis:"Redis cache",
+  sysInternet:"Internet",
+  sysRecheck:"Qayta tekshirish",
 }

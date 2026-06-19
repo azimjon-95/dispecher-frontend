@@ -341,11 +341,11 @@ function MobDashboard({ stats, finance, attendance, debtOrders, loading, onNav, 
             {('🖥️ '+(t.systemStatus||'Tizim holati'))}
           </div>
           {[
-            {lbl:'Asosiy server',        ok:stats!==null,     okT:t.serverOk||'Ishlayapti', errT:t.serverFail||'Ulanmadi'},
-            {lbl:"Ma'lumotlar bazasi",   ok:stats!==null,     okT:t.dbOk||'Ulangan', errT:'MongoDB off'},
-            {lbl:'Telegram Bot',         ok:false,            okT:'Active', errT:t.botFail||'Token kiritilmagan'},
-            {lbl:'Redis cache',          ok:true,             okT:t.serverOk||'Ishlayapti', errT:t.redisFail||'Oddiy rejim'},
-            {lbl:'Internet',             ok:navigator.onLine, okT:t.connected||'Ulanilgan', errT:t.offlineMode||'Offline rejim'},
+            {lbl:t.sysServer||'Asosiy server',       ok:stats!==null,     okT:t.serverOk||'Ishlayapti', errT:t.serverFail||'Ulanmadi'},
+            {lbl:t.sysDb||"Ma'lumotlar bazasi",        ok:stats!==null,     okT:t.dbOk||'Ulangan', errT:'MongoDB off'},
+            {lbl:t.sysTgBot||'Telegram Bot',           ok:!!(stats?.botActive), okT:'Active', errT:t.botFail||'Token kiritilmagan'},
+            {lbl:t.sysRedis||'Redis cache',            ok:true,             okT:t.serverOk||'Ishlayapti', errT:t.redisFail||'Oddiy rejim'},
+            {lbl:t.sysInternet||'Internet',            ok:navigator.onLine, okT:t.connected||'Ulanilgan', errT:t.offlineMode||'Offline rejim'},
           ].map((s,i,arr)=>(
             <div key={s.lbl} style={{
               display:'flex',alignItems:'center',justifyContent:'space-between',
