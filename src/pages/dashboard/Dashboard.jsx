@@ -540,7 +540,7 @@ export default function Dashboard({ onNav }) {
     try {
       const [stR,finR,attR,ordR,botR] = await Promise.allSettled([
         api.getDashStats(), api.getFinance(), api.getAttendanceToday(), api.getOrders(),
-        api.getTgSettings(),
+        api.getTgBotStatus(),
       ])
       if (stR.status==='fulfilled') {
         const st = stR.value || {}

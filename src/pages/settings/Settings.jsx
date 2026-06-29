@@ -322,7 +322,6 @@ const ROLES_LIST = [
   { role:'Shafyor',     perms:["O'z topshiriqlari",'Status yangilash'] },
 ]
 const TABS = [
-  { id:'telegram', label:'Telegram Bot',    icon:<TgLogo size={13}/> },
   { id:'sms-api',  label:'SMS Provayderlar', icon:'📡' },
   { id:'sms-tmpl', label:'SMS Shablonlar',   icon:'📝' },
   { id:'prices',   label:'Narxlar',           icon:'💲' },
@@ -332,7 +331,7 @@ const TABS = [
 
 export default function Settings() {
   const { t } = useLang()
-  const [tab,    setTab]    = useState('telegram')
+  const [tab,    setTab]    = useState('sms-api')
   const [mobile, setMobile] = useState(isMob())
   useEffect(() => {
     const fn = () => setMobile(isMob())
@@ -354,7 +353,6 @@ export default function Settings() {
   }
 
   const TABS_MOBILE = [
-    { id:'telegram', label:'Telegram Bot', icon:'✈️', color:'#229ED9' },
     { id:'sms-api',  label:'SMS Provayder', icon:'📱', color:'#22c55e' },
     { id:'sms-tmpl', label:'SMS Shablonlar', icon:'📝', color:'#f59e0b' },
     { id:'prices',   label:'Narxlar',        icon:'💰', color:'#8b5cf6' },
@@ -408,7 +406,6 @@ export default function Settings() {
               <div>
                 <div style={{fontWeight:700,fontSize:14,color:'var(--text)'}}>{t.label}</div>
                 <div style={{fontSize:11,color:'var(--text3)',marginTop:1}}>
-                  {tab==='telegram' && 'Bot token va admin ID sozlang'}
                   {tab==='sms-api'  && 'SMS provayderni tanlang va sozlang'}
                   {tab==='sms-tmpl' && 'Avtomatik xabarlar matnini tahrirlang'}
                   {tab==='prices'   && 'Gilam yuvish narxlarini belgilang'}
@@ -422,7 +419,6 @@ export default function Settings() {
 
         {/* Content */}
         <div style={{padding:'0 16px'}}>
-          {tab==='telegram' && <TelegramTab/>}
           {tab==='sms-api'  && <SmsApiTab/>}
 
           {tab==='sms-tmpl' && (
@@ -586,7 +582,6 @@ export default function Settings() {
             ))}
           </div>
           <div className="settings-content">
-            {tab==='telegram' && <div style={{animation:'fadeIn .2s both'}}><TelegramTab/></div>}
             {tab==='sms-api'  && <div style={{animation:'fadeIn .2s both'}}><SmsApiTab/></div>}
 
             {tab==='sms-tmpl' && (

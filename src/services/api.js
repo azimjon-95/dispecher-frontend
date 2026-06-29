@@ -281,10 +281,8 @@ export const api = {
   deleteHomeService:    id     => mutate('delete','/home-service/' + id, null),
   completeHomeService:  (id,b) => mutate('post', '/home-service/' + id + '/complete', b),
 
-  /* Settings */
-  getTgSettings:       () => withRetry(() => http.get('/telegram-settings')).catch(()=>({})),
-  saveTgSettings:      b  => mutate('put', '/telegram-settings', b),
-  testTgSettings:      b  => mutate('post','/telegram-settings/test', b),
+  /* Settings — Telegram .env orqali (frontend dan sozlanmaydi) */
+  getTgBotStatus: () => withRetry(() => http.get('/telegram-settings')).catch(()=>({})),
 
   /* Smart Customer */
   getCustomerByPhone:  phone => http.get('/customers/by-phone/'+encodeURIComponent(phone)).catch(()=>null),
