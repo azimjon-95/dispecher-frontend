@@ -3,6 +3,7 @@ import { MdAdd, MdEdit, MdDelete, MdSave, MdContentCopy, MdSend, MdRefresh, MdVi
 import { Modal, toast } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import { useLang } from '../../i18n/index.jsx'
+import { api } from '../../services/api.js'
 const isMob = () => window.innerWidth <= 768
 import './Settings.css'
 
