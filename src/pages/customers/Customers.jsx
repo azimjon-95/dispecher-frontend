@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { MdPhone, MdLocationOn, MdShoppingBag, MdAttachMoney,
          MdChevronRight, MdClose, MdSearch } from 'react-icons/md'
 import { api, fmt } from '../../services/api.js'
+import { useRealtime } from '../../services/realtime.js'
 import { Sbadge, ErrorBoundary, toast } from '../../components/ui/UI.jsx'
 import './Customers.css'
 import { useLang } from '../../i18n/index.jsx'
@@ -239,6 +240,10 @@ export default function Customers() {
   }, [])
 
   useEffect(() => { load() }, [])
+
+  // Mijoz statistikasi buyurtma orqali yangilanadi (orders.upsertCustomer)
+  // — shu sababli ham 'customers', ham 'orders' eventini tinglaymiz
+  useRealtime(['refresh:customers', 'refresh:orders', 'network:online'], () => load())
 
   async function load() {
     setLoading(true)

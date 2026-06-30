@@ -14,10 +14,10 @@ import Salary    from './pages/salary/Salary.jsx'
 import Archive   from './pages/archive/Archive.jsx'
 import Settings     from './pages/settings/Settings.jsx'
 import HomeService  from './pages/homeservice/HomeService.jsx'
-import { useNetworkStatus, NetworkToast } from './hooks/useNetworkStatus.jsx'
+import { NetworkToast } from './hooks/useNetworkStatus.jsx'
 import MobileTabBar from './components/layout/MobileTabBar.jsx'
-import { syncOfflineQueue, getQueueSize, isOnline } from './services/api.js'
 import { api, norm } from './services/api.js'
+import { bus } from './services/realtime.js'
 import { LangProvider } from './i18n/index.jsx'
 
 function getSavedPage() {
@@ -73,7 +73,8 @@ export default function App() {
     return () => window.removeEventListener('auth:expired', onAuthExpired)
   }, [])
 
-  const networkStatus = useNetworkStatus()
+  // useNetworkStatus o'z holatini o'zi boshqaradi (NetworkToast komponenti orqali),
+  // App.jsx darajasida alohida ushlab turish shart emas
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -167,37 +168,15 @@ export default function App() {
     }
   }, [user, loadBadges])
 
-  /* ── Startup sync: sahifa ochilganda offline queue ni yuborish ── */
+  /* ── Internet qaytganda: badge va aktiv sahifa darhol yangilanadi ── */
   useEffect(() => {
     if (!user) return
-
-    async function startupSync() {
-      try {
-        const size = await getQueueSize()
-        if (size === 0) return
-        if (!isOnline()) return  // Internet yo'q — skip, 'online' event kutiladi
-
-        // 2 sekunddan keyin — sahifa to'liq yuklanib, useNetworkStatus ham tayyor bo'lsin
-        // useNetworkStatus ham sync qiladi, shuning uchun bitta bo'lishi uchun kutamiz
-        await new Promise(r => setTimeout(r, 2000))
-
-        const stillSize = await getQueueSize()
-        if (stillSize === 0) return  // useNetworkStatus allaqachon sync qildi
-
-        const synced = await syncOfflineQueue()
-        if (synced > 0) {
-          const { toast } = await import('./components/ui/UI.jsx')
-          toast(synced + " ta offline o'zgarish serverga yuborildi ✅", 'ok')
-          loadBadges()
-        }
-      } catch(e) {
-        console.warn('Startup sync error:', e)
-      }
-    }
-
-    const t = setTimeout(startupSync, 1500)
-    return () => clearTimeout(t)
-  }, [user])
+    const off = bus.on('network:online', () => {
+      loadBadges()
+      bus.emit('refresh:all')
+    })
+    return off
+  }, [user, loadBadges])
 
   function navigate(p) {
     setPage(p)
@@ -253,7 +232,6 @@ export default function App() {
         onTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
         onBurger={() => setMobOpen(true)}
         onLogout={handleLogout}
-        networkStatus={networkStatus}
         notifications={notifications}
         onNav={navigate}
       />

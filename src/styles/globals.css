@@ -393,26 +393,3 @@ body {
   from { opacity:0; transform:translateY(8px); }
   to   { opacity:1; transform:translateY(0); }
 }
-
-/* ════ OFFLINE TOAST ════ */
-.offline-toast {
-  position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
-  background: var(--red); color: #fff;
-  padding: 10px 20px; border-radius: 99px;
-  font-size: 13px; font-weight: 700;
-  z-index: 9999; animation: slideUp 200ms both;
-  display: flex; align-items: center; gap: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,.4);
-}
-
-/* ── Pending (offline) item indicator ── */
-tr:has(._pending), .kb-card._pending {
-  opacity: 0.75;
-}
-._pending-badge {
-  display: inline-flex; align-items: center; gap: 3px;
-  padding: 1px 5px; border-radius: 99px;
-  background: var(--yellowbg); color: var(--yellow);
-  font-size: 9px; font-weight: 700;
-  border: 1px solid rgba(210,153,34,.2);
-}

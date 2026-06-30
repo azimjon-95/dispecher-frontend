@@ -13,7 +13,7 @@ export default function Drivers() {
   const { t } = useLang()
   const crud = useCRUD(
     { getAll:api.getDrivers, create:api.createDriver, update:api.updateDriver, remove:api.deleteDriver },
-    ['name','phone','plate']
+    ['name','phone','plate'], 10, 'drivers'
   )
   const [modal,     setModal]     = useState(null)
   const [form,      setForm]      = useState(EMPTY)

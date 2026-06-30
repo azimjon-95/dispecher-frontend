@@ -12,7 +12,7 @@ export default function Archive() {
   const { t } = useLang()
   const crud   = useCRUD(
     { getAll:api.getArchive, create:()=>Promise.resolve({}), update:()=>Promise.resolve({}), remove:()=>Promise.resolve({}) },
-    ['number','customer']
+    ['number','customer'], 10, 'orders'
   )
   const [mobile, setMobile] = useState(isMob())
   const [srch,   setSrch]   = useState('')

@@ -1,12 +1,19 @@
 /* ═══════════════════════════════════════════════════════
-   TARTIB CRM — REAL-TIME STORE
-   Socket.IO + Smart Polling + Event Bus
-   Barcha sahifalar shu orqali yangilanadi
+   TARTIB CRM — REAL-TIME ENGINE
+   Socket.IO (asosiy) + Polling (fallback) + Event Bus
+
+   Tamoyil:
+   1. Internet bor → Socket.IO ulanadi → real-time push
+   2. Socket.IO ulanmasa (firewall, eski brauzer) → polling fallback
+   3. Internet yo'q → urinishlar pauza, 'online' eventda darhol qayta uriniladi
+   4. Hech qachon ishni to'xtatmaydi — degradatsiya, crash emas
 ═══════════════════════════════════════════════════════ */
 
 const BASE = 'https://gilam.medme.uz'
 
-/* ── Event Bus ── */
+/* ───────────────────────────────────────
+   Event Bus — sahifalar bu orqali gaplashadi
+─────────────────────────────────────── */
 const listeners = {}
 
 export const bus = {
@@ -16,76 +23,98 @@ export const bus = {
     return () => listeners[event].delete(fn)
   },
   emit(event, data) {
-    listeners[event]?.forEach(fn => { try { fn(data) } catch {} })
+    listeners[event]?.forEach(fn => { try { fn(data) } catch (e) { console.error(`bus:${event}`, e) } })
   },
-  off(event, fn) {
-    listeners[event]?.delete(fn)
-  },
+  off(event, fn) { listeners[event]?.delete(fn) },
 }
 
-/* ── Socket.IO connection ── */
+/* ───────────────────────────────────────
+   Connection status — markazlashtirilgan holat
+   'connecting' | 'connected' | 'polling' | 'offline'
+─────────────────────────────────────── */
+let _status = 'connecting'
+function setStatus(next) {
+  if (_status === next) return
+  _status = next
+  bus.emit('connection:status', next)
+}
+export function getConnectionStatus() { return _status }
+
+/* ───────────────────────────────────────
+   Socket.IO ulanish
+─────────────────────────────────────── */
 let socket = null
-let connected = false
-let reconnectTimer = null
+let socketIOFailed = false
 
-function loadSocketIO(cb) {
-  if (window.io) return cb(window.io)
-  const s = document.createElement('script')
-  s.src = `${BASE}/socket.io/socket.io.js`
-  s.onload  = () => cb(window.io)
-  s.onerror = () => console.warn('Socket.IO CDN failed')
-  document.head.appendChild(s)
+function loadSocketIO() {
+  return new Promise(resolve => {
+    if (window.io) return resolve(window.io)
+    const s = document.createElement('script')
+    s.src = `${BASE}/socket.io/socket.io.js`
+    s.onload  = () => resolve(window.io)
+    s.onerror = () => resolve(null)
+    document.head.appendChild(s)
+  })
 }
 
-export function connectSocket() {
+async function connectSocket() {
   if (socket?.connected) return
+  if (!navigator.onLine) { setStatus('offline'); return }
 
-  loadSocketIO(io => {
-    if (!io) return startPolling()
+  const io = await loadSocketIO()
+  if (!io) {
+    socketIOFailed = true
+    startPolling()
+    return
+  }
 
-    socket = io(BASE, {
-      transports: ['websocket', 'polling'],
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
-      timeout: 5000,
-    })
+  socket = io(BASE, {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 10000,
+    reconnectionAttempts: Infinity,   // hech qachon to'xtamaydi — faqat sekinlashadi
+    timeout: 8000,
+  })
 
-    socket.on('connect', () => {
-      connected = true
-      socket.emit('join:admin')
-      bus.emit('socket:connected')
-      stopPolling()
-      console.log('🔌 Real-time ulandi')
-    })
+  socket.on('connect', () => {
+    socket.emit('join:admin')
+    setStatus('connected')
+    stopPolling()
+    console.log('🔌 Real-time ulandi (Socket.IO)')
+    // Qayta ulanganda — hamma narsani yangilab qo'yamiz, chunki
+    // ulanmagan vaqtda o'tkazib yuborilgan eventlar bo'lishi mumkin
+    bus.emit('refresh:all', { reason: 'reconnect' })
+  })
 
-    socket.on('disconnect', () => {
-      connected = false
-      bus.emit('socket:disconnected')
-      startPolling() // fallback to polling
-    })
+  socket.on('disconnect', (reason) => {
+    console.warn('🔌 Socket.IO uzildi:', reason)
+    setStatus(navigator.onLine ? 'polling' : 'offline')
+    startPolling()
+  })
 
-    socket.on('connect_error', () => {
-      startPolling() // fallback
-    })
+  socket.on('connect_error', () => {
+    setStatus(navigator.onLine ? 'polling' : 'offline')
+    startPolling()
+  })
 
-    // ── Data update events ──
-    socket.on('data:update', ({ type }) => {
-      bus.emit('refresh:' + type)
-      bus.emit('refresh:all', { type })
-    })
+  /* ── Server eventlari ── */
+  socket.on('data:update', ({ type }) => {
+    bus.emit('refresh:' + type)
+    bus.emit('refresh:all', { type })
+  })
 
-    socket.on('driver:live-location', data => {
-      bus.emit('driver:location', data)
-    })
+  socket.on('driver:live-location', data => {
+    bus.emit('driver:location', data)
+  })
 
-    socket.on('order:new', data => {
-      bus.emit('refresh:orders', data)
-      bus.emit('toast', { msg: `📦 Yangi buyurtma: ${data.number}`, type: 'ok' })
-    })
+  socket.on('order:new', data => {
+    bus.emit('refresh:orders', data)
+    bus.emit('toast', { msg: `📦 Yangi buyurtma: ${data.number}`, type: 'ok' })
+  })
 
-    socket.on('order:status', data => {
-      bus.emit('refresh:orders', data)
-    })
+  socket.on('order:status', data => {
+    bus.emit('refresh:orders', data)
   })
 }
 
@@ -94,35 +123,61 @@ export function disconnectSocket() {
   stopPolling()
 }
 
-/* ── Smart Polling (Socket.IO bo'lmasa) ── */
-const POLL_INTERVALS = {}
+/* ───────────────────────────────────────
+   Polling — faqat Socket.IO ishlamasa ishlaydi.
+   Eksponensial backoff: internet beqaror bo'lsa
+   serverni keraksiz so'rovlar bilan to'ldirmaymiz.
+─────────────────────────────────────── */
+const POLL_RESOURCES = [
+  { key: 'orders',    interval: 8000  },
+  { key: 'transport', interval: 10000 },
+  { key: 'dashboard', interval: 15000 },
+]
+const POLL_TIMERS = {}
+let pollBackoffMultiplier = 1
 
 function startPolling() {
-  if (Object.keys(POLL_INTERVALS).length > 0) return // already polling
+  if (Object.keys(POLL_TIMERS).length > 0) return // allaqachon ishlayapti
+  if (!navigator.onLine) return
 
-  const RESOURCES = [
-    { key: 'orders',    interval: 8000  },
-    { key: 'transport', interval: 10000 },
-    { key: 'dashboard', interval: 15000 },
-  ]
+  console.log("📡 Polling rejimi (Socket.IO ulanmagan)")
 
-  RESOURCES.forEach(({ key, interval }) => {
-    POLL_INTERVALS[key] = setInterval(() => {
-      if (connected) return // socket connected, no need to poll
+  POLL_RESOURCES.forEach(({ key, interval }) => {
+    const tick = () => {
+      if (_status === 'connected') return // socket qaytdi — polling kerak emas
+      if (!navigator.onLine) return
       bus.emit('refresh:' + key)
-    }, interval)
+    }
+    POLL_TIMERS[key] = setInterval(tick, interval * pollBackoffMultiplier)
   })
-
-  console.log('📡 Polling mode (Socket.IO yo\'q)')
 }
 
 function stopPolling() {
-  Object.values(POLL_INTERVALS).forEach(clearInterval)
-  Object.keys(POLL_INTERVALS).forEach(k => delete POLL_INTERVALS[k])
+  Object.values(POLL_TIMERS).forEach(clearInterval)
+  Object.keys(POLL_TIMERS).forEach(k => delete POLL_TIMERS[k])
+  pollBackoffMultiplier = 1
 }
 
-/* ── useRealtime hook ── */
-import { useEffect, useRef } from 'react'
+/* ───────────────────────────────────────
+   Brauzer online/offline eventlari
+   — internet qaytganda DARHOL qayta urinamiz
+─────────────────────────────────────── */
+window.addEventListener('online', () => {
+  console.log('🌐 Internet qaytdi — qayta ulanmoqda...')
+  setStatus('connecting')
+  connectSocket()
+})
+
+window.addEventListener('offline', () => {
+  console.log('🌐 Internet yo\'q')
+  setStatus('offline')
+  stopPolling()
+})
+
+/* ───────────────────────────────────────
+   useRealtime hook — komponentlar shu orqali tinglaydi
+─────────────────────────────────────── */
+import { useEffect, useRef, useState } from 'react'
 
 export function useRealtime(events, callback) {
   const cbRef = useRef(callback)
@@ -131,8 +186,19 @@ export function useRealtime(events, callback) {
   useEffect(() => {
     const offs = events.map(ev => bus.on(ev, data => cbRef.current(ev, data)))
     return () => offs.forEach(off => off())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events.join(',')])
 }
 
-/* ── Auto-connect on import ── */
+/* ── Ulanish holatini real-time kuzatish (Navbar LIVE badge uchun) ── */
+export function useConnectionStatus() {
+  const [status, setLocalStatus] = useState(getConnectionStatus())
+  useEffect(() => {
+    const off = bus.on('connection:status', s => setLocalStatus(s))
+    return off
+  }, [])
+  return status
+}
+
+/* ── Auto-connect — modul yuklanganda darhol boshlanadi ── */
 connectSocket()

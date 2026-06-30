@@ -548,8 +548,7 @@ export default function Orders() {
         const saved = rec?.data||rec
         if (saved) {
           setOrders(p => {
-            // Prevent duplicate in local state
-            const exists = p.some(o => o._id === saved._id || (saved._pending && o.phone===saved.phone && o.customer===saved.customer))
+            const exists = p.some(o => o._id === saved._id)
             return exists ? p : [saved,...p]
           })
         }

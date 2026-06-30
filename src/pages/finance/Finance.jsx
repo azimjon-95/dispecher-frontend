@@ -318,7 +318,7 @@ function MobileFinance({ crud, filtered, monthFin, kirim, chiqim, foyda, allBal,
 
 export default function Finance() {
   const { t } = useLang()
-  const crud    = useCRUD({ getAll:api.getFinance, create:api.createFinance, update:api.updateFinance, remove:api.deleteFinance }, ['description','category'])
+  const crud    = useCRUD({ getAll:api.getFinance, create:api.createFinance, update:api.updateFinance, remove:api.deleteFinance }, ['description','category'], 10, 'finance')
   const [modal,    setModal]    = useState(null)
   const [form,     setForm]     = useState(EMPTY)
   const [delId,    setDelId]    = useState(null)

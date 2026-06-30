@@ -14,7 +14,7 @@ export default function Delivery() {
   const { t } = useLang()
   const crud = useCRUD(
     { getAll: api.getDelivery, create: api.createDelivery, update: api.updateDelivery, remove: api.deleteDelivery },
-    ['order', 'customer', 'address']
+    ['order', 'customer', 'address'], 10, 'delivery'
   )
   const [modal, setModal] = useState(null)
   const [form,  setForm]  = useState(EMPTY)

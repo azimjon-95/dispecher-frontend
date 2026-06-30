@@ -17,7 +17,7 @@ export default function Workers() {
   const { t } = useLang()
   const crud = useCRUD(
     { getAll:api.getWorkers, create:api.createWorker, update:api.updateWorker, remove:api.deleteWorker },
-    ['order','item','worker']
+    ['order','item','worker'], 10, 'order-items'
   )
   const [modal,  setModal]  = useState(null)
   const [form,   setForm]   = useState(EMPTY)

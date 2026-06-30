@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLang, LANGS } from '../../i18n/index.jsx'
-import { bus } from '../../services/realtime.js'
+import { bus, useConnectionStatus } from '../../services/realtime.js'
 import {
   MdDashboard, MdShoppingBag, MdLocalShipping, MdConstruction,
   MdPeople, MdDirectionsCar, MdPerson, MdAttachMoney,
@@ -8,7 +8,6 @@ import {
   MdNotifications, MdLightMode, MdDarkMode, MdSearch,
   MdMenu, MdLogout, MdExpandMore, MdClose, MdCheckCircle
 } from 'react-icons/md'
-import { NetworkBar } from '../../hooks/useNetworkStatus.jsx'
 import './Navbar.css'
 
 const TITLES = {
@@ -280,28 +279,33 @@ function LangSwitcher() {
 }
 
 function LiveBadge() {
-  const [ok, setOk] = useState(true)
-  useEffect(() => {
-    const off1 = bus.on('socket:connected',    () => setOk(true))
-    const off2 = bus.on('socket:disconnected', () => setOk(false))
-    return () => { off1(); off2() }
-  }, [])
+  const status = useConnectionStatus() // 'connecting' | 'connected' | 'polling' | 'offline'
+
+  const CONFIG = {
+    connected:  { color:'#22c55e', label:'LIVE',     pulse:true  },
+    connecting: { color:'#3b82f6', label:'Ulanmoqda',pulse:true  },
+    polling:    { color:'#f59e0b', label:'Polling',  pulse:false },
+    offline:    { color:'#f85149', label:'Offline',  pulse:false },
+  }
+  const cfg = CONFIG[status] || CONFIG.connecting
+
   return (
     <div className="nb-live" style={{
-      background: ok ? 'rgba(34,197,94,.12)' : 'rgba(245,158,11,.12)',
-      border: `1px solid ${ok ? 'rgba(34,197,94,.3)' : 'rgba(245,158,11,.3)'}`,
-      color: ok ? '#22c55e' : '#f59e0b',
+      background: `${cfg.color}20`,
+      border: `1px solid ${cfg.color}50`,
+      color: cfg.color,
       borderRadius: 8, padding: '3px 8px',
       fontSize: 11, fontWeight: 700,
       display: 'flex', alignItems: 'center', gap: 5,
+      transition: 'background .25s, border-color .25s, color .25s',
     }}>
       <span style={{
         width: 6, height: 6, borderRadius: '50%',
-        background: ok ? '#22c55e' : '#f59e0b',
-        animation: ok ? 'livePulse 1.5s infinite' : 'none',
+        background: cfg.color,
+        animation: cfg.pulse ? 'livePulse 1.5s infinite' : 'none',
         display: 'inline-block',
       }}/>
-      {ok ? 'LIVE' : 'Polling'}
+      {cfg.label}
       <style>{`@keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
     </div>
   )
@@ -329,16 +333,6 @@ export default function Navbar({ active, collapsed, theme, onTheme, onBurger, us
         <MdSearch size={16} className="nb-search-ico"/>
         <input placeholder="Qidirish..."/>
       </div>
-
-      {/* Network status bar */}
-      {networkStatus && (
-        <NetworkBar
-          online={networkStatus.online}
-          queueLen={networkStatus.queueLen}
-          syncing={networkStatus.syncing}
-          doSync={networkStatus.doSync}
-        />
-      )}
 
       <LiveBadge/>
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { toast } from '../components/ui/UI.jsx'
+import { bus } from '../services/realtime.js'
 
 /* normalize: API { data:[] } yoki [] ikkalasini ham qabul qiladi */
 function normalize(res) {
@@ -21,7 +22,15 @@ async function withRetry(fn, retries = 3, baseDelay = 800) {
   }
 }
 
-export function useCRUD(apiFns, searchKeys = [], pageSize = 10) {
+/**
+ * @param {object} apiFns        — { getAll, create, update, remove }
+ * @param {string[]} searchKeys  — qidiruv qilinadigan fieldlar
+ * @param {number} pageSize
+ * @param {string} [resourceType] — Socket.IO 'refresh:<type>' eventiga obuna bo'lish uchun
+ *   (masalan 'employees', 'drivers'). Berilsa: boshqa admin/bot o'zgartirganda
+ *   bu ro'yxat ham avtomatik qayta yuklanadi — qo'lda refresh kerak emas.
+ */
+export function useCRUD(apiFns, searchKeys = [], pageSize = 10, resourceType = null) {
   const [data,    setData]    = useState([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
@@ -29,8 +38,6 @@ export function useCRUD(apiFns, searchKeys = [], pageSize = 10) {
   const [filters, setFilters] = useState({})
   const [page,    setPage]    = useState(1)
   const [selIds,  setSelIds]  = useState([])
-
-  useEffect(() => { load() }, [])
 
   const load = useCallback(async () => {
     setLoading(true); setError(null)
@@ -46,6 +53,18 @@ export function useCRUD(apiFns, searchKeys = [], pageSize = 10) {
       setLoading(false)
     }
   }, [apiFns])
+
+  useEffect(() => { load() }, [])
+
+  /* Boshqa client (admin yoki bot) shu turdagi datani o'zgartirsa —
+     Socket.IO orqali xabar keladi va ro'yxat sokin qayta yuklanadi.
+     Internet uzilib qaytganda ham eskirgan datani yangilab qo'yadi. */
+  useEffect(() => {
+    if (!resourceType) return
+    const off1 = bus.on('refresh:' + resourceType, () => load())
+    const off2 = bus.on('network:online', () => load())
+    return () => { off1(); off2() }
+  }, [resourceType, load])
 
   const filtered = useMemo(() => {
     if (!Array.isArray(data)) return []
@@ -63,24 +82,16 @@ export function useCRUD(apiFns, searchKeys = [], pageSize = 10) {
     [filtered, page, pageSize]
   )
 
+  /** Yangi yozuv yaratadi. Internet bo'lmasa yoki server javob bermasa
+   *  aniq xato ko'rsatiladi — soxta "saqlandi" holatiga olib bormaydi. */
   async function create(formData) {
-    // Optimistic: add immediately
-    const tempId   = '_tmp_' + Date.now()
-    const tempItem = { _id: tempId, ...formData, _pending: true }
-    setData(d => [tempItem, ...d])
     try {
-      const raw  = await apiFns.create(formData)
-      const rec  = raw?.data || raw
-      if (rec && rec._id && rec._id !== tempId) {
-        setData(d => d.map(r => r._id === tempId ? rec : r))
-      } else {
-        // offline — keep temp
-        setData(d => d.map(r => r._id === tempId ? {...r, ...formData} : r))
-      }
+      const raw = await apiFns.create(formData)
+      const rec = raw?.data || raw
+      if (rec?._id) setData(d => [rec, ...d])
       toast("Qo'shildi ✅", 'ok')
-      return rec || tempItem
+      return rec || null
     } catch (e) {
-      setData(d => d.filter(r => r._id !== tempId))
       toast(String(e?.message || e), 'err')
       return null
     }

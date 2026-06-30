@@ -4,6 +4,7 @@ import {
   MdPerson, MdPhone, MdRefresh, MdPersonAdd
 } from 'react-icons/md'
 import { api, fmt } from '../../services/api.js'
+import { useRealtime } from '../../services/realtime.js'
 import { Modal, Confirm, Sbadge, Table, Paging, PH, ExportBtn, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import { useLang } from '../../i18n/index.jsx'
@@ -297,6 +298,8 @@ export default function HomeService() {
   }, [])
 
   useEffect(() => { loadAll() }, [])
+
+  useRealtime(['refresh:home-service', 'network:online'], () => loadAll())
 
   async function loadAll() {
     setLoading(true)

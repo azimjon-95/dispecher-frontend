@@ -14,7 +14,7 @@ export default function Pickup() {
   const { t } = useLang()
   const crud = useCRUD(
     { getAll: api.getPickup, create: api.createPickup, update: api.updatePickup, remove: api.deletePickup },
-    ['order', 'customer', 'address']
+    ['order', 'customer', 'address'], 10, 'pickup'
   )
   const [modal, setModal] = useState(null)
   const [form,  setForm]  = useState(EMPTY)

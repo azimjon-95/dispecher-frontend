@@ -113,7 +113,7 @@ function ItemCard({ item, workers, onAdvance, onAssign, onEdit, onDelete }) {
   const canAdv  = item.stage !== 'tugallandi'
 
   return (
-    <div className="od-item-card" style={{ '--stage-c': stage.color, opacity: item._pending ? 0.7 : 1 }}>
+    <div className="od-item-card" style={{ '--stage-c': stage.color }}>
       {/* Left accent */}
       <div style={{ position:'absolute', left:0, top:0, bottom:0, width:3, background:stage.color, borderRadius:'4px 0 0 4px' }}/>
 
@@ -270,20 +270,19 @@ export default function OrderDetail({ order: initialOrder, onBack }) {
     const sqm   = payload.unit==='sqm' ? Math.round(parseFloat(payload.width||0)*parseFloat(payload.length||0)*100)/100 : 0
     const price = payload.unit==='sqm' ? Math.round(sqm*payload.pricePerUnit) : Math.round((payload.qty||1)*payload.pricePerUnit)
 
-    const tempId = '_tmp_' + Date.now()
-    setItems(p => [...p, { _id:tempId, ...payload, sqm, totalPrice:price, stage:'qabul', assignments:[], _pending:true }])
     setNewItem(EMPTY)
     setAdding(true)
     try {
       const res   = await api.createOrderItem(payload)
       const saved = res?.data || res
       if (saved?._id) {
-        setItems(p => p.map(i => i._id===tempId ? saved : i))
+        setItems(p => [...p, saved])
         setOrder(o => ({ ...o, total:(o.total||0)+price, itemCount:(o.itemCount||0)+1 }))
         toast(`"${saved.name}" qo'shildi ✅`, 'ok')
-      } else { toast(`"${payload.name}" offline saqlandi`, 'inf') }
+      } else {
+        toast("Mahsulot saqlanmadi, qayta urinib ko'ring", 'err')
+      }
     } catch(e) {
-      setItems(p => p.filter(i => i._id!==tempId))
       toast(e.message, 'err')
     }
     setAdding(false)

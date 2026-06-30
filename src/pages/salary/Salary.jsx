@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { MdAdd, MdRefresh, MdAttachMoney, MdWarning, MdStar } from 'react-icons/md'
 import { api, fmt } from '../../services/api.js'
+import { useRealtime } from '../../services/realtime.js'
 import { Modal, Sbadge, Table, Paging, PH, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 
@@ -175,6 +176,10 @@ export default function Salary() {
   const [tab,      setTab]      = useState('summary')
 
   useEffect(()=>{ load() },[month])
+
+  // Ishchi botdan bosqich tugatsa (balans o'zgaradi) yoki avans/jarima
+  // berilsa — Maosh sahifasi avtomatik yangilanadi
+  useRealtime(['refresh:salary-payments', 'refresh:employees', 'refresh:order-items', 'network:online'], () => load())
 
   async function load(){
     setLoading(true)

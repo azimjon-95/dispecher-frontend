@@ -90,7 +90,7 @@ export default function Employees() {
 
   const crud = useCRUD(
     { getAll:api.getEmployees, create:api.createEmployee, update:api.updateEmployee, remove:api.deleteEmployee },
-    ['name','phone']
+    ['name','phone'], 10, 'employees'
   )
   const [modal, setModal] = useState(null)
   const [form,  setForm]  = useState(EMPTY)

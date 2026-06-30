@@ -1,9 +1,10 @@
 /* ═══════════════════════════════════════════════════
-   api.js — Offline-first API client
-   Mock data O'CHIRILDI — faqat real API + offline queue
+   api.js — Online-only API client
+   Internet bo'lsa ishlaydi, bo'lmasa aniq xato beradi.
+   Offline queue / IndexedDB / sync — YO'Q.
+   Real-time yangilanish Socket.IO orqali (realtime.js)
 ═══════════════════════════════════════════════════ */
 import axios from 'axios'
-import { enqueue, getQueue, dequeue, queueSize } from './offlineQueue.js'
 
 const BASE_URL = 'https://gilam.medme.uz'
 
@@ -18,51 +19,28 @@ http.interceptors.response.use(
   r => r.data,
   err => {
     const status = err?.response?.status
-    // 401 yoki 403 — token yaroqsiz yoki muddati o'tgan
     if (status === 401 || status === 403) {
-      // LocalStorage tozala
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      // Toast chiqar (agar mavjud bo'lsa)
       try {
-        const event = new CustomEvent('auth:expired', {
+        window.dispatchEvent(new CustomEvent('auth:expired', {
           detail: { msg: 'Sessiya muddati tugadi. Qayta kiring.' }
-        })
-        window.dispatchEvent(event)
+        }))
       } catch {}
-      // Login sahifasiga yo'naltir (hard reload)
       setTimeout(() => { window.location.href = '/' }, 800)
+    }
+    if (!err?.response) {
+      // Internet yo'q yoki server javob bermadi — aniq xabar
+      return Promise.reject(new Error("Internet aloqasi yo'q yoki server javob bermayapti"))
     }
     return Promise.reject(new Error(err?.response?.data?.error || err?.message || 'Server xatosi'))
   }
 )
 
-/* ── Online state — kuchli aniqlash ── */
+/* ── Online holatni kuzatish (faqat ko'rsatish uchun, queue yo'q) ── */
 let _online = navigator.onLine
-
-// navigator.onLine har doim ishonchli emas
-// Server ping bilan tekshiramiz
-let _lastPing = 0
-async function pingServer() {
-  try {
-    await fetch(BASE_URL + '/health', { method:'HEAD', signal: AbortSignal.timeout(3000) })
-    if (!_online) { _online = true; window.dispatchEvent(new Event('online')) }
-    return true
-  } catch {
-    if (_online) { _online = false; window.dispatchEvent(new Event('offline')) }
-    return false
-  }
-}
-
-// Har 8 soniyada ping (faqat online tuyulsa)
-setInterval(() => {
-  if (navigator.onLine) pingServer()
-  else if (_online) { _online = false; window.dispatchEvent(new Event('offline')) }
-}, 8000)
-
-window.addEventListener('online',  () => { pingServer() })
+window.addEventListener('online',  () => { _online = true })
 window.addEventListener('offline', () => { _online = false })
-
 export function isOnline() { return _online }
 
 /* ── Normalize → always array ── */
@@ -72,118 +50,40 @@ export function norm(res) {
   return []
 }
 
-/* ── Retry helper ── */
+/* ── Retry helper — vaqtinchalik tarmoq xatolarida qayta urinish ── */
 async function withRetry(fn, retries = 3, delay = 800) {
   for (let i = 0; i < retries; i++) {
     try { return await fn() }
     catch (e) {
       if (i === retries - 1) throw e
-      if (e?.response?.status < 500) throw e
+      if (e?.response?.status < 500 && e?.response?.status >= 400) throw e
       await new Promise(r => setTimeout(r, delay * (i + 1)))
     }
   }
 }
 
-/* ── Offline-safe mutation ── */
+/* ── Double-submit himoyasi (masalan, tugmani 2 marta bosish) ── */
 const _pendingKeys = new Set()
-
-// Stable hash for dedup (not timestamp-based)
 function makeKey(method, url, data) {
   const str = method + '|' + url + '|' + JSON.stringify(data || {})
   let h = 0
-  for (let i = 0; i < str.length; i++) {
-    h = Math.imul(31, h) + str.charCodeAt(i) | 0
-  }
+  for (let i = 0; i < str.length; i++) h = Math.imul(31, h) + str.charCodeAt(i) | 0
   return String(h)
 }
 
-async function mutate(method, url, data, optimistic) {
+/* ── Mutation — to'g'ridan-to'g'ri serverga, queue yo'q ── */
+async function mutate(method, url, data) {
   const key = makeKey(method, url, data)
-  
-  // Prevent duplicate in-flight (e.g. double click)
-  if (_pendingKeys.has(key)) {
-    return null
-  }
+  if (_pendingKeys.has(key)) return null  // double-click himoyasi
   _pendingKeys.add(key)
-  setTimeout(() => _pendingKeys.delete(key), 8000)
+  setTimeout(() => _pendingKeys.delete(key), 6000)
 
-  if (!_online) {
-    // Check if exactly same request already in queue
-    const existing = await getQueue()
-    const isDup = existing.some(i =>
-      i.method === method && i.url === url &&
-      JSON.stringify(i.data || {}) === JSON.stringify(data || {})
-    )
-    if (!isDup) {
-      await enqueue({ method, url, data, _key: key })
-    }
-    _pendingKeys.delete(key)
-    return optimistic?.() ?? null
-  }
-  
   try {
-    const result = await http[method](url, data)
-    _pendingKeys.delete(key)
-    return result
-  } catch (e) {
-    _pendingKeys.delete(key)
-    if (!e?.response) {  // Network error only
-      const existing = await getQueue()
-      const isDup = existing.some(i =>
-        i.method === method && i.url === url &&
-        JSON.stringify(i.data || {}) === JSON.stringify(data || {})
-      )
-      if (!isDup) {
-        await enqueue({ method, url, data, _key: key })
-      }
-      return optimistic?.() ?? null
-    }
-    throw e
-  }
-}
-
-/* ── Sync when online ── */
-let _syncing = false  // Global lock — parallel sync bo'lmasin
-
-export async function syncOfflineQueue() {
-  if (_syncing) return 0          // Already syncing — skip
-  if (!_online) return 0          // No internet — skip
-  
-  _syncing = true
-  let synced = 0
-  
-  try {
-    const items = await getQueue()
-    if (!items.length) return 0
-
-    for (const item of items) {
-      // Double-check: still online?
-      if (!_online) break
-      
-      try {
-        // Remove from queue BEFORE sending to prevent retry on concurrent sync
-        await dequeue(item.id)
-        
-        const result = await http[item.method || 'post'](item.url, item.data)
-        synced++
-      } catch (e) {
-        if (e?.response?.status >= 400 && e?.response?.status < 500) {
-          // 4xx — bad data, already dequeued, skip
-        } else {
-          // Network error — re-enqueue
-          await enqueue({ method: item.method, url: item.url, data: item.data })
-          break  // Stop on network error, try again later
-        }
-      }
-    }
+    return await http[method](url, data)
   } finally {
-    _syncing = false
+    _pendingKeys.delete(key)
   }
-  
-  return synced
 }
-
-export const getQueueSize = queueSize
 
 export const api = {
   /* Auth */
@@ -191,8 +91,8 @@ export const api = {
 
   /* Orders */
   getOrders:   () => withRetry(() => http.get('/orders')),
-  createOrder: b  => mutate('post', '/orders', b, () => ({ _id:'_tmp_'+Date.now(), ...b, number:'#...', itemCount:0, total:0, _pending:true })),
-  updateOrder: (id,b) => mutate('put', `/orders/${id}`, b, () => ({ _id:id, ...b })),
+  createOrder: b  => mutate('post', '/orders', b),
+  updateOrder: (id,b) => mutate('put', `/orders/${id}`, b),
   deleteOrder: id  => mutate('delete', `/orders/${id}`, null),
 
   /* Order Items */
