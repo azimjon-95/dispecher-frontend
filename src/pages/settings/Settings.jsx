@@ -326,7 +326,7 @@ const TABS = [
   { id:'sms-tmpl', label:'SMS Shablonlar',   icon:'📝' },
   { id:'prices',   label:'Narxlar',           icon:'💲' },
   { id:'roles',    label:'Rollar',             icon:'🔐' },
-  { id:'general',  label:'Umumiy',             icon:'⚙️' },
+  { id:'company',  label:'Kompaniya',          icon:'🏢' },
 ]
 
 export default function Settings() {
@@ -344,6 +344,63 @@ export default function Settings() {
   const [co,     setCo]     = useState('Tartib CRM')
   const [ph,     setPh]     = useState('+998 90 123 45 67')
   const [ad,     setAd]     = useState('Toshkent sh.')
+
+  /* ── Filial (Ximchistka) joylashuvi ──
+     Bu CRM turli viloyatlarga o'rnatiladi — har bir o'rnatishda
+     admin shu yerdan filial markazini bir marta belgilaydi.
+     Transport sahifasidagi Live Xarita shu nuqta atrofida ochiladi. */
+  const [companyLoc,    setCompanyLoc]    = useState(null)   // {lat,lon,address,city,savedAt}
+  const [locLoading,    setLocLoading]    = useState(false)  // GPS so'ralmoqda
+  const [locSaved,      setLocSaved]      = useState(false)  // yaqinda saqlangani (vizual feedback)
+
+  useEffect(() => {
+    api.getCompanyLocation()
+      .then(loc => { if (loc?.lat) setCompanyLoc(loc) })
+      .catch(() => {})
+  }, [])
+
+  async function saveCompanyLocation() {
+    if (!navigator.geolocation) {
+      toast("Brauzer geolokatsiyani qo'llab-quvvatlamaydi", 'err')
+      return
+    }
+    setLocLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude: lat, longitude: lon } = pos.coords
+        try {
+          // Teskari geokodlash — koordinata → manzil nomi (OpenStreetMap Nominatim, bepul)
+          let address = '', city = ''
+          try {
+            const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=uz`)
+            const d = await r.json()
+            address = d?.display_name || ''
+            city    = d?.address?.city || d?.address?.town || d?.address?.region || ''
+          } catch { /* geokodlash ixtiyoriy — koordinata baribir saqlanadi */ }
+
+          const saved = await api.saveCompanyLocation(lat, lon, address, city)
+          setCompanyLoc(saved)
+          setLocSaved(true)
+          toast('📍 Filial joylashuvi saqlandi ✅', 'ok')
+          setTimeout(() => setLocSaved(false), 3000)
+        } catch (e) {
+          toast(e.message || "Saqlashda xato yuz berdi", 'err')
+        } finally {
+          setLocLoading(false)
+        }
+      },
+      (err) => {
+        setLocLoading(false)
+        const msgs = {
+          1: "Joylashuvga ruxsat berilmadi — brauzer sozlamalaridan ruxsat bering",
+          2: "Joylashuvni aniqlab bo'lmadi — GPS yoki internet tekshiring",
+          3: "Joylashuv so'rovi vaqti tugadi — qayta urinib ko'ring",
+        }
+        toast(msgs[err.code] || err.message, 'err')
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    )
+  }
 
   function savePrice() {
     if (!pform.item || !pform.price) { toast("Maydonlarni to'ldiring!", 'err'); return }
@@ -505,6 +562,55 @@ export default function Settings() {
                     }}/>
                 </div>
               ))}
+
+              {/* ── Filial (Ximchistka) joylashuvi — xarita markazi ── */}
+              <div style={{
+                background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:14,
+                overflow:'hidden',
+              }}>
+                <div style={{padding:'10px 14px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                  <span style={{fontSize:11,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.5px'}}>
+                    🧺 Filial joylashuvi (xarita markazi)
+                  </span>
+                  {companyLoc?.lat && (
+                    <span style={{fontSize:10,fontWeight:700,color:'var(--green)',background:'var(--greenbg)',padding:'2px 8px',borderRadius:99}}>
+                      ✅ Saqlangan
+                    </span>
+                  )}
+                </div>
+                <div style={{padding:'12px 14px'}}>
+                  {companyLoc?.lat ? (
+                    <>
+                      <div style={{fontSize:13,fontWeight:600,marginBottom:4}}>
+                        {companyLoc.address || `${companyLoc.lat.toFixed(5)}, ${companyLoc.lon.toFixed(5)}`}
+                      </div>
+                      <div style={{fontSize:11,color:'var(--text3)',marginBottom:10}}>
+                        📐 {companyLoc.lat.toFixed(6)}, {companyLoc.lon.toFixed(6)}
+                        {companyLoc.savedAt && ` · ${new Date(companyLoc.savedAt).toLocaleDateString('uz-UZ')}`}
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{fontSize:12,color:'var(--text3)',marginBottom:10,lineHeight:1.5}}>
+                      Hali belgilanmagan. Filial (ximchistka) turgan joyingizda turib tugmani bosing —
+                      shu nuqta Transport sahifasidagi Live Xarita markazi bo'ladi.
+                    </div>
+                  )}
+                  <button
+                    className="btn btn-primary"
+                    disabled={locLoading}
+                    onClick={saveCompanyLocation}
+                    style={{
+                      width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                      background: locSaved ? 'var(--green)' : undefined,
+                    }}
+                  >
+                    {locLoading ? '📡 Joylashuv aniqlanmoqda...' :
+                     locSaved   ? '✅ Saqlandi!' :
+                     companyLoc?.lat ? '🔄 Joylashuvni yangilash' : '📍 Joylashuvni saqlash'}
+                  </button>
+                </div>
+              </div>
+
               <button className="btn btn-primary" style={{marginTop:4}}
                 onClick={()=>toast('Saqlandi ✅','ok')}>
                 💾 Saqlash
@@ -651,15 +757,71 @@ export default function Settings() {
               </div>
             )}
 
-            {tab==='general' && (
+            {tab==='company' && (
               <div className="card" style={{animation:'fadeIn .2s both'}}>
-                <div className="card-hd"><div className="card-title">⚙️ Umumiy</div></div>
+                <div className="card-hd"><div className="card-title">⚙️ Kompaniya</div></div>
                 <div style={{display:'flex',flexDirection:'column',gap:12}}>
                   <div className="fg"><label className="flabel">Kompaniya nomi</label><input className="finput" value={co} onChange={e=>setCo(e.target.value)}/></div>
                   <div className="fg"><label className="flabel">Telefon</label><input className="finput" value={ph} onChange={e=>setPh(e.target.value)}/></div>
                   <div className="fg"><label className="flabel">Manzil</label><input className="finput" value={ad} onChange={e=>setAd(e.target.value)}/></div>
                   <div className="fg"><label className="flabel">Valyuta</label><select className="fselect"><option>UZS</option><option>USD</option></select></div>
                   <button className="btn btn-primary" style={{alignSelf:'flex-start'}} onClick={() => toast('Saqlandi ✅','ok')}><MdSave size={15}/> Saqlash</button>
+                </div>
+              </div>
+            )}
+
+            {tab==='company' && (
+              <div className="card" style={{animation:'fadeIn .2s both', marginTop:16}}>
+                <div className="card-hd">
+                  <div className="card-title">🧺 Filial joylashuvi (xarita markazi)</div>
+                  {companyLoc?.lat && (
+                    <span className="badge b-green">✅ Saqlangan</span>
+                  )}
+                </div>
+                <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                  <p style={{fontSize:13,color:'var(--text2)',lineHeight:1.6,margin:0}}>
+                    Bu CRM turli viloyatlarga o'rnatilishi mumkin. Filial (ximchistka) turgan
+                    joyingizda turib pastdagi tugmani bosing — shu koordinata <b>Transport →
+                    Live Xarita</b> markazi bo'lib qoladi, shafyorlaringiz shu nuqta atrofida
+                    kuzatiladi.
+                  </p>
+
+                  {companyLoc?.lat ? (
+                    <div style={{
+                      background:'var(--bg3)', borderRadius:'var(--r)', padding:'12px 14px',
+                      display:'flex', flexDirection:'column', gap:4,
+                    }}>
+                      <div style={{fontWeight:700, fontSize:14}}>
+                        {companyLoc.address || 'Manzil aniqlanmagan'}
+                      </div>
+                      <div className="mono" style={{fontSize:12, color:'var(--text2)'}}>
+                        📐 {companyLoc.lat.toFixed(6)}, {companyLoc.lon.toFixed(6)}
+                      </div>
+                      {companyLoc.savedAt && (
+                        <div style={{fontSize:11, color:'var(--text3)'}}>
+                          Oxirgi yangilanish: {new Date(companyLoc.savedAt).toLocaleString('uz-UZ')}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{
+                      background:'var(--yellowbg)', border:'1px solid rgba(210,153,34,.25)',
+                      borderRadius:'var(--r)', padding:'12px 14px', fontSize:13, color:'var(--yellow)',
+                    }}>
+                      ⚠️ Filial joylashuvi hali belgilanmagan — xarita Toshkent markazida ochiladi.
+                    </div>
+                  )}
+
+                  <button
+                    className="btn btn-primary"
+                    style={{alignSelf:'flex-start'}}
+                    disabled={locLoading}
+                    onClick={saveCompanyLocation}
+                  >
+                    {locLoading ? '📡 Aniqlanmoqda...' :
+                     locSaved   ? '✅ Saqlandi!' :
+                     companyLoc?.lat ? '🔄 Joylashuvni yangilash' : '📍 Joylashuvni saqlash'}
+                  </button>
                 </div>
               </div>
             )}

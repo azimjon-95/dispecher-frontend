@@ -369,7 +369,7 @@ function TaskPanel({ title, icon, color, type, apiFns, drivers, allOrders, onDri
 /* ════════════════════════════════
    LIVE MAP — Leaflet.js (OpenStreetMap)
 ════════════════════════════════ */
-function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
+function LiveMap({ drivers, driverLocations, setDriverLocations, orders, companyLocation, companyLocLoaded }) {
   const { t } = useLang()
   const [connected,   setConnected]   = useState(false)
   const [fullscreen,  setFullscreen]  = useState(false)
@@ -380,6 +380,7 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
   const leafletRef = useRef(null)
   const markersRef = useRef({})
   const socketRef  = useRef(null)
+  const companyMarkerRef = useRef(null)
 
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
@@ -387,10 +388,21 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
   const pendingDelivery = orders.filter(o => o && o.status==='yetkazishda')
   const activeDrivers   = drivers.filter(d => driverLocations[d.tgChatId||d._id]?.online)
 
-  // Init Leaflet map
+  // Fallback markaz — Toshkent. Faqat filial joylashuvi HALI saqlanmagan
+  // bo'lsa ishlatiladi (Settings → Kompaniya → "📍 Joylashuvni saqlash").
+  const FALLBACK_CENTER = [41.2995, 69.2401]
+  const mapCenter = companyLocation?.lat
+    ? [companyLocation.lat, companyLocation.lon]
+    : FALLBACK_CENTER
+
+  // Init Leaflet map — companyLocLoaded kelguncha kutamiz, shunda
+  // xarita to'g'ridan filial markazida ochiladi, keyin "sakrab"
+  // ko'chmaydi (avval har doim Toshkentda ochilib, keyin joyiga
+  // sakrardi — yomon UX bo'lardi).
   useEffect(() => {
     if (leafletRef.current) return
     if (!mapRef.current) return
+    if (!companyLocLoaded) return  // joylashuv hali yuklanmagan — kutamiz
 
     // Inject Leaflet CSS
     if (!document.getElementById('leaflet-css')) {
@@ -405,18 +417,36 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders }) {
     script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
     script.onload = () => {
       const L = window.L
-      const map = L.map(mapRef.current, { zoomControl: true }).setView([41.2995, 69.2401], 11)
+      const map = L.map(mapRef.current, { zoomControl: true }).setView(mapCenter, 12)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap',
         maxZoom: 19,
       }).addTo(map)
       leafletRef.current = map
       updateMarkers()
+      updateCompanyMarker()
     }
     document.head.appendChild(script)
 
     return () => { leafletRef.current?.remove(); leafletRef.current = null }
-  }, [])
+  }, [companyLocLoaded])
+
+  // Filial markeri — har doim xaritaning markazida, alohida ikonka bilan
+  function updateCompanyMarker() {
+    const L = window.L
+    if (!L || !leafletRef.current || !companyLocation?.lat) return
+    companyMarkerRef.current?.remove()
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="background:#1d4ed8;width:40px;height:40px;border-radius:12px;border:3px solid white;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 14px rgba(29,78,216,.55)">🧺</div>`,
+      iconSize: [40,40], iconAnchor: [20,20],
+    })
+    companyMarkerRef.current = L.marker([companyLocation.lat, companyLocation.lon], { icon, zIndexOffset: 1000 })
+      .addTo(leafletRef.current)
+      .bindPopup(`<b>🧺 Filial</b><br>${companyLocation.address || 'Markaz'}`)
+  }
+
+  useEffect(() => { updateCompanyMarker() }, [companyLocation])
 
   // Update markers when data changes
   function updateMarkers() {
@@ -781,9 +811,20 @@ export default function Transport() {
   const [orders,          setOrders]           = useState([])
   const [driverLocations, setDriverLocations]  = useState({})
   const [mobileTab,       setMobileTab]        = useState('delivery')
+  // Filial (Ximchistka) joylashuvi — Live Xarita markazi.
+  // Settings sahifasida saqlanadi, bu yerda faqat o'qiladi.
+  const [companyLocation,   setCompanyLocation]   = useState(null)
+  const [companyLocLoaded,  setCompanyLocLoaded]  = useState(false)
   // mobile state added below in return
 
   useEffect(() => { loadAll() }, [])
+
+  useEffect(() => {
+    api.getCompanyLocation()
+      .then(loc => setCompanyLocation(loc))
+      .catch(() => setCompanyLocation(null))
+      .finally(() => setCompanyLocLoaded(true)) // muvaffaqiyat yoki xato — baribir xaritani to'xtatib qo'ymaymiz
+  }, [])
 
   async function loadAll() {
     try {
@@ -890,6 +931,8 @@ export default function Transport() {
                     driverLocations={driverLocations}
                     setDriverLocations={setDriverLocations}
                     orders={orders}
+                    companyLocation={companyLocation}
+                    companyLocLoaded={companyLocLoaded}
                   />
                 </div>
               )}
@@ -941,7 +984,8 @@ export default function Transport() {
           </div>
           <div style={mobileTab!=='map'?{}:{display:'block'}}>
             <LiveMap drivers={drivers} driverLocations={driverLocations}
-              setDriverLocations={setDriverLocations} orders={orders}/>
+              setDriverLocations={setDriverLocations} orders={orders}
+              companyLocation={companyLocation} companyLocLoaded={companyLocLoaded}/>
           </div>
         </>)}
       </div>

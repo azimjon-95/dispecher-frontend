@@ -184,6 +184,11 @@ export const api = {
   /* Settings — Telegram .env orqali (frontend dan sozlanmaydi) */
   getTgBotStatus: () => withRetry(() => http.get('/telegram-settings')).catch(()=>({})),
 
+  /* Filial (Ximchistka) joylashuvi — xarita markazi, viloyatga moslab saqlanadi */
+  getCompanyLocation: () => withRetry(() => http.get('/settings/company-location')).catch(()=>null),
+  saveCompanyLocation: (lat, lon, address, city) =>
+    mutate('put', '/settings/company-location', { lat, lon, address, city }),
+
   /* Smart Customer */
   getCustomerByPhone:  phone => http.get('/customers/by-phone/'+encodeURIComponent(phone)).catch(()=>null),
   upsertCustomer:      b     => mutate('post','/customers/upsert', b),
