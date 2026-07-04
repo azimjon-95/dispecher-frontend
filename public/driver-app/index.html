@@ -240,6 +240,15 @@ const fullName   = `${firstName} ${lastName}`.trim()
 document.getElementById('driverName').textContent = fullName
 document.getElementById('driverId').textContent   = `Telegram ID: ${telegramId}`
 
+// ── WebApp ochildi — serverga xabar ──
+if (telegramId !== 'unknown') {
+  fetch(`${API_BASE}/api/driver/webapp-open`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ telegramId }),
+  }).catch(() => {})
+}
+
 let watchId     = null
 let isTracking  = false
 let signalCount = 0
@@ -282,12 +291,10 @@ function stopTracking() {
   clearTimeout(sendTimer)
   lastCoords = null
 
-  // Serverga offline deb belgilash
-  fetch(`${API_BASE}/api/driver/offline`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ telegramId }),
-  }).catch(() => {})
+  // Serverga offline + webapp-close deb belgilash
+  const body = JSON.stringify({ telegramId })
+  fetch(`${API_BASE}/api/driver/offline`,      { method:'POST', headers:{'Content-Type':'application/json'}, body }).catch(() => {})
+  fetch(`${API_BASE}/api/driver/webapp-close`, { method:'POST', headers:{'Content-Type':'application/json'}, body }).catch(() => {})
 
   updateUI(false)
   log('⏹ GPS to\'xtatildi')
