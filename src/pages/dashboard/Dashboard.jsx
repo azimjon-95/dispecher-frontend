@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { MdRefresh, MdAdd, MdChevronRight, MdTrendingUp, MdTrendingDown } from 'react-icons/md'
 import { api, fmt } from '../../services/api.js'
+import { useStore } from '../../store/appStore.js'
 import { Modal, toast } from '../../components/ui/UI.jsx'
 import './Dashboard.css'
 import { useLang } from '../../i18n/index.jsx'
@@ -512,8 +513,7 @@ function DeskDashboard({ stats, finance, attendance, debtOrders, loading, onNav,
 
 /* ══ ROOT ══ */
 export default function Dashboard({ onNav }) {
-  const [stats,      setStats]      = useState(null)
-  const [finance,    setFinance]    = useState([])
+  const { stats, finance, orders, loaded, loading: storeLoading } = useStore ? useStore() : {}
   const [attendance, setAttendance] = useState({ total:0, present:0, absent:0, list:[] })
   const [debtOrders, setDebtOrders] = useState([])
   const [loading,    setLoading]    = useState(true)
@@ -525,32 +525,36 @@ export default function Dashboard({ onNav }) {
   const [newOrder,   setNewOrder]   = useState({ customer:'', phone:'', description:'' })
   const [newFin,     setNewFin]     = useState({ type:'kirim', description:'', amount:'', category:'Buyurtma' })
 
+  // Store data kelganda loading tugaydi
   useEffect(() => {
-    load()
+    if (loaded) setLoading(false)
+  }, [loaded])
+
+  // Orders'dan qarzli buyurtmalar
+  useEffect(() => {
+    if (orders?.length) {
+      setDebtOrders(orders.filter(o=>o.debt>0||(o.status==='tugallandi'&&!o.paid&&o.total>0)).slice(0,5))
+    }
+  }, [orders])
+
+  useEffect(() => {
+    // Davomat alohida — tez-tez o'zgaradi
+    api.getAttendanceToday().then(r => { if (r) setAttendance(r) }).catch(()=>{})
     const fn = () => setMobile(isMob())
     window.addEventListener('resize', fn)
     return () => window.removeEventListener('resize', fn)
   }, [])
 
-  // Real-time: dashboard har 15s yoki yangi data kelganda
-  useRealtime(['refresh:orders','refresh:dashboard','refresh:all'], () => { load() })
+  useRealtime(['refresh:orders','refresh:dashboard','refresh:all'], () => {
+    // Store o'zi yangilaydi — faqat davomat alohida
+    api.getAttendanceToday().then(r => { if (r) setAttendance(r) }).catch(()=>{})
+  })
 
   async function load() {
     setLoading(true)
     try {
-      const [stR,finR,attR,ordR,botR] = await Promise.allSettled([
-        api.getDashStats(), api.getFinance(), api.getAttendanceToday(), api.getOrders(),
-        api.getTgBotStatus(),
-      ])
-      if (stR.status==='fulfilled') {
-        const st = stR.value || {}
-        const bot = botR.status==='fulfilled' ? botR.value : {}
-        setStats({ ...st, botActive: !!(bot?.BOT_TOKEN || bot?._botActive) })
-      }
-      setFinance(Array.isArray(finR.value) ? finR.value : finR.value?.data||[])
+      const [attR] = await Promise.allSettled([api.getAttendanceToday()])
       if (attR.status==='fulfilled') setAttendance(attR.value)
-      const ords = Array.isArray(ordR.value) ? ordR.value : ordR.value?.data||[]
-      setDebtOrders(ords.filter(o=>o.debt>0||(o.status==='tugallandi'&&!o.paid&&o.total>0)).slice(0,5))
     } catch(e){ console.error(e) }
     setLoading(false)
   }

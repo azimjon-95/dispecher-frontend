@@ -7,7 +7,7 @@ import { NetworkToast } from './hooks/useNetworkStatus.jsx'
 import MobileTabBar from './components/layout/MobileTabBar.jsx'
 import { api, norm } from './services/api.js'
 import { bus } from './services/realtime.js'
-import { LangProvider } from './i18n/index.jsx'
+import { bootstrap } from './store/appStore.js'
 
 // Lazy load — faqat bosilganda yuklanadi, hammasi bir vaqtda emas
 const Dashboard   = lazy(() => import('./pages/dashboard/Dashboard.jsx'))
@@ -191,6 +191,8 @@ export default function App() {
   function handleLogin(userData) {
     setUser(userData)
     try { localStorage.setItem('user', JSON.stringify(userData)) } catch {}
+    // Login bo'lgandan keyin darhol barcha data yuklanadi — bitta so'rovda
+    setTimeout(() => bootstrap(), 100)
   }
 
   function handleLogout() {
