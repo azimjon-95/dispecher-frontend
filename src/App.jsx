@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense, memo } from 'react'
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import Sidebar   from './components/layout/Sidebar.jsx'
 import Navbar    from './components/layout/Navbar.jsx'
 import { ToastContainer } from './components/ui/UI.jsx'
@@ -7,6 +7,7 @@ import { NetworkToast } from './hooks/useNetworkStatus.jsx'
 import MobileTabBar from './components/layout/MobileTabBar.jsx'
 import { api, norm } from './services/api.js'
 import { bus } from './services/realtime.js'
+import { LangProvider } from './i18n/index.jsx'
 import { bootstrap } from './store/appStore.js'
 
 // Lazy load — faqat bosilganda yuklanadi, hammasi bir vaqtda emas
@@ -77,6 +78,12 @@ export default function App() {
 
   // useNetworkStatus o'z holatini o'zi boshqaradi (NetworkToast komponenti orqali),
   // App.jsx darajasida alohida ushlab turish shart emas
+
+  // Sahifa yangilanganida (token bor bo'lsa) darhol bootstrap
+  useEffect(() => {
+    if (user) bootstrap()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)

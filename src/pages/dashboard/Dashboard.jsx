@@ -513,7 +513,7 @@ function DeskDashboard({ stats, finance, attendance, debtOrders, loading, onNav,
 
 /* ══ ROOT ══ */
 export default function Dashboard({ onNav }) {
-  const { stats, finance, orders, loaded, loading: storeLoading } = useStore ? useStore() : {}
+  const { stats = {}, finance = [], orders = [], loaded = false } = useStore()
   const [attendance, setAttendance] = useState({ total:0, present:0, absent:0, list:[] })
   const [debtOrders, setDebtOrders] = useState([])
   const [loading,    setLoading]    = useState(true)

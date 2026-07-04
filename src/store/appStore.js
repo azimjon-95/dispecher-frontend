@@ -52,7 +52,9 @@ function setState(patch) {
 
 // ── Token olish ──
 function getToken() {
-  try { return JSON.parse(localStorage.getItem('crm_user') || '{}').token || '' } catch { return '' }
+  try {
+    return localStorage.getItem('token') || ''
+  } catch { return '' }
 }
 
 // ── Bitta resource'ni qayta yuklovchi helper ──
