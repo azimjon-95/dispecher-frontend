@@ -1,24 +1,26 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, lazy, Suspense, memo } from 'react'
 import Sidebar   from './components/layout/Sidebar.jsx'
 import Navbar    from './components/layout/Navbar.jsx'
 import { ToastContainer } from './components/ui/UI.jsx'
 import Login     from './pages/login/Login.jsx'
-import Dashboard from './pages/dashboard/Dashboard.jsx'
-import Orders    from './pages/orders/Orders.jsx'
-import Transport from './pages/transport/Transport.jsx'
-import Workers   from './pages/workers/Workers.jsx'
-import Employees from './pages/employees/Employees.jsx'
-import Customers from './pages/customers/Customers.jsx'
-import Finance   from './pages/finance/Finance.jsx'
-import Salary    from './pages/salary/Salary.jsx'
-import Archive   from './pages/archive/Archive.jsx'
-import Settings     from './pages/settings/Settings.jsx'
-import HomeService  from './pages/homeservice/HomeService.jsx'
 import { NetworkToast } from './hooks/useNetworkStatus.jsx'
 import MobileTabBar from './components/layout/MobileTabBar.jsx'
 import { api, norm } from './services/api.js'
 import { bus } from './services/realtime.js'
 import { LangProvider } from './i18n/index.jsx'
+
+// Lazy load — faqat bosilganda yuklanadi, hammasi bir vaqtda emas
+const Dashboard   = lazy(() => import('./pages/dashboard/Dashboard.jsx'))
+const Orders      = lazy(() => import('./pages/orders/Orders.jsx'))
+const Transport   = lazy(() => import('./pages/transport/Transport.jsx'))
+const Workers     = lazy(() => import('./pages/workers/Workers.jsx'))
+const Employees   = lazy(() => import('./pages/employees/Employees.jsx'))
+const Customers   = lazy(() => import('./pages/customers/Customers.jsx'))
+const Finance     = lazy(() => import('./pages/finance/Finance.jsx'))
+const Salary      = lazy(() => import('./pages/salary/Salary.jsx'))
+const Archive     = lazy(() => import('./pages/archive/Archive.jsx'))
+const Settings    = lazy(() => import('./pages/settings/Settings.jsx'))
+const HomeService = lazy(() => import('./pages/homeservice/HomeService.jsx'))
 
 function getSavedPage() {
   try { return localStorage.getItem('activePage') || 'dashboard' } catch { return 'dashboard' }
@@ -199,18 +201,22 @@ export default function App() {
 
   if (!user) return <Login onLogin={handleLogin} />
 
+  // Sahifalar — faqat aktiv sahifa render bo'ladi
+  // useMemo: navigate o'zgarmasa qayta yaratilmaydi
+  const Fallback = <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'60vh',color:'var(--text2)',fontSize:14}}>Yuklanmoqda...</div>
+
   const PAGES = {
-    dashboard: <Dashboard onNav={navigate} />,
-    orders:    <Orders />,
-    transport: <Transport />,
-    workers:   <Workers />,
-    employees: <Employees />,
-    customers: <Customers />,
-    finance:   <Finance />,
-    salary:    <Salary />,
-    archive:   <Archive />,
-    settings:    <Settings />,
-    homeservice: <HomeService />,
+    dashboard:   <Suspense fallback={Fallback}><Dashboard onNav={navigate} /></Suspense>,
+    orders:      <Suspense fallback={Fallback}><Orders /></Suspense>,
+    transport:   <Suspense fallback={Fallback}><Transport /></Suspense>,
+    workers:     <Suspense fallback={Fallback}><Workers /></Suspense>,
+    employees:   <Suspense fallback={Fallback}><Employees /></Suspense>,
+    customers:   <Suspense fallback={Fallback}><Customers /></Suspense>,
+    finance:     <Suspense fallback={Fallback}><Finance /></Suspense>,
+    salary:      <Suspense fallback={Fallback}><Salary /></Suspense>,
+    archive:     <Suspense fallback={Fallback}><Archive /></Suspense>,
+    settings:    <Suspense fallback={Fallback}><Settings /></Suspense>,
+    homeservice: <Suspense fallback={Fallback}><HomeService /></Suspense>,
   }
 
   return (

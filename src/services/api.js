@@ -8,7 +8,15 @@ import axios from 'axios'
 
 const BASE_URL = 'https://gilam.medme.uz'
 
-const http = axios.create({ baseURL: BASE_URL + '/api', timeout: 12000 })
+const http = axios.create({ baseURL: BASE_URL + '/api', timeout: 8000 })
+
+// ── Sahifa cache (sessionStorage) — tezkor ko'rsatish uchun
+// Foydalanuvchi sahifaga o'tganda darhol eski ma'lumot ko'rinadi,
+// keyin server'dan yangi ma'lumot kelgach yangilanadi (stale-while-revalidate)
+const pageCache = {
+  get: (key) => { try { const d = sessionStorage.getItem('pc:'+key); return d ? JSON.parse(d) : null } catch { return null } },
+  set: (key, val) => { try { sessionStorage.setItem('pc:'+key, JSON.stringify(val)) } catch {} },
+}
 
 http.interceptors.request.use(cfg => {
   const t = localStorage.getItem('token')
@@ -43,6 +51,8 @@ window.addEventListener('online',  () => { _online = true })
 window.addEventListener('offline', () => { _online = false })
 export function isOnline() { return _online }
 
+export { pageCache, withRetry }
+
 /* ── Normalize → always array ── */
 export function norm(res) {
   if (Array.isArray(res))       return res
@@ -51,12 +61,12 @@ export function norm(res) {
 }
 
 /* ── Retry helper — vaqtinchalik tarmoq xatolarida qayta urinish ── */
-async function withRetry(fn, retries = 3, delay = 800) {
+async function withRetry(fn, retries = 2, delay = 500) {
   for (let i = 0; i < retries; i++) {
     try { return await fn() }
     catch (e) {
       if (i === retries - 1) throw e
-      if (e?.response?.status < 500 && e?.response?.status >= 400) throw e
+      if (e?.response?.status >= 400 && e?.response?.status < 500) throw e
       await new Promise(r => setTimeout(r, delay * (i + 1)))
     }
   }

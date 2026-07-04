@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { toast } from '../components/ui/UI.jsx'
 import { bus } from '../services/realtime.js'
+import { pageCache, withRetry } from '../services/api.js'
 
 /* normalize: API { data:[] } yoki [] ikkalasini ham qabul qiladi */
 function normalize(res) {
@@ -9,17 +10,6 @@ function normalize(res) {
   if (Array.isArray(res.data)) return res.data
   if (Array.isArray(res.items)) return res.items
   return []
-}
-
-/* retry helper: xato bo'lsa N marta qayta urinadi */
-async function withRetry(fn, retries = 3, baseDelay = 800) {
-  for (let i = 0; i < retries; i++) {
-    try { return await fn() }
-    catch (e) {
-      if (i === retries - 1) throw e
-      await new Promise(r => setTimeout(r, baseDelay * (i + 1)))
-    }
-  }
 }
 
 /**
@@ -40,19 +30,34 @@ export function useCRUD(apiFns, searchKeys = [], pageSize = 10, resourceType = n
   const [selIds,  setSelIds]  = useState([])
 
   const load = useCallback(async () => {
-    setLoading(true); setError(null)
+    // 1. Avval sessionStorage'dan (stale) ma'lumot ko'rsatamiz — darhol
+    if (resourceType) {
+      const stale = pageCache.get(resourceType)
+      if (stale?.length) {
+        setData(stale)
+        setLoading(false) // darhol ko'rsatiladi
+      }
+    }
+
+    // 2. Server'dan yangi ma'lumot olamiz (background)
+    setLoading(true)
+    setError(null)
     try {
-      const res = await withRetry(() => apiFns.getAll(), 3, 800)
-      setData(normalize(res))
+      const res = await withRetry(() => apiFns.getAll(), 2, 500)
+      const fresh = normalize(res)
+      setData(fresh)
+      // Cache ga saqlaymiz — keyingi ochilishda tezkor
+      if (resourceType) pageCache.set(resourceType, fresh)
     } catch (e) {
       const msg = e?.message || String(e) || 'Server bilan aloqa yo\'q'
       setError(msg)
       toast(msg, 'err')
-      setData([])
+      if (!data.length) setData([])
     } finally {
       setLoading(false)
     }
-  }, [apiFns])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => { load() }, [])
 
