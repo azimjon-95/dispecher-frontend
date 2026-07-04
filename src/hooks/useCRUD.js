@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { toast } from '../components/ui/UI.jsx'
 import { bus } from '../services/realtime.js'
 import { pageCache, withRetry } from '../services/api.js'
+import { store } from '../store/appStore.js'
 
 /* normalize: API { data:[] } yoki [] ikkalasini ham qabul qiladi */
 function normalize(res) {
@@ -30,29 +31,32 @@ export function useCRUD(apiFns, searchKeys = [], pageSize = 10, resourceType = n
   const [selIds,  setSelIds]  = useState([])
 
   const load = useCallback(async () => {
-    // 1. Avval sessionStorage'dan (stale) ma'lumot ko'rsatamiz — darhol
+    // 1. Store dan — agar bootstrap allaqachon yuklab bo'lgan bo'lsa
     if (resourceType) {
-      const stale = pageCache.get(resourceType)
-      if (stale?.length) {
-        setData(stale)
-        setLoading(false) // darhol ko'rsatiladi
+      const storeState = store.getState ? store.getState() : null
+      const storeData  = storeState?.[resourceType]
+      if (storeData?.length) {
+        setData(storeData)
+        setLoading(false)
+        return   // Store da bor — API chaqirmaydi
       }
+      // sessionStorage'dan stale ko'rsatish
+      const stale = pageCache.get(resourceType)
+      if (stale?.length) { setData(stale); setLoading(false) }
     }
 
-    // 2. Server'dan yangi ma'lumot olamiz (background)
+    // 2. API dan yuklaymiz (store bo'sh bo'lsa yoki resourceType yo'q)
     setLoading(true)
     setError(null)
     try {
-      const res = await withRetry(() => apiFns.getAll(), 2, 500)
+      const res   = await withRetry(() => apiFns.getAll(), 2, 500)
       const fresh = normalize(res)
       setData(fresh)
-      // Cache ga saqlaymiz — keyingi ochilishda tezkor
       if (resourceType) pageCache.set(resourceType, fresh)
     } catch (e) {
-      const msg = e?.message || String(e) || 'Server bilan aloqa yo\'q'
+      const msg = e?.message || 'Server bilan aloqa yo\'q'
       setError(msg)
       toast(msg, 'err')
-      if (!data.length) setData([])
     } finally {
       setLoading(false)
     }
@@ -61,15 +65,19 @@ export function useCRUD(apiFns, searchKeys = [], pageSize = 10, resourceType = n
 
   useEffect(() => { load() }, [])
 
-  /* Boshqa client (admin yoki bot) shu turdagi datani o'zgartirsa —
-     Socket.IO orqali xabar keladi va ro'yxat sokin qayta yuklanadi.
-     Internet uzilib qaytganda ham eskirgan datani yangilab qo'yadi. */
+  /* Store yangilanganda yoki Socket.IO event kelganda — store'dan oladi */
   useEffect(() => {
     if (!resourceType) return
-    const off1 = bus.on('refresh:' + resourceType, () => load())
-    const off2 = bus.on('network:online', () => load())
-    return () => { off1(); off2() }
-  }, [resourceType, load])
+    const syncFromStore = () => {
+      const d = store.getState()[resourceType]
+      if (d?.length) { setData(d); setLoading(false) }
+    }
+    const off1 = bus.on('refresh:' + resourceType, syncFromStore)
+    const off2 = bus.on('data:updated:' + resourceType, syncFromStore)
+    const off3 = bus.on('network:online', load)
+    return () => { off1(); off2(); off3() }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resourceType])
 
   const filtered = useMemo(() => {
     if (!Array.isArray(data)) return []
