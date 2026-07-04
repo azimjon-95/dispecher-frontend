@@ -73,6 +73,8 @@ function PhonePopover({ phone, name }) {
 const ROLES    = ['Dispecher','Shafyor','Ishchi','Buxgalter','Menejer','Xavfsizlik hodimi','Farrosh','Elektrik','Texnik']
 const SECTIONS = ['yuvish','quritish','bezak','hammasi']
 const SALARY_TYPES = ['Oylik','Kunlik','Ish bayi']
+const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'tartibcrmbot'
+
 const EMPTY = { name:'', phone:'', role:'Ishchi', section:'hammasi', pin:'', status:'active', salary:'', salaryType:'Oylik', dailyRate:'', perItemRate:'' }
 
 /* Calculate monthly earnings based on salary type */
@@ -94,13 +96,25 @@ export default function Employees() {
   )
   const [modal, setModal] = useState(null)
   const [form,  setForm]  = useState(EMPTY)
-  const [delId, setDelId] = useState(null)
+  const [delId,    setDelId]    = useState(null)
+  const [pinModal, setPinModal] = useState(null)   // { name, pin, botUrl }
+  const [pinLoad,  setPinLoad]  = useState(null)
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
 
-  function resetPin() {
-    const pin = String(Math.floor(1000 + Math.random() * 9000))
-    setForm(p => ({ ...p, pin }))
-    toast(`Yangi PIN: ${pin}`, 'inf')
+  async function generatePin(row, e) {
+    e?.stopPropagation()
+    setPinLoad(row._id)
+    try {
+      const r = await api.generatePinEmp(row._id)
+      setPinModal({ name:r.name, pin:r.pin, botUrl:`https://t.me/${BOT_USERNAME}` })
+      crud.reload()
+    } catch (err) { toast(err.message || 'PIN yaratishda xato', 'err') }
+    finally { setPinLoad(null) }
+  }
+
+  function copyPin(pin) {
+    navigator.clipboard?.writeText(pin).catch(()=>{})
+    toast('📋 PIN nusxa olindi!', 'ok')
   }
 
   async function save() {
@@ -134,6 +148,10 @@ export default function Employees() {
     { k:'balance',    l:"To'plangan",  r:v=>(
       <span className="mono" style={{color:v>0?'var(--green)':'var(--text3)',fontWeight:700}}>{fmt.currency(v||0)}</span>
     )},
+    { k:'pin', l:'PIN', r:(v)=> v
+      ? <span style={{fontFamily:'monospace',fontWeight:800,fontSize:13,color:'var(--purple)',letterSpacing:2,background:'rgba(139,92,246,.1)',padding:'2px 8px',borderRadius:6}}>{v}</span>
+      : <span style={{color:'var(--text3)',fontSize:11}}>—</span>
+    },
     { k:'tgChatId',   l:'TG Bot',      r:(v,row)=> v
       ? <span style={{color:'var(--green)',fontSize:11}}>✅ Ulangan</span>
       : row.role==='Ishchi'
@@ -149,9 +167,10 @@ export default function Employees() {
         <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setForm({...row,salaryType:row.salaryType||'Oylik'});setModal('edit')}}>
           <MdEdit size={15}/>
         </button>
-        <button className="btn btn-ghost btn-sm" style={{fontSize:11,color:'var(--purple)'}}
-          onClick={async e=>{e.stopPropagation();try{const r=await api.generatePinEmp(row._id);toast(`📌 ${r.name} PIN: ${r.pin}`,'ok')}catch(e2){toast(e2.message,'err')}}}>
-          🔑 PIN
+        <button className="btn btn-ghost btn-sm" style={{fontSize:11,fontWeight:700,color:row.pin?'var(--purple)':'var(--amber)',borderColor:row.pin?'rgba(139,92,246,.3)':'rgba(245,158,11,.3)',background:row.pin?'rgba(139,92,246,.08)':'rgba(245,158,11,.08)',minWidth:60}}
+          disabled={pinLoad===row._id}
+          onClick={e=>generatePin(row,e)}>
+          {pinLoad===row._id ? '...' : row.pin ? '🔄 PIN' : '🔑 PIN'}
         </button>
         <button className="btn btn-ghost btn-icon btn-sm" style={{color:'var(--red)'}} onClick={()=>setDelId(row._id)}>
           <MdDelete size={15}/>
