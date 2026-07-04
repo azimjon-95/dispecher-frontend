@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Tartib CRM — GPS Tracking</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  :root {
+    --bg: #0a0e16;
+    --bg2: #161b22;
+    --border: rgba(255,255,255,.08);
+    --green: #22c55e;
+    --red: #f85149;
+    --blue: #3b82f6;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --purple: #8b5cf6;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px 40px;
+    gap: 16px;
+  }
+
+  /* ── Status Card ── */
+  .status-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .pulse-ring {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: rgba(34,197,94,.15);
+    border: 2px solid var(--green);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    position: relative;
+  }
+  .pulse-ring::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px solid var(--green);
+    opacity: 0.4;
+    animation: pulse 2s infinite;
+  }
+  .pulse-ring.off {
+    background: rgba(248,81,73,.15);
+    border-color: var(--red);
+  }
+  .pulse-ring.off::before { border-color: var(--red); animation: none; }
+
+  @keyframes pulse {
+    0%   { transform: scale(1); opacity: 0.4; }
+    50%  { transform: scale(1.15); opacity: 0.1; }
+    100% { transform: scale(1); opacity: 0.4; }
+  }
+
+  .status-icon { font-size: 32px; }
+  .status-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+  .status-sub   { font-size: 13px; color: var(--text2); }
+
+  /* ── Info Grid ── */
+  .info-grid {
+    width: 100%;
+    max-width: 380px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .info-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .info-lbl { font-size: 10px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .info-val  { font-size: 18px; font-weight: 800; font-family: monospace; }
+  .info-val.green  { color: var(--green); }
+  .info-val.red    { color: var(--red); }
+  .info-val.blue   { color: var(--blue); }
+  .info-val.purple { color: var(--purple); }
+
+  /* ── Main Button ── */
+  .main-btn {
+    width: 100%; max-width: 380px;
+    padding: 18px;
+    border-radius: 16px;
+    border: none;
+    font-size: 16px; font-weight: 800;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .main-btn:active { transform: scale(.97); }
+  .main-btn.start {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+  }
+  .main-btn.stop {
+    background: linear-gradient(135deg, #f85149, #dc2626);
+    color: #fff;
+  }
+  .main-btn:disabled {
+    background: var(--bg2);
+    color: var(--text2);
+    cursor: not-allowed;
+    border: 1px solid var(--border);
+  }
+
+  /* ── Log ── */
+  .log-card {
+    width: 100%; max-width: 380px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+  .log-title { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .log-line  { font-size: 11px; font-family: monospace; color: var(--text2); padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+  .log-line.ok  { color: var(--green); }
+  .log-line.err { color: var(--red); }
+
+  /* ── Driver info ── */
+  .driver-card {
+    width: 100%; max-width: 380px;
+    background: rgba(59,130,246,.08);
+    border: 1px solid rgba(59,130,246,.2);
+    border-radius: 16px;
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .driver-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(59,130,246,.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .driver-name { font-size: 15px; font-weight: 800; }
+  .driver-sub  { font-size: 12px; color: var(--text2); margin-top: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Driver info (Telegram'dan olinadi) -->
+<div class="driver-card" id="driverCard">
+  <div class="driver-avatar">🚗</div>
+  <div>
+    <div class="driver-name" id="driverName">Yuklanmoqda...</div>
+    <div class="driver-sub" id="driverId">Telegram ID aniqlanmoqda</div>
+  </div>
+</div>
+
+<!-- Status -->
+<div class="status-card">
+  <div class="pulse-ring off" id="pulseRing">
+    <span class="status-icon" id="statusIcon">📍</span>
+  </div>
+  <div class="status-title" id="statusTitle">GPS o'chirilgan</div>
+  <div class="status-sub"   id="statusSub">Boshlash tugmasini bosing</div>
+</div>
+
+<!-- Info grid -->
+<div class="info-grid">
+  <div class="info-box">
+    <div class="info-lbl">Tezlik</div>
+    <div class="info-val blue" id="speed">— km/h</div>
+  </div>
+  <div class="info-box">
+    <div class="info-lbl">Aniqlik</div>
+    <div class="info-val purple" id="accuracy">— m</div>
+  </div>
+  <div class="info-box">
+    <div class="info-lbl">Signal</div>
+    <div class="info-val green" id="signalCount">0</div>
+  </div>
+  <div class="info-box">
+    <div class="info-lbl">Oxirgi yangilanish</div>
+    <div class="info-val" id="lastUpdate" style="font-size:13px">—</div>
+  </div>
+</div>
+
+<!-- Main button -->
+<button class="main-btn start" id="mainBtn" onclick="toggleTracking()">
+  <span>▶️</span> GPS Yoqish
+</button>
+
+<!-- Log -->
+<div class="log-card">
+  <div class="log-title">📡 Signal jurnali</div>
+  <div id="logList"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  TARTIB CRM — DRIVER WEBAPP GPS
+//  Telegram Mini App sifatida ishlaydi.
+//  navigator.geolocation.watchPosition — GPS kuzatuv
+//  Har yangi koordinatada POST /api/driver/live-location
+// ══════════════════════════════════════
+
+const API_BASE = 'https://gilam.medme.uz'
+
+// Telegram WebApp init
+const tg = window.Telegram?.WebApp
+if (tg) {
+  tg.ready()
+  tg.expand()
+  tg.setHeaderColor('#0a0e16')
+  tg.setBackgroundColor('#0a0e16')
+}
+
+// Telegram foydalanuvchi ma'lumotlari
+const user       = tg?.initDataUnsafe?.user || {}
+const telegramId = String(user.id || 'unknown')
+const firstName  = user.first_name || 'Shafyor'
+const lastName   = user.last_name  || ''
+const fullName   = `${firstName} ${lastName}`.trim()
+
+// UI ni to'ldirish
+document.getElementById('driverName').textContent = fullName
+document.getElementById('driverId').textContent   = `Telegram ID: ${telegramId}`
+
+let watchId     = null
+let isTracking  = false
+let signalCount = 0
+let sendTimer   = null
+let lastCoords  = null
+
+// ── Toggle tracking ──
+function toggleTracking() {
+  if (isTracking) stopTracking()
+  else            startTracking()
+}
+
+function startTracking() {
+  if (!navigator.geolocation) {
+    log('❌ GPS qo\'llab-quvvatlanmaydi', 'err')
+    return
+  }
+
+  isTracking = true
+  updateUI(true)
+  log('▶️ GPS kuzatuv boshlandi')
+
+  watchId = navigator.geolocation.watchPosition(
+    onPosition,
+    onError,
+    {
+      enableHighAccuracy: true,
+      timeout:            15000,
+      maximumAge:         0,
+    }
+  )
+}
+
+function stopTracking() {
+  isTracking = false
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId)
+    watchId = null
+  }
+  clearTimeout(sendTimer)
+  lastCoords = null
+
+  // Serverga offline deb belgilash
+  fetch(`${API_BASE}/api/driver/offline`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ telegramId }),
+  }).catch(() => {})
+
+  updateUI(false)
+  log('⏹ GPS to\'xtatildi')
+}
+
+// ── GPS pozitsiya keldi ──
+function onPosition(pos) {
+  const { latitude, longitude, speed, accuracy } = pos.coords
+  lastCoords = { latitude, longitude, speed, accuracy }
+
+  // UI yangilash
+  document.getElementById('speed').textContent    = speed ? `${Math.round(speed * 3.6)} km/h` : '0 km/h'
+  document.getElementById('accuracy').textContent = accuracy ? `${Math.round(accuracy)} m` : '— m'
+  document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('uz-UZ', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
+
+  // Serverga yuborish
+  sendLocation(latitude, longitude, speed, accuracy)
+}
+
+function onError(err) {
+  const msgs = {
+    1: 'GPS ruxsati berilmagan — sozlamalardan ruxsat bering',
+    2: 'GPS signal topilmadi — ochiq joyga chiqing',
+    3: 'GPS vaqt tugadi — qayta urinib ko\'ring',
+  }
+  log(`❌ ${msgs[err.code] || err.message}`, 'err')
+}
+
+// ── Serverga yuborish ──
+async function sendLocation(lat, lon, speed, accuracy) {
+  signalCount++
+  document.getElementById('signalCount').textContent = signalCount
+
+  try {
+    const res = await fetch(`${API_BASE}/api/driver/live-location`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId,
+        driverName: fullName,
+        latitude:   lat,
+        longitude:  lon,
+        speed:      speed ? parseFloat((speed * 3.6).toFixed(1)) : 0,
+        accuracy:   accuracy ? parseFloat(accuracy.toFixed(1)) : null,
+        initData:   tg?.initData || '',
+      }),
+    })
+
+    if (res.ok) {
+      log(`✅ ${lat.toFixed(5)}, ${lon.toFixed(5)}  ${speed ? Math.round(speed * 3.6) + 'km/h' : ''}`, 'ok')
+    } else {
+      log(`⚠️ Server xato: ${res.status}`, 'err')
+    }
+  } catch (e) {
+    log(`❌ Yuborishda xato: ${e.message}`, 'err')
+  }
+}
+
+// ── UI yangilash ──
+function updateUI(active) {
+  const ring  = document.getElementById('pulseRing')
+  const btn   = document.getElementById('mainBtn')
+  const title = document.getElementById('statusTitle')
+  const sub   = document.getElementById('statusSub')
+
+  if (active) {
+    ring.classList.remove('off')
+    btn.className   = 'main-btn stop'
+    btn.innerHTML   = '<span>⏹</span> GPS O\'chirish'
+    title.textContent = 'GPS faol — kuzatuv ketmoqda'
+    sub.textContent   = 'CRM xaritasida harakatlaringiz ko\'rinadi'
+  } else {
+    ring.classList.add('off')
+    btn.className   = 'main-btn start'
+    btn.innerHTML   = '<span>▶️</span> GPS Yoqish'
+    title.textContent = 'GPS o\'chirilgan'
+    sub.textContent   = 'Boshlash tugmasini bosing'
+    document.getElementById('speed').textContent    = '— km/h'
+    document.getElementById('accuracy').textContent = '— m'
+    document.getElementById('lastUpdate').textContent = '—'
+  }
+}
+
+// ── Log ──
+function log(msg, type = '') {
+  const list  = document.getElementById('logList')
+  const time  = new Date().toLocaleTimeString('uz-UZ', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
+  const div   = document.createElement('div')
+  div.className = `log-line ${type}`
+  div.textContent = `${time}  ${msg}`
+  list.insertBefore(div, list.firstChild)
+  // Max 30 ta log
+  while (list.children.length > 30) list.removeChild(list.lastChild)
+}
+
+// ── Sahifa yopilganda offline qilish ──
+window.addEventListener('beforeunload', () => {
+  if (isTracking) stopTracking()
+})
+
+// Telegram back button
+if (tg) {
+  tg.BackButton.show()
+  tg.BackButton.onClick(() => {
+    if (isTracking) stopTracking()
+    tg.close()
+  })
+}
+
+log('📱 Driver WebApp tayyor')
+</script>
+</body>
+</html>
