@@ -202,8 +202,8 @@ function TaskPanel({ title, icon, color, type, apiFns, drivers, allOrders, onDri
     const dr = drivers.find(d=>d._id===selDrv)
     if (!dr) return
     try {
-      await apiFns.update(assign._id, { driver: dr.name })
-      setRows(p=>p.map(r=>r._id===assign._id?{...r,driver:dr.name}:r))
+      await apiFns.update(assign._id, { driver: dr.name, driverId: dr._id })
+      setRows(p=>p.map(r=>r._id===assign._id?{...r,driver:dr.name,driverId:dr._id}:r))
       onDriverChange?.(dr.name, 'band')
       // Send TG to driver
       if (dr.phone) {
@@ -546,7 +546,7 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders, company
     if (!selDrv || !assignOrder) return
     const dr = drivers.find(d=>d._id===selDrv)
     try {
-      await api.updateOrder(assignOrder._id, { driver: dr.name })
+      await api.updateOrder(assignOrder._id, { driver: dr.name, driverId: dr._id })
       toast(`${dr.name} → ${assignOrder.number} biriktirildi ✅`, 'ok')
       if (dr.phone) {
         const msg = `🚗 Yangi topshiriq!\n📋 ${assignOrder.number}\n👤 ${assignOrder.customer}\n📍 ${assignOrder.address||''}`
@@ -699,8 +699,8 @@ function MobileTaskPanel({ type, color, apiFns, drivers, allOrders, onDriverChan
     const dr = drivers.find(d=>d._id===selDrv)
     if (!dr) return
     try {
-      await apiFns.update(assign._id, { driver: dr.name })
-      setRows(p=>p.map(r=>r._id===assign._id?{...r,driver:dr.name}:r))
+      await apiFns.update(assign._id, { driver: dr.name, driverId: dr._id })
+      setRows(p=>p.map(r=>r._id===assign._id?{...r,driver:dr.name,driverId:dr._id}:r))
       onDriverChange?.(dr.name, 'band')
       if (dr.phone) {
         const url = tgLink(dr.phone, `🚗 Yangi topshiriq!\n📋 ${assign.order}\n👤 ${assign.customer}\n📍 ${assign.address}`)
