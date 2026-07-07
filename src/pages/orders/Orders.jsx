@@ -598,16 +598,31 @@ export default function Orders() {
     } catch(e){toast(e.message,'err')}
   }
 
-  /* Assign driver */
+  /* Assign driver — Order GA ham, Pickup TASK GA ham biriktiradi
+     Telegram xabari backend pickup PUT da avtomatik ketadi */
   async function confirmAssignDriver() {
     if (!selDriver){toast('Shafyorni tanlang','err');return}
     const dr = drivers.find(d=>d._id===selDriver)
+    if (!dr) return
     try {
-      // STATUS O'ZGARMAYDI — faqat shafyor biriktiriladi
-      // "Yangi" dan "Qabul qilindi" ga o'tish faqat shafyor botda "Topshirdim" desa o'tadi
-      await api.updateOrder(assignModal._id, { driver: dr.name })
-      setOrders(p=>p.map(r=>r._id===assignModal._id ? {...r, driver:dr.name} : r))
-      toast(`${dr.name} biriktirildi ✅ — Shafyor olib kelganda Qabul qilindiga o'tadi`, 'ok')
+      // 1. Order yangilanadi
+      await api.updateOrder(assignModal._id, { driver: dr.name, driverId: dr._id })
+      setOrders(p=>p.map(r=>r._id===assignModal._id ? {...r, driver:dr.name, driverId:dr._id} : r))
+
+      // 2. Pickup task topiladi va yangilanadi (Telegram xabari shu yerda avtomatik ketadi)
+      try {
+        const res = await api.getPickup()
+        const allPickup = Array.isArray(res) ? res : (res?.data || [])
+        const ordTasks = allPickup.filter(t =>
+          String(t.orderId) === String(assignModal._id) ||
+          t.order === assignModal.number
+        )
+        for (const task of ordTasks) {
+          await api.updatePickup(task._id, { driver: dr.name, driverId: dr._id })
+        }
+      } catch {}
+
+      toast(`✅ ${dr.name} biriktirildi — bot xabari yuborildi`, 'ok')
       setAssignModal(null); setSelDriver(null)
     } catch(e){toast(e.message,'err')}
   }
