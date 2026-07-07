@@ -46,8 +46,8 @@ const NEXT_LABEL = (t={}) => ({
 })
 
 /* Helpers */
-const BOT_USERNAME      = import.meta.env.VITE_BOT_USERNAME          || 'tartibcrmbot'
-const CUSTOMER_BOT_NAME = import.meta.env.VITE_CUSTOMER_BOT_USERNAME  || 'tartibcrm_customer_bot'
+const BOT_USERNAME      = import.meta.env.VITE_BOT_USERNAME         || 'tartibcrmbot'
+const CUSTOMER_BOT_NAME = import.meta.env.VITE_CUSTOMER_BOT_USERNAME || 'tartibcrm_customer_bot'
 
 // Xarita tugmasi logikasi:
 // lat/lon BOR  → Yandex Maps (aniq manzil)
