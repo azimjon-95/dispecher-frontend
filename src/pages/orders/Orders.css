@@ -48,6 +48,7 @@
 .kba-advance { background:var(--greenbg);  color:var(--green);  border-color:rgba(63,185,80,.2); }
 .kba-tg      { background:#229ED9; color:#fff; }
 .kba-map     { background:var(--orangebg); color:var(--orange); border-color:rgba(240,136,62,.2); }
+.kba-bot     { background:rgba(34,158,217,.12); color:#229ED9; border-color:rgba(34,158,217,.3); }
 
 /* Empty */
 .kb-empty { padding:20px 12px; text-align:center; color:var(--text3); font-size:11px; }

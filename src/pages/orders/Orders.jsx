@@ -48,7 +48,26 @@ const NEXT_LABEL = (t={}) => ({
 /* Helpers */
 function mapLink(lat,lon,addr){
   if(lat&&lon) return `https://yandex.com/maps/?ll=${lon},${lat}&z=16&pt=${lon},${lat},pm2rdm`
-  return `https://yandex.com/maps/?text=${encodeURIComponent(addr||'')}`
+  if(addr)     return `https://yandex.com/maps/?text=${encodeURIComponent(addr)}`
+  return null
+}
+
+const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'tartibcrmbot'
+
+// Xarita tugmasi logikasi:
+// lat/lon bor → Yandex Maps
+// yo'q → bot deep link (mijozdan location so'rash)
+function getMapAction(order) {
+  if (order.lat && order.lon) {
+    return {
+      type: 'map',
+      url: `https://yandex.com/maps/?ll=${order.lon},${order.lat}&z=16&pt=${order.lon},${order.lat},pm2rdm`
+    }
+  }
+  // Bot deep link: /start cust_loc_ORDERID_CUSTID
+  const custId  = order.customerId || order.customer_id || ''
+  const deepLink = `https://t.me/${BOT_USERNAME}?start=cust_loc_${order._id}_${custId}`
+  return { type: 'bot', url: deepLink }
 }
 function TgIcon(){
   return <svg style={{width:11,height:11,flexShrink:0}} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248-2.012 9.48c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L6.26 14.4l-2.95-.924c-.64-.203-.654-.64.136-.948l11.52-4.443c.534-.194 1.001.13.596.163z"/></svg>
@@ -76,7 +95,6 @@ function KanbanCard({ order, col, drivers, employees, onDetail, onAdvance, onAss
   const colCfg  = COLUMNS(t).find(c=>c.key===col)
   const accent  = colCfg?.color || 'var(--accent)'
   const canAdv  = !!NEXT_STATUS[order.status]
-  const hasMap  = (order.lat&&order.lon) || order.address
   const needWorker = ['qabul_qilindi','yuvishda','qurishda','bezakda'].includes(order.status)
 
   return (
@@ -136,13 +154,25 @@ function KanbanCard({ order, col, drivers, employees, onDetail, onAdvance, onAss
           </button>
         )}
 
-        {/* Xarita */}
-        {hasMap && (
-          <a href={mapLink(order.lat,order.lon,order.address)} target="_blank" rel="noopener noreferrer"
-            className="kb-action-btn kba-map" onClick={e=>e.stopPropagation()}>
-            <MdLocationOn size={10}/> Xarita
-          </a>
-        )}
+        {/* Xarita — lat/lon bor → Yandex Maps, yo'q → bot link */}
+        {(() => {
+          const action = getMapAction(order)
+          const hasCoords = order.lat && order.lon
+          return (
+            <a href={action.url} target="_blank" rel="noopener noreferrer"
+              className={`kb-action-btn ${hasCoords ? 'kba-map' : 'kba-bot'}`}
+              onClick={e => e.stopPropagation()}
+              title={hasCoords
+                ? `Xarita: ${order.lat?.toFixed(4)}, ${order.lon?.toFixed(4)}`
+                : 'Mijozdan manzil so\'rash (Telegram bot)'}
+            >
+              {hasCoords
+                ? <><MdLocationOn size={10}/> Xarita</>
+                : <><MdLocationOn size={10}/> 📍 Manzil so'rash</>
+              }
+            </a>
+          )
+        })()}
       </div>
 
       {order.driver && (
