@@ -46,17 +46,16 @@ const NEXT_LABEL = (t={}) => ({
 })
 
 /* Helpers */
-function mapLink(lat,lon,addr){
+function mapLink(lat,lon){
   if(lat&&lon) return `https://yandex.com/maps/?ll=${lon},${lat}&z=16&pt=${lon},${lat},pm2rdm`
-  if(addr)     return `https://yandex.com/maps/?text=${encodeURIComponent(addr)}`
   return null
 }
 
 const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'tartibcrmbot'
 
 // Xarita tugmasi logikasi:
-// lat/lon bor → Yandex Maps
-// yo'q → bot deep link (mijozdan location so'rash)
+// lat/lon bor  → Yandex Maps (aniq manzil)
+// lat/lon yo'q → Bot deep link (mijozdan joylashuv so'rash)
 function getMapAction(order) {
   if (order.lat && order.lon) {
     return {
@@ -64,8 +63,8 @@ function getMapAction(order) {
       url: `https://yandex.com/maps/?ll=${order.lon},${order.lat}&z=16&pt=${order.lon},${order.lat},pm2rdm`
     }
   }
-  // Bot deep link: /start cust_loc_ORDERID_CUSTID
-  const custId  = order.customerId || order.customer_id || ''
+  // Bot deep link: mijoz /start bosadi → joylashuv so'raladi → saqlanadi
+  const custId   = order.customerId || order.customer_id || ''
   const deepLink = `https://t.me/${BOT_USERNAME}?start=cust_loc_${order._id}_${custId}`
   return { type: 'bot', url: deepLink }
 }
@@ -154,17 +153,17 @@ function KanbanCard({ order, col, drivers, employees, onDetail, onAdvance, onAss
           </button>
         )}
 
-        {/* Xarita — lat/lon bor → Yandex Maps, yo'q → bot link */}
+        {/* Xarita — lat/lon bor → Yandex Maps, yo'q → bot orqali manzil so'rash */}
         {(() => {
-          const action = getMapAction(order)
+          const action    = getMapAction(order)
           const hasCoords = order.lat && order.lon
           return (
             <a href={action.url} target="_blank" rel="noopener noreferrer"
               className={`kb-action-btn ${hasCoords ? 'kba-map' : 'kba-bot'}`}
               onClick={e => e.stopPropagation()}
               title={hasCoords
-                ? `Xarita: ${order.lat?.toFixed(4)}, ${order.lon?.toFixed(4)}`
-                : 'Mijozdan manzil so\'rash (Telegram bot)'}
+                ? `Yandex Maps: ${order.lat?.toFixed(4)}, ${order.lon?.toFixed(4)}`
+                : 'Botga o\'tib manzilini yuboring'}
             >
               {hasCoords
                 ? <><MdLocationOn size={10}/> Xarita</>
