@@ -46,16 +46,12 @@ const NEXT_LABEL = (t={}) => ({
 })
 
 /* Helpers */
-function mapLink(lat,lon){
-  if(lat&&lon) return `https://yandex.com/maps/?ll=${lon},${lat}&z=16&pt=${lon},${lat},pm2rdm`
-  return null
-}
-
-const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'tartibcrmbot'
+const BOT_USERNAME      = import.meta.env.VITE_BOT_USERNAME          || 'tartibcrmbot'
+const CUSTOMER_BOT_NAME = import.meta.env.VITE_CUSTOMER_BOT_USERNAME  || 'tartibcrm_customer_bot'
 
 // Xarita tugmasi logikasi:
-// lat/lon bor  → Yandex Maps (aniq manzil)
-// lat/lon yo'q → Bot deep link (mijozdan joylashuv so'rash)
+// lat/lon BOR  → Yandex Maps (aniq manzil)
+// lat/lon YO'Q → Mijoz boti deep link (joylashuv so'rash)
 function getMapAction(order) {
   if (order.lat && order.lon) {
     return {
@@ -63,9 +59,8 @@ function getMapAction(order) {
       url: `https://yandex.com/maps/?ll=${order.lon},${order.lat}&z=16&pt=${order.lon},${order.lat},pm2rdm`
     }
   }
-  // Bot deep link: mijoz /start bosadi → joylashuv so'raladi → saqlanadi
   const custId   = order.customerId || order.customer_id || ''
-  const deepLink = `https://t.me/${BOT_USERNAME}?start=cust_loc_${order._id}_${custId}`
+  const deepLink = `https://t.me/${CUSTOMER_BOT_NAME}?start=cust_loc_${order._id}_${custId}`
   return { type: 'bot', url: deepLink }
 }
 function TgIcon(){
