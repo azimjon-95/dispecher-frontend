@@ -11,6 +11,7 @@ import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import './Transport.css'
 import { useLang } from '../../i18n/index.jsx'
 import { useRealtime, bus } from '../../services/realtime.js'
+import { store, bootstrap } from '../../store/appStore.js'
 const isMob = () => window.innerWidth <= 768
 
 const STATUSES     = ['yangi','jarayonda','yetkazildi','bekor']
@@ -827,10 +828,19 @@ export default function Transport() {
   }, [])
 
   async function loadAll() {
+    // Store dan darhol
+    const s = store.getState()
+    if (s.drivers?.length || s.orders?.length) {
+      if (s.drivers?.length) setDrivers(s.drivers)
+      if (s.orders?.length) setOrders(s.orders)
+      return
+    }
+    // Bootstrap fallback
     try {
-      const [dR, oR] = await Promise.allSettled([api.getDrivers(), api.getOrders()])
-      setDrivers(norm(dR.value))
-      setOrders(norm(oR.value))
+      await bootstrap()
+      const fresh = store.getState()
+      if (fresh.drivers?.length) setDrivers(fresh.drivers)
+      if (fresh.orders?.length) setOrders(fresh.orders)
     } catch {}
   }
 
@@ -858,7 +868,11 @@ export default function Transport() {
     return () => window.removeEventListener('resize', fn)
   }, [])
 
-  useRealtime(['refresh:orders','refresh:transport','refresh:all'], () => { loadAll() })
+  useRealtime(['refresh:orders','refresh:transport','refresh:all','data:updated:orders','data:updated:drivers'], () => {
+    const s = store.getState()
+    if (s.drivers?.length) setDrivers(s.drivers)
+    if (s.orders?.length) setOrders(s.orders)
+  })
 
   return (
     <ErrorBoundary>

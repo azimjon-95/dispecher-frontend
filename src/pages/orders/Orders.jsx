@@ -12,6 +12,7 @@ import { SmsPopover } from '../../components/ui/SmsPopover.jsx'
 import './Orders.css'
 import { useLang } from '../../i18n/index.jsx'
 import { useRealtime } from '../../services/realtime.js'
+import { store, bootstrap } from '../../store/appStore.js'
 
 const isMob = () => window.innerWidth <= 768
 
@@ -462,7 +463,11 @@ export default function Orders() {
 
   useEffect(() => { loadAll() }, [])
 
-  useRealtime(['refresh:orders', 'refresh:all'], () => { loadAll() })
+  useRealtime(['refresh:orders', 'refresh:all', 'data:updated:orders'], () => {
+    const s = store.getState()
+    if (s.orders?.length) { setOrders(s.orders); setLoading(false) }
+    else loadAll()
+  })
 
   /* Save form draft on change */
   useEffect(() => {
@@ -470,17 +475,23 @@ export default function Orders() {
   }, [form, formModal])
 
   async function loadAll() {
+    // 1. Store dan darhol
+    const s = store.getState()
+    if (s.orders?.length) {
+      setOrders(s.orders)
+      setDrivers(s.drivers || [])
+      setEmployees((s.employees || []).filter(e=>e.role==='Ishchi'&&e.status==='active'))
+      setLoading(false)
+      return
+    }
+    // 2. Bootstrap (bitta so'rov)
     setLoading(true)
     try {
-      const [ords, drvs, emps] = await Promise.all([
-        api.getOrders().then(norm),
-        api.getDrivers().then(norm).catch(()=>[]),
-        api.getEmployees().then(norm).catch(()=>[]),
-      ])
-      setOrders(ords)
-      setDrivers(drvs)
-      setEmployees(emps.filter(e=>e.role==='Ishchi'&&e.status==='active'))
-
+      await bootstrap()
+      const fresh = store.getState()
+      setOrders(fresh.orders || [])
+      setDrivers(fresh.drivers || [])
+      setEmployees((fresh.employees || []).filter(e=>e.role==='Ishchi'&&e.status==='active'))
     } catch(e) { toast(e.message,'err') }
     setLoading(false)
   }

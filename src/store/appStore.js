@@ -140,4 +140,9 @@ export function useStore(select) {
   return s
 }
 
-export const store = { bootstrap, refetch, getState: () => _state }
+export const store = {
+  bootstrap,
+  refetch,
+  getState:  () => _state,
+  subscribe: (fn) => { _subs.add(fn); return () => _subs.delete(fn) },
+}
