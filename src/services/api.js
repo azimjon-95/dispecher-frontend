@@ -216,11 +216,13 @@ export const fmt = {
 }
 
 export const botApi = {
-  sendPickup:   id => http.post(`/delivery/${id}/send-tg`).catch(()=>null),
-  sendDelivery: id => http.post(`/delivery/${id}/send-tg`).catch(()=>null),
-  driverLink:   id => http.get(`/drivers/${id}/bot-link`).catch(()=>null),
-  workerLink:   id => http.get(`/employees/${id}/bot-link`).catch(()=>null),
-  driverStats:  id => http.get(`/drivers/${id}/stats`).catch(()=>null),
+  sendPickup:      id => http.post(`/delivery/${id}/send-tg`).catch(()=>null),
+  sendDelivery:    id => http.post(`/delivery/${id}/send-tg`).catch(()=>null),
+  driverLink:      id => http.get(`/drivers/${id}/bot-link`).catch(()=>null),
+  workerLink:      id => http.get(`/employees/${id}/bot-link`).catch(()=>null),
+  driverStats:     id => http.get(`/drivers/${id}/stats`).catch(()=>null),
+  requestLocation: (orderId, phone, custId) =>
+    http.post('/bot/request-location', { orderId, phone, custId }).then(r => r.data),
 }
 
 export default api

@@ -4,7 +4,7 @@ import {
   MdPhone, MdLocationOn, MdDirectionsCar, MdArrowForward,
   MdShoppingBag, MdRefresh, MdPersonAdd
 } from 'react-icons/md'
-import { api, fmt, norm } from '../../services/api.js'
+import { api, fmt, norm, botApi } from '../../services/api.js'
 import { Modal, Confirm, Sbadge, Table, Paging, PH, ExportBtn, toast, Loader, SkeletonKPI } from '../../components/ui/UI.jsx'
 import { ErrorBoundary } from '../../components/ui/UI.jsx'
 import OrderDetail from '../orderdetail/OrderDetail.jsx'
@@ -84,7 +84,7 @@ const EMPTY = { customer:'', phone:'', address:'', description:'', status:'yangi
 /* ══════════════════════════════════════════
    KANBAN CARD
 ══════════════════════════════════════════ */
-function KanbanCard({ order, col, drivers, employees, onDetail, onAdvance, onAssign, onAssignWorker, onEdit, onDelete }) {
+function KanbanCard({ order, col, drivers, employees, onDetail, onAdvance, onAssign, onAssignWorker, onEdit, onDelete, onRequestLoc }) {
   const { t } = useLang()
   const colCfg  = COLUMNS(t).find(c=>c.key===col)
   const accent  = colCfg?.color || 'var(--accent)'
@@ -152,19 +152,25 @@ function KanbanCard({ order, col, drivers, employees, onDetail, onAdvance, onAss
         {(() => {
           const action    = getMapAction(order)
           const hasCoords = order.lat && order.lon
+          if (hasCoords) {
+            return (
+              <a href={action.url} target="_blank" rel="noopener noreferrer"
+                className="kb-action-btn kba-map"
+                onClick={e => e.stopPropagation()}
+                title={`Yandex Maps: ${order.lat?.toFixed(4)}, ${order.lon?.toFixed(4)}`}
+              >
+                <MdLocationOn size={10}/> Xarita
+              </a>
+            )
+          }
           return (
-            <a href={action.url} target="_blank" rel="noopener noreferrer"
-              className={`kb-action-btn ${hasCoords ? 'kba-map' : 'kba-bot'}`}
-              onClick={e => e.stopPropagation()}
-              title={hasCoords
-                ? `Yandex Maps: ${order.lat?.toFixed(4)}, ${order.lon?.toFixed(4)}`
-                : 'Botga o\'tib manzilini yuboring'}
+            <button
+              className="kb-action-btn kba-bot"
+              onClick={e => { e.stopPropagation(); onRequestLoc && onRequestLoc(order) }}
+              title="Mijozdan manzil so'rash"
             >
-              {hasCoords
-                ? <><MdLocationOn size={10}/> Xarita</>
-                : <><MdLocationOn size={10}/> 📍 Manzil so'rash</>
-              }
-            </a>
+              <MdLocationOn size={10}/> 📍 Manzil so'rash
+            </button>
           )
         })()}
       </div>
@@ -181,7 +187,7 @@ function KanbanCard({ order, col, drivers, employees, onDetail, onAdvance, onAss
 /* ══════════════════════════════════════════
    KANBAN COLUMN
 ══════════════════════════════════════════ */
-function KanbanColumn({ col, orders, drivers, employees, onColClick, onDetail, onAdvance, onAssign, onAssignWorker, onEdit, onDelete }) {
+function KanbanColumn({ col, orders, drivers, employees, onColClick, onDetail, onAdvance, onAssign, onAssignWorker, onEdit, onDelete, onRequestLoc }) {
   const { t } = useLang()
   const total = orders.reduce((s,o)=>s+(o.total||0),0)
   return (
@@ -205,7 +211,8 @@ function KanbanColumn({ col, orders, drivers, employees, onColClick, onDetail, o
                 drivers={drivers} employees={employees}
                 onDetail={onDetail} onAdvance={onAdvance}
                 onAssign={onAssign} onAssignWorker={onAssignWorker}
-                onEdit={onEdit} onDelete={onDelete}/>
+                onEdit={onEdit} onDelete={onDelete}
+                onRequestLoc={onRequestLoc}/>
             ))
         }
       </div>
@@ -475,6 +482,7 @@ export default function Orders() {
   const [selDriver,       setSelDriver]       = useState(null)
   const [selWorker,       setSelWorker]       = useState(null)
   const [delId,           setDelId]           = useState(null)
+  const [locModal,        setLocModal]        = useState(null)  // { name, phone, deepLink, sent, hasTg }
   const [isSubmitting,    setIsSubmitting]    = useState(false)
   const [custFound,       setCustFound]       = useState(null)   // topilgan mijoz
   const [geoLoading,      setGeoLoading]      = useState(false)
@@ -624,6 +632,27 @@ export default function Orders() {
 
   /* Assign driver — Order GA ham, Pickup TASK GA ham biriktiradi
      Telegram xabari backend pickup PUT da avtomatik ketadi */
+  /* Manzil so'rash — backend orqali mijoz Telegram'iga xabar yuboradi */
+  async function handleRequestLoc(order) {
+    try {
+      const res = await botApi.requestLocation(
+        order._id,
+        order.phone,
+        order.customerId || order.customer_id || ''
+      )
+      setLocModal({
+        name:     res.name     || order.customer,
+        phone:    res.phone    || order.phone,
+        deepLink: res.deepLink || '',
+        sent:     res.sent     || false,
+        hasTg:    res.hasTg   || false,
+        method:   res.method  || 'link',
+      })
+    } catch(e) {
+      toast('Xato: ' + e.message, 'err')
+    }
+  }
+
   async function confirmAssignDriver() {
     if (!selDriver){toast('Shafyorni tanlang','err');return}
     const dr = drivers.find(d=>d._id===selDriver)
@@ -810,6 +839,7 @@ export default function Orders() {
                     onAssignWorker={o=>{setAssignWorkerMod(o);setSelWorker(null)}}
                     onEdit={o=>{setForm({...o});setFormModal('edit')}}
                     onDelete={id=>setDelId(id)}
+                    onRequestLoc={handleRequestLoc}
                   />
                 ))}
               </div>
@@ -992,6 +1022,77 @@ export default function Orders() {
 
         <Confirm open={!!delId} onClose={()=>setDelId(null)} onOk={doDelete}
           title="Buyurtmani o'chirish" msg="Bu buyurtmani o'chirishni xohlaysizmi?" danger/>
+
+        {/* ── Manzil so'rash modali ── */}
+        <Modal open={!!locModal} onClose={()=>setLocModal(null)}
+          title="📍 Manzil so'rash"
+          footer={<button className="btn btn-ghost" onClick={()=>setLocModal(null)}>Yopish</button>}
+          size="sm"
+        >
+          {locModal && (
+            <div style={{display:'flex',flexDirection:'column',gap:14}}>
+
+              {/* Status */}
+              {locModal.sent ? (
+                <div style={{padding:'12px 16px',background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.25)',borderRadius:'var(--r)',display:'flex',gap:10,alignItems:'center'}}>
+                  <span style={{fontSize:22}}>✅</span>
+                  <div>
+                    <div style={{fontWeight:700,color:'var(--green)'}}>Telegram orqali yuborildi!</div>
+                    <div style={{fontSize:12,color:'var(--text2)',marginTop:2}}>{locModal.name} Telegram'da xabar ko'rdi</div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{padding:'12px 16px',background:'rgba(245,158,11,.1)',border:'1px solid rgba(245,158,11,.25)',borderRadius:'var(--r)'}}>
+                  <div style={{fontWeight:700,color:'var(--amber)',marginBottom:4}}>
+                    ⚠️ {locModal.hasTg ? 'Telegram xabari yuborilmadi' : 'Telegram topilmadi'}
+                  </div>
+                  <div style={{fontSize:12,color:'var(--text2)'}}>
+                    {locModal.name || locModal.phone} uchun quyidagi havolani yuboring:
+                  </div>
+                </div>
+              )}
+
+              {/* Mijoz info */}
+              <div style={{display:'flex',gap:10,alignItems:'center',padding:'10px 14px',background:'var(--bg3)',borderRadius:'var(--r)'}}>
+                <div style={{fontSize:20}}>👤</div>
+                <div>
+                  <div style={{fontWeight:700}}>{locModal.name}</div>
+                  <div style={{fontSize:12,color:'var(--text2)'}}>{locModal.phone}</div>
+                </div>
+              </div>
+
+              {/* Deep link */}
+              {locModal.deepLink && (
+                <div>
+                  <div style={{fontSize:11,fontWeight:700,color:'var(--text2)',marginBottom:6,textTransform:'uppercase',letterSpacing:.5}}>
+                    Bot havolasi
+                  </div>
+                  <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                    <div style={{flex:1,padding:'8px 12px',background:'var(--bg3)',borderRadius:'var(--r)',fontSize:11,fontFamily:'monospace',wordBreak:'break-all',color:'var(--text2)',border:'1px solid var(--border)'}}>
+                      {locModal.deepLink}
+                    </div>
+                    <button className="btn btn-ghost btn-sm" style={{flexShrink:0}}
+                      onClick={() => {
+                        navigator.clipboard?.writeText(locModal.deepLink)
+                        toast('📋 Nusxa olindi!','ok')
+                      }}>
+                      📋
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Ko'rsatma */}
+              {!locModal.sent && (
+                <div style={{fontSize:12,color:'var(--text3)',lineHeight:1.6,padding:'10px 14px',background:'var(--bg2)',borderRadius:'var(--r)',border:'1px solid var(--border)'}}>
+                  📋 Mijozga shu havolani yuboring (SMS, Telegram, WhatsApp).<br/>
+                  Mijoz bosadi → bot ochiladi → joylashuvini yuboradi → CRM da ko'rinadi.
+                </div>
+              )}
+
+            </div>
+          )}
+        </Modal>
       </div>
     </ErrorBoundary>
   )
