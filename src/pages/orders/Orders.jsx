@@ -635,22 +635,35 @@ export default function Orders() {
   /* Manzil so'rash — backend orqali mijoz Telegram'iga xabar yuboradi */
   async function handleRequestLoc(order) {
     if (!order?._id) return
+    const CBOT = import.meta.env.VITE_CUSTOMER_BOT_USERNAME || 'tartibcrm_customer_bot'
     try {
       const res = await botApi.requestLocation(
         order._id,
         order.phone || '',
         order.customerId || order.customer_id || ''
       )
+      // deepLink har doim bo'lsin — fallback yasaymiz
+      const deepLink = res?.deepLink ||
+        `https://t.me/${CBOT}?start=cust_loc_${order._id}_`
       setLocModal({
-        name:     res?.name     || order.customer  || order.phone || '—',
-        phone:    res?.phone    || order.phone     || '—',
-        deepLink: res?.deepLink || '',
+        name:     res?.name     || order.customer || order.phone || '—',
+        phone:    res?.phone    || order.phone    || '—',
+        deepLink,
         sent:     res?.sent     || false,
         hasTg:    res?.hasTg   || false,
         method:   res?.method  || 'link',
       })
     } catch(e) {
-      toast('Xato: ' + (e?.message || 'Noma\'lum xato'), 'err')
+      // Xato bo'lsa ham modal ochilsin — fallback link bilan
+      const deepLink = `https://t.me/${CBOT}?start=cust_loc_${order._id}_`
+      setLocModal({
+        name:     order.customer || order.phone || '—',
+        phone:    order.phone    || '—',
+        deepLink,
+        sent:     false,
+        hasTg:    false,
+        method:   'link',
+      })
     }
   }
 
