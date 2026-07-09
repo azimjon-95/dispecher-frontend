@@ -457,6 +457,147 @@ function MobileOrders({ orders, loading, onDetail, onAdvance, onAssign, onAssign
 /* ══════════════════════════════════════════
    MAIN ORDERS PAGE
 ══════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════
+   MANZIL SO'RASH MODALI
+══════════════════════════════════════════════ */
+function LocRequestModal({ locModal, onClose }) {
+  const CBOT = import.meta.env.VITE_CUSTOMER_BOT_USERNAME || 'tartibcrm_customer_bot'
+
+  const defaultSms = (lm) => {
+    if (!lm) return ''
+    const link = lm.deepLink || `https://t.me/${CBOT}`
+    return `Salom, ${lm.name || 'mijoz'}! Tartib CRM gilam yuvish xizmati.\nManzilingizni yuborish uchun quyidagi havolani bosing:\n${link}`
+  }
+
+  const [smsText, setSmsText] = useState('')
+
+  useEffect(() => {
+    if (locModal) setSmsText(defaultSms(locModal))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locModal])
+
+  if (!locModal) return null
+
+  const cleanPhone = (locModal.phone || '').replace(/\s/g, '')
+  const encoded    = encodeURIComponent(smsText)
+  const tgUrl      = `https://t.me/${cleanPhone}?text=${encoded}`
+  const waUrl      = `https://wa.me/${cleanPhone.replace('+', '')}?text=${encoded}`
+
+  function copyText() {
+    navigator.clipboard?.writeText(smsText).catch(() => {})
+    toast('📋 Matn nusxa olindi!', 'ok')
+  }
+  function copyLink() {
+    navigator.clipboard?.writeText(locModal.deepLink || '').catch(() => {})
+    toast('📋 Havola nusxa olindi!', 'ok')
+  }
+
+  return (
+    <Modal open={!!locModal} onClose={onClose}
+      title="📍 Manzil so\'rash" size="sm"
+      footer={<button className="btn btn-ghost" onClick={onClose}>Yopish</button>}
+    >
+      <div style={{display:'flex',flexDirection:'column',gap:14}}>
+
+        {/* Mijoz */}
+        <div style={{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',
+          background:'var(--bg3)',borderRadius:'var(--r)',border:'1px solid var(--border)'}}>
+          <div style={{width:38,height:38,borderRadius:'50%',background:'rgba(59,130,246,.15)',
+            display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>👤</div>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:700}}>{locModal.name || '—'}</div>
+            <div style={{fontSize:12,color:'var(--text2)'}}>{locModal.phone || '—'}</div>
+          </div>
+          {locModal.hasTg && (
+            <span style={{fontSize:10,fontWeight:700,color:'#229ED9',
+              background:'rgba(34,158,217,.12)',padding:'3px 8px',borderRadius:99}}>
+              TG ✓
+            </span>
+          )}
+        </div>
+
+        {/* Bot havolasi */}
+        {locModal.deepLink && (
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:'var(--text2)',
+              textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>
+              🔗 Bot havolasi
+            </div>
+            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+              <div style={{flex:1,padding:'8px 10px',background:'var(--bg3)',
+                borderRadius:'var(--r)',fontSize:11,fontFamily:'monospace',
+                wordBreak:'break-all',color:'#60a5fa',border:'1px solid var(--border)'}}>
+                {locModal.deepLink}
+              </div>
+              <button className="btn btn-ghost btn-sm" style={{flexShrink:0}} onClick={copyLink}>📋</button>
+            </div>
+          </div>
+        )}
+
+        {/* SMS matni — tahrirlash mumkin */}
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:'var(--text2)',
+            textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>
+            ✏️ Xabar matni
+          </div>
+          <textarea
+            value={smsText}
+            onChange={e => setSmsText(e.target.value)}
+            rows={5}
+            style={{width:'100%',padding:'10px 12px',background:'var(--bg3)',
+              border:'1px solid var(--border)',borderRadius:'var(--r)',
+              color:'var(--text)',fontSize:12,lineHeight:1.6,resize:'vertical',
+              fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}
+          />
+        </div>
+
+        {/* Yuborish */}
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          <div style={{fontSize:11,fontWeight:700,color:'var(--text2)',
+            textTransform:'uppercase',letterSpacing:.5}}>📤 Yuborish</div>
+
+          <a href={tgUrl} target="_blank" rel="noopener noreferrer"
+            style={{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',
+              borderRadius:'var(--r)',background:'rgba(34,158,217,.1)',
+              border:'1px solid rgba(34,158,217,.25)',textDecoration:'none',color:'var(--text)'}}>
+            <span style={{fontSize:22}}>✈️</span>
+            <div>
+              <div style={{fontWeight:700,fontSize:13}}>Telegram</div>
+              <div style={{fontSize:11,color:'var(--text2)'}}>t.me/{cleanPhone}</div>
+            </div>
+            <span style={{marginLeft:'auto'}}>→</span>
+          </a>
+
+          <a href={waUrl} target="_blank" rel="noopener noreferrer"
+            style={{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',
+              borderRadius:'var(--r)',background:'rgba(37,211,102,.08)',
+              border:'1px solid rgba(37,211,102,.2)',textDecoration:'none',color:'var(--text)'}}>
+            <span style={{fontSize:22}}>💬</span>
+            <div>
+              <div style={{fontWeight:700,fontSize:13}}>WhatsApp</div>
+              <div style={{fontSize:11,color:'var(--text2)'}}>wa.me/{cleanPhone.replace('+','')}</div>
+            </div>
+            <span style={{marginLeft:'auto'}}>→</span>
+          </a>
+
+          <button onClick={copyText}
+            style={{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',
+              borderRadius:'var(--r)',background:'var(--bg3)',border:'1px solid var(--border)',
+              color:'var(--text)',cursor:'pointer',width:'100%',fontFamily:'inherit'}}>
+            <span style={{fontSize:22}}>📋</span>
+            <div style={{textAlign:'left'}}>
+              <div style={{fontWeight:700,fontSize:13}}>Matnni nusxa olish</div>
+              <div style={{fontSize:11,color:'var(--text2)'}}>Boshqa ilovada yuborish</div>
+            </div>
+          </button>
+        </div>
+
+      </div>
+    </Modal>
+  )
+}
+
 export default function Orders() {
   const { t } = useLang()
   const [orders,      setOrders]      = useState([])
