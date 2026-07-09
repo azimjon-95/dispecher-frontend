@@ -9,7 +9,8 @@
    4. Hech qachon ishni to'xtatmaydi — degradatsiya, crash emas
 ═══════════════════════════════════════════════════════ */
 
-const BASE = 'https://gilam.medme.uz'
+import { BASE_URL } from '../api/baseApi.js'
+const BASE = BASE_URL
 
 /* ───────────────────────────────────────
    Event Bus — sahifalar bu orqali gaplashadi

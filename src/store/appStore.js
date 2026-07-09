@@ -8,7 +8,8 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { bus } from '../services/realtime.js'
 
-const BASE = 'https://gilam.medme.uz'
+import { BASE_URL } from '../api/baseApi.js'
+const BASE = BASE_URL
 
 const EMPTY = {
   orders: [], drivers: [], employees: [], customers: [],

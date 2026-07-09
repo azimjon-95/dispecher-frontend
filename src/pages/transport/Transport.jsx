@@ -383,7 +383,7 @@ function LiveMap({ drivers, driverLocations, setDriverLocations, orders, company
   const socketRef  = useRef(null)
   const companyMarkerRef = useRef(null)
 
-  const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+  // BASE_URL api/baseApi.js dan olinadi
 
   const pendingPickup   = orders.filter(o => o && !o.driver && o.status==='yangi')
   const pendingDelivery = orders.filter(o => o && o.status==='yetkazishda')

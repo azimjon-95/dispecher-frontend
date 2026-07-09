@@ -7,7 +7,8 @@ import { api } from '../../services/api.js'
 const isMob = () => window.innerWidth <= 768
 import './Settings.css'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+import { BASE_URL } from '../../api/baseApi.js'
+const API = BASE_URL
 function hdrs() { return { 'Content-Type': 'application/json', Authorization: 'Bearer ' + localStorage.getItem('token') } }
 
 function TgLogo({ size = 16 }) {

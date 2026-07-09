@@ -4,11 +4,9 @@
    Offline queue / IndexedDB / sync — YO'Q.
    Real-time yangilanish Socket.IO orqali (realtime.js)
 ═══════════════════════════════════════════════════ */
-import axios from 'axios'
+import { BASE_URL, axiosInstance } from '../api/baseApi.js'
 
-const BASE_URL = 'https://gilam.medme.uz'
-
-const http = axios.create({ baseURL: BASE_URL + '/api', timeout: 8000 })
+const http = axiosInstance
 
 // ── Sahifa cache (sessionStorage) — tezkor ko'rsatish uchun
 // Foydalanuvchi sahifaga o'tganda darhol eski ma'lumot ko'rinadi,
