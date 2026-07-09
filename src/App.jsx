@@ -1,14 +1,18 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import Sidebar   from './components/layout/Sidebar.jsx'
 import Navbar    from './components/layout/Navbar.jsx'
 import { ToastContainer } from './components/ui/UI.jsx'
 import Login     from './pages/login/Login.jsx'
 import { NetworkToast } from './hooks/useNetworkStatus.jsx'
 import MobileTabBar from './components/layout/MobileTabBar.jsx'
-import { api, norm } from './services/api.js'
 import { bus } from './services/realtime.js'
 import { LangProvider } from './i18n/index.jsx'
-import { bootstrap } from './store/appStore.js'
+import { setCredentials, logout, selectCurrentUser } from './store/slices/authSlice.js'
+import { setPage, setTheme, setCollapsed, selectPage, selectTheme, selectCollapsed } from './store/slices/uiSlice.js'
+import { useGetBootstrapQuery } from './api/endpoints/bootstrap.js'
+import { resetApiCache } from './store/index.js'
+import { api, norm } from './services/api.js'
 
 // Lazy load — faqat bosilganda yuklanadi, hammasi bir vaqtda emas
 const Dashboard   = lazy(() => import('./pages/dashboard/Dashboard.jsx'))

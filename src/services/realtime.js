@@ -102,6 +102,24 @@ async function connectSocket() {
   socket.on('data:update', ({ type }) => {
     bus.emit('refresh:' + type)
     bus.emit('refresh:all', { type })
+
+    // RTK Query cache invalidation — Socket.IO dan kelgan o'zgarish
+    // Bu sahifalar o'tmasdan ham data yangilanishini ta'minlaydi
+    const tagMap = {
+      orders:    ['Orders', 'Stats', 'Bootstrap'],
+      drivers:   ['Drivers', 'Bootstrap'],
+      employees: ['Employees', 'Bootstrap'],
+      customers: ['Customers', 'Bootstrap'],
+      delivery:  ['Delivery', 'Bootstrap'],
+      pickup:    ['Pickup', 'Bootstrap'],
+      finance:   ['Finance', 'Stats', 'Bootstrap'],
+      attendance:['Attendance'],
+      prices:    ['Prices', 'Bootstrap'],
+    }
+    const tags = tagMap[type] || ['Bootstrap']
+    import('../store/index.js').then(({ socketInvalidate }) => {
+      socketInvalidate(...tags)
+    }).catch(() => {})
   })
 
   socket.on('driver:live-location', data => {
