@@ -467,7 +467,7 @@ function LocRequestModal({ locModal, onClose }) {
   const defaultSms = (lm) => {
     if (!lm) return ''
     const link = lm.deepLink || `https://t.me/${CBOT}`
-    return `Salom, ${lm.name || 'mijoz'}! Tartib CRM gilam yuvish xizmati.\nManzilingizni yuborish uchun quyidagi havolani bosing:\n${link}`
+    return `Salom, ${lm.name || 'mijoz'}! 👋\n\nTartib CRM gilam yuvish xizmati.\nManzilingizni yuborish uchun:\n\n${link}`
   }
 
   const [smsText, setSmsText] = useState('')
