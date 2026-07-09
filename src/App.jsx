@@ -10,7 +10,6 @@ import { bus } from './services/realtime.js'
 import { LangProvider } from './i18n/index.jsx'
 import { setCredentials, logout, selectCurrentUser } from './store/slices/authSlice.js'
 import { setPage, setTheme, setCollapsed, selectPage, selectTheme, selectCollapsed } from './store/slices/uiSlice.js'
-import { useGetBootstrapQuery } from './api/endpoints/bootstrap.js'
 import { resetApiCache } from './store/index.js'
 import { api, norm } from './services/api.js'
 
@@ -82,12 +81,6 @@ export default function App() {
 
   // useNetworkStatus o'z holatini o'zi boshqaradi (NetworkToast komponenti orqali),
   // App.jsx darajasida alohida ushlab turish shart emas
-
-  // Sahifa yangilanganida (token bor bo'lsa) darhol bootstrap
-  useEffect(() => {
-    if (user) bootstrap()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -203,7 +196,7 @@ export default function App() {
     setUser(userData)
     try { localStorage.setItem('user', JSON.stringify(userData)) } catch {}
     // Login bo'lgandan keyin darhol barcha data yuklanadi — bitta so'rovda
-    setTimeout(() => bootstrap(), 100)
+    // RTK Query useGetBootstrapQuery avtomatik yuklaydi
   }
 
   function handleLogout() {
