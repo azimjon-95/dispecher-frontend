@@ -634,22 +634,23 @@ export default function Orders() {
      Telegram xabari backend pickup PUT da avtomatik ketadi */
   /* Manzil so'rash — backend orqali mijoz Telegram'iga xabar yuboradi */
   async function handleRequestLoc(order) {
+    if (!order?._id) return
     try {
       const res = await botApi.requestLocation(
         order._id,
-        order.phone,
+        order.phone || '',
         order.customerId || order.customer_id || ''
       )
       setLocModal({
-        name:     res.name     || order.customer,
-        phone:    res.phone    || order.phone,
-        deepLink: res.deepLink || '',
-        sent:     res.sent     || false,
-        hasTg:    res.hasTg   || false,
-        method:   res.method  || 'link',
+        name:     res?.name     || order.customer  || order.phone || '—',
+        phone:    res?.phone    || order.phone     || '—',
+        deepLink: res?.deepLink || '',
+        sent:     res?.sent     || false,
+        hasTg:    res?.hasTg   || false,
+        method:   res?.method  || 'link',
       })
     } catch(e) {
-      toast('Xato: ' + e.message, 'err')
+      toast('Xato: ' + (e?.message || 'Noma\'lum xato'), 'err')
     }
   }
 

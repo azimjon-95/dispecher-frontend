@@ -219,8 +219,14 @@ export const botApi = {
   driverLink:      id => http.get(`/drivers/${id}/bot-link`).catch(()=>null),
   workerLink:      id => http.get(`/employees/${id}/bot-link`).catch(()=>null),
   driverStats:     id => http.get(`/drivers/${id}/stats`).catch(()=>null),
-  requestLocation: (orderId, phone, custId) =>
-    http.post('/bot/request-location', { orderId, phone, custId }).then(r => r.data),
+  requestLocation: async (orderId, phone, custId) => {
+    try {
+      const r = await http.post('/bot/request-location', { orderId, phone, custId })
+      return r.data || {}
+    } catch(e) {
+      return { sent: false, method: 'link', deepLink: '', name: '', phone: '', hasTg: false }
+    }
+  },
 }
 
 export default api
