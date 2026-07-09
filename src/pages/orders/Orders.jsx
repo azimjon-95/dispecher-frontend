@@ -1038,75 +1038,10 @@ export default function Orders() {
           title="Buyurtmani o'chirish" msg="Bu buyurtmani o'chirishni xohlaysizmi?" danger/>
 
         {/* ── Manzil so'rash modali ── */}
-        <Modal open={!!locModal} onClose={()=>setLocModal(null)}
-          title="📍 Manzil so'rash"
-          footer={<button className="btn btn-ghost" onClick={()=>setLocModal(null)}>Yopish</button>}
-          size="sm"
-        >
-          {locModal && (
-            <div style={{display:'flex',flexDirection:'column',gap:14}}>
-
-              {/* Status */}
-              {locModal.sent ? (
-                <div style={{padding:'12px 16px',background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.25)',borderRadius:'var(--r)',display:'flex',gap:10,alignItems:'center'}}>
-                  <span style={{fontSize:22}}>✅</span>
-                  <div>
-                    <div style={{fontWeight:700,color:'var(--green)'}}>Telegram orqali yuborildi!</div>
-                    <div style={{fontSize:12,color:'var(--text2)',marginTop:2}}>{locModal.name} Telegram'da xabar ko'rdi</div>
-                  </div>
-                </div>
-              ) : (
-                <div style={{padding:'12px 16px',background:'rgba(245,158,11,.1)',border:'1px solid rgba(245,158,11,.25)',borderRadius:'var(--r)'}}>
-                  <div style={{fontWeight:700,color:'var(--amber)',marginBottom:4}}>
-                    ⚠️ {locModal.hasTg ? 'Telegram xabari yuborilmadi' : 'Telegram topilmadi'}
-                  </div>
-                  <div style={{fontSize:12,color:'var(--text2)'}}>
-                    {locModal.name || locModal.phone} uchun quyidagi havolani yuboring:
-                  </div>
-                </div>
-              )}
-
-              {/* Mijoz info */}
-              <div style={{display:'flex',gap:10,alignItems:'center',padding:'10px 14px',background:'var(--bg3)',borderRadius:'var(--r)'}}>
-                <div style={{fontSize:20}}>👤</div>
-                <div>
-                  <div style={{fontWeight:700}}>{locModal.name}</div>
-                  <div style={{fontSize:12,color:'var(--text2)'}}>{locModal.phone}</div>
-                </div>
-              </div>
-
-              {/* Deep link */}
-              {locModal.deepLink && (
-                <div>
-                  <div style={{fontSize:11,fontWeight:700,color:'var(--text2)',marginBottom:6,textTransform:'uppercase',letterSpacing:.5}}>
-                    Bot havolasi
-                  </div>
-                  <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                    <div style={{flex:1,padding:'8px 12px',background:'var(--bg3)',borderRadius:'var(--r)',fontSize:11,fontFamily:'monospace',wordBreak:'break-all',color:'var(--text2)',border:'1px solid var(--border)'}}>
-                      {locModal.deepLink}
-                    </div>
-                    <button className="btn btn-ghost btn-sm" style={{flexShrink:0}}
-                      onClick={() => {
-                        navigator.clipboard?.writeText(locModal.deepLink)
-                        toast('📋 Nusxa olindi!','ok')
-                      }}>
-                      📋
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Ko'rsatma */}
-              {!locModal.sent && (
-                <div style={{fontSize:12,color:'var(--text3)',lineHeight:1.6,padding:'10px 14px',background:'var(--bg2)',borderRadius:'var(--r)',border:'1px solid var(--border)'}}>
-                  📋 Mijozga shu havolani yuboring (SMS, Telegram, WhatsApp).<br/>
-                  Mijoz bosadi → bot ochiladi → joylashuvini yuboradi → CRM da ko'rinadi.
-                </div>
-              )}
-
-            </div>
-          )}
-        </Modal>
+        <LocRequestModal
+          locModal={locModal}
+          onClose={() => setLocModal(null)}
+        />
       </div>
     </ErrorBoundary>
   )
